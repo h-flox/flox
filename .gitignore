@@ -1,3 +1,7 @@
+# Compressed data
+*.gz
+*-ubyte
+
 # IDE-specific directories
 .idea/
 
