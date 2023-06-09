@@ -1,6 +1,9 @@
 # IDE-specific directories
 .idea/
 
+# ML Tooling directories
+**/lightning_logs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
