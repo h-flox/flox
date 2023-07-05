@@ -5,7 +5,6 @@ import os
 import torch
 import torch.nn.functional as F
 
-from collections import defaultdict
 from torch.utils.data import DataLoader, Dataset
 from numpy.random import RandomState
 from concurrent.futures import ThreadPoolExecutor
@@ -17,7 +16,7 @@ from torchvision.datasets import MNIST
 Helpful thread for a environmental issue with OpenMP:
 https://github.com/pytorch/pytorch/issues/44282
 """
-PATH_DATASETS = os.environ.get("PATH_DATASETS", ".")
+PATH_DATASETS = os.environ.get("PATH_DATASETS", "..")
 BATCH_SIZE = 256 if torch.cuda.is_available() else 64
 
 
@@ -41,9 +40,10 @@ class MnistModule(L.LightningModule):
     def forward(self, x: torch.Tensor):
         return torch.relu(self.l1(x.view(x.size(0), -1)))
 
-    def training_step(self, batch, batch_nb):
+    def training_step(self, batch, batch_nb, **kwargs):
         x, y = batch
         loss = F.cross_entropy(self(x), y)
+        print(kwargs.get("lol", "This didn't pass through..."))
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -52,8 +52,6 @@ class MnistModule(L.LightningModule):
         loss = F.nll_loss(logits, y)
         preds = torch.argmax(logits, dim=1)
         self.test_accuracy.update(preds, y)
-
-        # Calling self.log will surface up scalars for you in TensorBoard
         self.log("test_loss", loss, prog_bar=True)
         self.log("test_acc", self.test_accuracy, prog_bar=True)
 
@@ -71,7 +69,8 @@ def local_fit(
         devices=1,
         max_epochs=3
     )
-    trainer.fit(module, data_loader)
+    trainer.fit(module, data_loader,
+                lol="This made it!!")
     return endp_id, module
 
 
@@ -98,8 +97,9 @@ def fedavg(
 
 
 def main(args):
-    # This header code simply sets up the FL process: loading in the training/testing data, initializing the neural net,
-    # initializing the random seed, and splitting up the across the "endpoints".
+    # This header code simply sets up the FL process: loading in the
+    # training/testing data, initializing the neural net, initializing
+    # the random seed, and splitting up the across the "endpoints".
     random_state = RandomState(args.seed)
     module = MnistModule()
     global_rounds = 10
@@ -125,13 +125,11 @@ def main(args):
     }
 
     # Below is the execution of the Global Aggregation Rounds. Each round consists of the following steps:
-    #
-    # (1) clients are selected to do local training
-    # (2) selected clients do local training and send back their locally-trained model udpates
-    # (3) the aggregator then aggregates the model updates using FedAvg
-    # (4) the aggregator tests/evaluates the new global model
-    # (5) the loop repeats until all global rounds have been done.
-
+    #   (1) clients are selected to do local training
+    #   (2) selected clients do local training and send back their locally-trained model udpates
+    #   (3) the aggregator then aggregates the model updates using FedAvg
+    #   (4) the aggregator tests/evaluates the new global model
+    #   (5) the loop repeats until all global rounds have been done.
     for gr in range(global_rounds):
         print(f">> Starting global round ({gr + 1}/{global_rounds}).")
 
@@ -158,8 +156,8 @@ def main(args):
 
         # Evaluate the global model performance.
         trainer = L.Trainer()
-        metrics = trainer.test(module, DataLoader(mnist_test_data))
-        print(metrics)
+        # metrics = trainer.test(module, DataLoader(mnist_test_data))
+        # print(metrics)
 
 
 if __name__ == "__main__":

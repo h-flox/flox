@@ -1,0 +1,6 @@
+seed: 123
+iid: true
+workers:
+  - worker-1:
+    name: "worker1"
+    data: { source: "mnist" }

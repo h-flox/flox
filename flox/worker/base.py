@@ -1,4 +1,4 @@
-class TrainerLogic:
+class AbstractWorkerLogic:
     def __init__(self):
         pass
 
