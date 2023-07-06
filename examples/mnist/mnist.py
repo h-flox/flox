@@ -155,9 +155,6 @@ def main(args):
         module.load_state_dict(avg_weights)
 
         # Evaluate the global model performance.
-        trainer = L.Trainer()
-        # metrics = trainer.test(module, DataLoader(mnist_test_data))
-        # print(metrics)
 
 
 if __name__ == "__main__":

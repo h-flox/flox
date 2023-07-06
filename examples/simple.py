@@ -2,7 +2,8 @@ import pytorch_lightning as pl
 import torch.nn.functional as F
 from flox import *
 
-# Define the neural network module that you wish to train.
+
+# Define the neural network global_module that you wish to train.
 class LitClassifier(pl.LightningModule):
     def __init__(self, model):
         super().__init__()
@@ -13,6 +14,7 @@ class LitClassifier(pl.LightningModule):
         y_hat = self.model(x)
         loss = F.cross_entropy(y_hat, y)
         return loss
+
 
 if __name__ == "__main__":
     module = LitClassifier()

@@ -4,8 +4,13 @@ In other words, this can be seen as the target quickstart demo.
 """
 
 import argparse
+
+from torchvision.transforms import ToTensor
+
+import flox
 import lightning as L
 import os
+import random
 import torch
 import torch.nn.functional as F
 
@@ -13,6 +18,46 @@ from torchmetrics import Accuracy
 from torchvision import transforms
 from torchvision.datasets import MNIST
 from typing import Any
+
+from flox._aggr import FedAvg
+from flox._worker import WorkerLogic
+
+
+class MnistAggrLogic(FedAvg):
+
+    def __init__(self):
+        super().__init__()
+        self.metrics = None
+
+    def on_module_eval(self, module: L.LightningModule):
+        root = os.environ.get("PATH_DATASETS", ".")
+        test_data = MNIST(root, download=True, train=True, transform=ToTensor())
+        test_dataloader = torch.utils.data.DataLoader(test_data)
+        trainer = L.Trainer()
+        metrics = trainer.test(module, test_dataloader)
+        self.metrics = metrics
+        return self.metrics
+
+
+class MnistWorkerLogic(WorkerLogic):
+    def __init__(self, idx, indices):
+        super().__init__(idx)
+        self.name = "mnist"
+        self.indices = indices
+
+    def on_data_fetch(self):
+        from torch.utils.data import Subset
+        from torchvision.datasets import MNIST
+        from torchvision.transforms import ToTensor
+        from os import environ
+
+        root = environ.get("PATH_DATASETS", ".")
+        data = MNIST(root, download=True, train=True, transform=ToTensor())
+        data = Subset(data, indices=self.indices)
+        return data
+
+    def __len__(self) -> int:
+        return len(self.indices)
 
 
 class MnistModule(L.LightningModule):
@@ -42,23 +87,22 @@ class MnistModule(L.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=0.02)
 
 
+def create_workers(num: int) -> dict[str, MnistWorkerLogic]:
+    workers = {}
+    for idx in range(num):
+        n_samples = random.randint(100, 250)
+        indices = random.sample(range(10_000), k=n_samples)
+        workers[f"Worker-{idx}"] = MnistWorkerLogic(idx=idx, indices=list(indices))
+    return workers
+
+
 def main(args: argparse.Namespace):
-    # import flox
-    module = MnistModule()
-    dataset = MNIST(
-        os.environ.get("PATH_DATASETS", "."),
-        train=True,
-        download=True,
-        transform=transforms.ToTensor()
-    )
-    workers: dict[WorkerID, WorkerLogic] = flox.worker.WorkerModule.federate_data(
-        dataset,
-        num_workers=args.num_workers,
-        alpha=args.alpha
-    )
-    module, metrics = flox.federated_fit(
-        workers,
-        aggr="fedavg",
+    workers: dict[str, MnistWorkerLogic] = create_workers(10)
+    results = flox.federated_fit(
+        global_module=MnistModule(),
+        aggr=MnistAggrLogic(),
+        workers=workers,
+        global_rounds=5,
         mode="local"
     )
 

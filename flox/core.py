@@ -1,74 +1,55 @@
+import copy
 import os
 import torch
 import lightning as L
+import random
 
+from concurrent.futures import ThreadPoolExecutor
 from numpy.random import RandomState
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-from typing import Optional
+from torchvision.datasets import MNIST
+from typing import Any, Optional, Union
 
-from flox.aggregator.base import AggregatorLogic
-from flox.worker.base import WorkerLogic
+from flox._aggr import AggrLogic
+from flox._worker import WorkerLogic
+from main import MnistWorkerLogic
 
 PATH_DATASETS = os.environ.get("PATH_DATASETS", ".")
 BATCH_SIZE = 256 if torch.cuda.is_available() else 64
 
 
-def _local_fit(
+def local_fit(
         logic: WorkerLogic,
         module: L.LightningModule
-):
+) -> tuple[Any, L.LightningModule]:
     data_loader = DataLoader(logic.on_data_fetch(), batch_size=32, shuffle=True)
     module = logic.on_module_fit(module, data_loader)
-    return module
+    return logic.idx, module
 
 
-def local_fit(
-        endp_id: int,
-        module: L.LightningModule,
-        data_loader: DataLoader
-):
-    trainer = L.Trainer(
-        accelerator="auto",
-        devices=1,
-        max_epochs=3
-    )
-    module = trainer.fit(module, data_loader)
-    return endp_id, module
+def create_workers(num: int) -> dict[str, WorkerLogic]:
+    workers = {}
+    for i in range(num):
+        n_samples = random.randint(100, 250)
+        indices = random.sample(range(10_000), k=n_samples)
+        workers[f"Worker-{i}"] = MnistWorkerLogic(indices=list(indices))
+    return workers
 
 
-def fit(
-        endpoints,
-        module: L.LightningModule,
+def federated_fit(
+        global_module: L.LightningModule,
+        aggr: AggrLogic,
+        workers: dict[str, WorkerLogic],
         global_rounds: int,
-        aggr_logic: AggregatorLogic,
-        trainer_logic: WorkerLogic,
+        test: bool = False,
         random_state: Optional[RandomState] = None,
         **kwargs
 ):
     if random_state is None:
         random_state = RandomState()
-    mnist_train_data = MNIST(
-        PATH_DATASETS,
-        train=True,
-        download=True,
-        transform=transforms.ToTensor()
-    )
-    mnist_test_data = MNIST(
-        PATH_DATASETS,
-        train=False,
-        download=True,
-        transform=transforms.ToTensor(),
-    )
-    endpoints = {
-        endp: torch.utils.data.RandomSampler(
-            mnist_train_data,
-            replacement=False,
-            num_samples=random_state.randint(10, 250)
-        )
-        for endp in range(args.endpoints)
-    }
 
+    results = {}
     # Below is the execution of the Global Aggregation Rounds. Each round consists of the following steps:
     #   (1) clients are selected to do local training
     #   (2) selected clients do local training and send back their locally-trained model udpates
@@ -79,27 +60,26 @@ def fit(
         print(f">> Starting global round ({gr + 1}/{global_rounds}).")
 
         # Perform random client selection and submit "local" fitting tasks.
-        size = max(1, int(args.participation_frac * len(endpoints)))
-        selected_endps = random_state.choice(list(endpoints), size=size, replace=False)
+        # size = max(1, int(args.participation_frac * len(workers)))
+        size = len(workers)
+        selected_workers = random_state.choice(list(workers), size=size, replace=False)
         futures = []
         with ThreadPoolExecutor(max_workers=size) as exc:
-            for endp in selected_endps:
-                fut = exc.submit(
-                    local_fit,
-                    endp,
-                    copy.deepcopy(module),
-                    DataLoader(mnist_train_data, sampler=endpoints[endp], batch_size=args.batch_size)
-                )
-                print("Job submitted!")
+            for w in selected_workers:
+                fut = exc.submit(local_fit, workers[w], copy.deepcopy(global_module))
+                print(f"Job submitted to worker node {workers[w]}.")
                 futures.append(fut)
 
         # Retrieve the "locally" updated the models and do aggregation.
         updates = [fut.result() for fut in futures]
         updates = {endp: module for (endp, module) in updates}
-        avg_weights = fedavg(module, updates, endpoints)
-        module.load_state_dict(avg_weights)
+        # avg_weights = fedavg(global_module, updates, workers)
+        aggr_weights = aggr.on_model_aggr(global_module, workers, updates)
+        global_module.load_state_dict(aggr_weights)
 
         # Evaluate the global model performance.
-        trainer = L.Trainer()
-        metrics = trainer.test(module, DataLoader(mnist_test_data))
-        print(metrics)
+        if test:
+            results["metrics"] = aggr.on_module_eval(global_module)
+
+    results["module"] = global_module
+    return results

@@ -13,5 +13,5 @@ def work(worker_id, logic: AbstractWorkerLogic, module: L.LightningModule, **kwa
     trainer.fit(module, data_loader)
     return {
         "worker_id": worker_id,
-        "module": module
+        "global_module": module
     }
