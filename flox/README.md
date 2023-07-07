@@ -7,7 +7,7 @@
 - **[W]** on_model_fit()
 - **[W]** on_model_send()
 - **[S]** on_model_collate()
-- **[S]** on_model_aggr()
+- **[S]** on_module_aggr()
 - **[S]** on_model_eval()
 
 ***
@@ -21,7 +21,7 @@ class AggrLogic {
     on_model_init()*
     on_model_broadcast() 
     on_model_recv()
-    on_model_aggr()
+    on_module_aggr()
     on_model_eval()
 }
 

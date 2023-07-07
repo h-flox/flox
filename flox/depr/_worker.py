@@ -4,7 +4,7 @@ from typing import Any
 
 
 class WorkerLogic:
-    def __init__(self, idx: Any):
+    def __init__(self, idx: Any, **kwargs):
         self.idx = idx
 
     def on_model_recv(self):
@@ -13,13 +13,17 @@ class WorkerLogic:
     def on_data_fetch(self):
         pass
 
-    def on_module_fit(self, module: L.LightningModule, data_loader):
-        trainer = L.Trainer(
+    def on_module_fit(self, module: L.LightningModule, dataloader):
+        from lightning import Trainer
+        trainer = Trainer(
             accelerator="auto",
             devices=1,
-            max_epochs=3
+            max_epochs=3,
+            enable_progress_bar=False,
+            enable_checkpointing=False,
+            logger=False
         )
-        trainer.fit(module, data_loader)
+        trainer.fit(module, dataloader)
         return module
 
     def on_model_send(self) -> dict[str, Any]:

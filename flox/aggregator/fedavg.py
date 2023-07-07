@@ -1,31 +1,36 @@
 import lightning as L
 import torch
 
-from flox._worker import WorkerLogic
+from flox.aggregator import SimpleAggregatorLogic
+from flox.worker import WorkerLogicInterface
+from numpy.random import RandomState
+from typing import Iterable, Optional
 
 
-class AggrLogic:
-    def on_model_broadcast(self):
-        pass
+class FedAvg(SimpleAggregatorLogic):
 
-    def on_model_aggr(
+    def __init__(
             self,
-            module: L.LightningModule,
-            workers: dict[str, WorkerLogic],
-            updates: dict[str, L.LightningModule],
+            participation_frac: float,
+            random_state: Optional[RandomState] = None,
             **kwargs
-    ) -> dict[str, torch.Tensor]:  # returns a `state_dict`
-        pass
+    ):
+        if not 0.0 <= participation_frac <= 1.0:
+            raise ValueError("Parameter `participation_frac` must be in range [0,1].")
+        self.participation_frac = participation_frac
+        if random_state is None:
+            self.random_state = RandomState()
 
-    def on_module_eval(self, module: L.LightningModule):
-        pass
+    def on_worker_select(self, workers: dict[str, WorkerLogicInterface]) -> Iterable[str]:
+        size = int(len(workers) * self.participation_frac)
+        size = max(1, size)
+        choices = self.random_state.choice(list(workers), size=size, replace=False)
+        return choices
 
-
-class FedAvg(AggrLogic):
-    def on_model_aggr(
+    def on_module_aggregate(
             self,
             module: L.LightningModule,
-            workers: dict[str, WorkerLogic],
+            workers: dict[str, WorkerLogicInterface],
             updates: dict[str, L.LightningModule],
             **kwargs
     ) -> dict[str, torch.Tensor]:  # returns a `state_dict`
