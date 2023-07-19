@@ -18,6 +18,7 @@ class BasicMnistModule(L.LightningModule):
     def training_step(self, batch, batch_nb):
         x, y = batch
         loss = F.cross_entropy(self(x), y)
+        self.log("train_loss", loss)
         return loss
 
     def test_step(self, batch, batch_idx):

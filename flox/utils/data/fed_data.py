@@ -1,18 +1,13 @@
-import pytorch_lightning as pl
-import torch
+from typing import Protocol
 
-from torch.utils.data import Dataset
-
-
-class FederatedDataset(Dataset):
-    def __init__(self, dataset: Dataset, indices: list[int]):
-        pass
+from flox.typing import WorkerID, Indices
 
 
-class FederatedDataModule(pl.LightningDataModule):
-
-    def __init__(self, endpoint_ids: list[str]):
-        super().__init__()
-
-    def prepare_distribution(self):
-        pass
+class IndicesGenerator(Protocol):
+    def sample(self) -> dict[WorkerID, Indices]:
+        workers = {}
+        for idx in range(num):
+            n_samples = random.randint(50, 250)
+            indices = random.sample(range(60_000), k=n_samples)
+            workers[f"Worker-{idx}"] = worker_logic(idx=idx, indices=list(indices))
+        return workers

@@ -3,7 +3,12 @@ import lightning as L
 from flox.worker.base import AbstractWorkerLogic
 
 
-def work(worker_id, logic: AbstractWorkerLogic, module: L.LightningModule, **kwargs):
+def work(
+        worker_id,
+        logic: AbstractWorkerLogic,
+        module: L.LightningModule,
+        **kwargs
+):
     trainer = L.Trainer(
         accelerator=kwargs.get("accelerator", "auto"),
         devices=kwargs.get("devices", 1),

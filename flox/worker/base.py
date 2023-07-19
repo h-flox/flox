@@ -45,16 +45,24 @@ class SimpleWorkerLogic:
             module: L.LightningModule,
             dataloader: DataLoader
     ) -> dict[str, Any]:
+        import warnings
         from lightning import Trainer
-        trainer = Trainer(
-            accelerator="auto",
-            devices=1,
-            max_epochs=3,
-            enable_progress_bar=False,
-            enable_checkpointing=False,
-            logger=False
-        )
-        trainer.fit(module, dataloader)
+        from lightning_utilities.core.rank_zero import log as device_logger
+        device_logger.disabled = True
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            trainer = Trainer(
+                accelerator="auto",
+                devices=1,
+                max_epochs=3,
+                enable_progress_bar=False,
+                enable_checkpointing=False,
+                enable_model_summary=False,
+                logger=False
+            )
+            trainer.fit(module, dataloader)
+
         return {
             "worker_id": self.idx,
             "module": module,

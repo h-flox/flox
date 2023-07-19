@@ -1,4 +1,3 @@
-import copy
 import datetime
 import lightning as L
 import pandas as pd
@@ -8,21 +7,20 @@ import torch
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from numpy.random import RandomState
-from torch.utils.data import DataLoader
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 from flox.aggregator import AggregatorLogicInterface
+from flox.tasks import launch_local_fitting_task
 from flox.worker import WorkerLogicInterface
 
 
-def local_fit(
-        logic: WorkerLogicInterface,
-        module: L.LightningModule,
-        batch_size: int = 32
-) -> tuple[Any, L.LightningModule]:
-    data_loader = DataLoader(logic.on_data_fetch(), batch_size=batch_size, shuffle=True)
-    res = logic.on_module_fit(module, data_loader)
-    return logic.idx, res
+def fork_module(
+        module: L.LightningModule
+) -> L.LightningModule:
+    cls = module.__class__
+    forked_module = cls()
+    forked_module.load_state_dict(module.state_dict())
+    return forked_module
 
 
 def create_workers(
@@ -57,7 +55,7 @@ def federated_fit(
     while not aggr.stop_condition(state):
         state["curr_round"] += 1
         print(">> Starting global round ({}/{}).".format(
-            state["curr_round"] + 1,
+            state["curr_round"],
             state["total_rounds"]
         ))
 
@@ -65,7 +63,8 @@ def federated_fit(
         futures = []
         with ThreadPoolExecutor(max_workers=n_threads) as exc:
             for w in aggr.on_worker_select(workers):
-                fut = exc.submit(local_fit, workers[w], copy.deepcopy(global_module))
+                fut = exc.submit(launch_local_fitting_task, workers[w], fork_module(global_module))
+                # fut = exc.submit(launch_local_fitting_task, workers[w], copy.deepcopy(global_module))
                 print(f"Job submitted to worker node {workers[w]}.")
                 futures.append(fut)
 
