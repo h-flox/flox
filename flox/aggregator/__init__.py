@@ -1,8 +1,8 @@
-from flox.aggregator.base import AggregatorLogicInterface, SimpleAggregatorLogic
-from flox.aggregator.fedavg import FedAvg
+from flox.aggregator.synch.base import SynchAggregatorLogicInterface, SynchAggregatorLogic
+from flox.aggregator.synch.fedavg import FedAvg
 
 __all__ = [
-    "AggregatorLogicInterface",
+    "SynchAggregatorLogicInterface",
     "FedAvg",
-    "SimpleAggregatorLogic"
+    "SynchAggregatorLogic"
 ]

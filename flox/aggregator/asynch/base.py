@@ -2,11 +2,12 @@ import lightning as L
 
 from typing import Protocol, runtime_checkable, Iterable
 
+from flox.typing import WorkerID
 from flox.worker import WorkerLogicInterface
 
 
 @runtime_checkable
-class AggregatorLogicInterface(Protocol):
+class AsynchAggregatorLogicInterface(Protocol):
     def __init__(self):
         pass
 
@@ -21,9 +22,9 @@ class AggregatorLogicInterface(Protocol):
 
     def on_module_aggregate(
             self,
-            module: L.LightningModule,
-            workers: dict[str, WorkerLogicInterface],
-            updates: dict[str, L.LightningModule],
+            global_module: L.LightningModule,
+            worker_id: WorkerID,
+            worker_update: L.LightningModule,
             **kwargs
     ):
         ...
@@ -35,7 +36,7 @@ class AggregatorLogicInterface(Protocol):
         ...
 
 
-class SimpleAggregatorLogic:
+class AsynchAggregatorLogic:
     def __init__(self, **kwargs) -> None:
         pass
 
@@ -44,9 +45,9 @@ class SimpleAggregatorLogic:
 
     def on_module_aggregate(
             self,
-            module: L.LightningModule,
-            workers: dict[str, WorkerLogicInterface],
-            updates: dict[str, L.LightningModule],
+            global_module: L.LightningModule,
+            worker_id: WorkerID,
+            worker_module: L.LightningModule,
             **kwargs
     ):
         pass
@@ -54,7 +55,7 @@ class SimpleAggregatorLogic:
     def on_module_eval(self, module: L.LightningModule):
         pass
 
-    def stop_condition(self, state: dict) -> bool:
-        if state["curr_round"] < state["total_rounds"]:
-            return False
-        return True
+    # def stop_condition(self, state: dict) -> bool:
+    #     if state["curr_round"] < state["total_rounds"]:
+    #         return False
+    #     return True

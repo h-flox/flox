@@ -1,9 +1,7 @@
-import lightning as L
-
-from flox.aggregator.base import AbstractAggregatorLogic
+from flox.aggregator.synch.base import SynchAggregatorLogic
 
 
-class SimpleAggregatorLogic(AbstractAggregatorLogic):
+class SimpleSynchAggregatorLogic(SynchAggregatorLogic):
     def __init__(self):
         super().__init__()
 

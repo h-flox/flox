@@ -1,13 +1,13 @@
 import lightning as L
 import torch
 
-from flox.aggregator import SimpleAggregatorLogic
+from flox.aggregator import SynchAggregatorLogic
 from flox.worker import WorkerLogicInterface
 from numpy.random import RandomState
 from typing import Iterable, Optional
 
 
-class FedAvg(SimpleAggregatorLogic):
+class FedAvg(SynchAggregatorLogic):
 
     def __init__(
             self,
@@ -15,6 +15,7 @@ class FedAvg(SimpleAggregatorLogic):
             random_state: Optional[RandomState] = None,
             **kwargs
     ):
+        super().__init__()
         if not 0.0 <= participation_frac <= 1.0:
             raise ValueError("Parameter `participation_frac` must be in range [0,1].")
         self.participation_frac = participation_frac
