@@ -2,7 +2,7 @@
 This file, at the moment, is just to get an idea of how one might use FLoX one day.
 In other words, this can be seen as the target quickstart demo.
 """
-import flox
+import depr
 import lightning as L
 
 from os import environ
@@ -10,15 +10,14 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
 from torchvision.datasets import MNIST
 
-import flox.fit.core
-from flox.aggregator import FedAvg
-from flox.worker import SimpleWorkerLogic
+import depr.fit.core
+from depr.aggregator import FedAvg
+from depr.worker import SimpleWorkerLogic
 from modules import MnistModule
 from pathlib import Path
 
 
 class MnistAggrLogic(FedAvg):
-
     def on_module_evaluate(self, module: L.LightningModule):
         root = environ.get("TORCH_DATASETS", ".")
         test_data = MNIST(root, download=True, train=True, transform=ToTensor())
@@ -49,13 +48,13 @@ class MnistWorkerLogic(SimpleWorkerLogic):
 
 
 def main():
-    workers: dict[str, MnistWorkerLogic] = flox.create_workers(30, MnistWorkerLogic)
-    results = flox.fit.core.federated_fit(
+    workers: dict[str, MnistWorkerLogic] = depr.create_workers(30, MnistWorkerLogic)
+    results = depr.fit.core.federated_fit(
         global_module=MnistModule(),
         aggr=MnistAggrLogic(participation_frac=0.5),
         workers=workers,
         global_rounds=5,
-        mode="local"
+        mode="local",
     )
 
     train_results = results["train_results"]

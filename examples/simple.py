@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 import torch.nn.functional as F
-from flox import *
+from depr import *
 
 
 # Define the neural network global_module that you wish to train.

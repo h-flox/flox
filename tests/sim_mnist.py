@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 import unittest
 
-from flox.executor.local import LocalExec
+from depr.executor.local import LocalExec
 from torchmetrics import Accuracy
 from torchvision import transforms
 from torchvision.datasets import MNIST
@@ -41,13 +41,11 @@ class MnistModule(L.LightningModule):
 
 
 class MnistSimulationTest(unittest.TestCase):
-
     def test_local_fl(self):
-
         def fedavg(
-                module: L.LightningModule,
-                updates: dict[int, L.LightningModule],
-                endpoints: dict[int, torch.utils.data.Sampler]
+            module: L.LightningModule,
+            updates: dict[int, L.LightningModule],
+            endpoints: dict[int, torch.utils.data.Sampler],
         ):
             avg_weights = {}
             total_data_samples = sum(len(endp_data) for endp_data in endpoints.values())
@@ -72,16 +70,11 @@ class MnistSimulationTest(unittest.TestCase):
         aggr_rounds = 3
         n_workers = 5
         mnist_train_data = MNIST(
-            PATH_DATASETS,
-            train=True,
-            download=True,
-            transform=transforms.ToTensor()
+            PATH_DATASETS, train=True, download=True, transform=transforms.ToTensor()
         )
         workers = {
             endp: torch.utils.data.RandomSampler(
-                mnist_train_data,
-                replacement=False,
-                num_samples=random.randint(10, 250)
+                mnist_train_data, replacement=False, num_samples=random.randint(10, 250)
             )
             for endp in range(n_workers)
         }
@@ -89,12 +82,18 @@ class MnistSimulationTest(unittest.TestCase):
         global_module = MnistModule()  # aggr_logic.on_model_init()
         for ar in range(aggr_rounds):
             ar_workers = workers  # aggr_logic.on_worker_selection(workers)
-            futures = executor.submit_jobs(workers=ar_workers, logic=worker_logic, module=global_module,
-                                           dataset=mnist_train_data)
+            futures = executor.submit_jobs(
+                workers=ar_workers,
+                logic=worker_logic,
+                module=global_module,
+                dataset=mnist_train_data,
+            )
             results = [fut.result() for fut in futures]
             module_updates = {worker: module for (worker, module) in results}
 
-            aggr_weights = fedavg(global_module, module_updates, workers)  # aggr_logic(global_module, results)
+            aggr_weights = fedavg(
+                global_module, module_updates, workers
+            )  # aggr_logic(global_module, results)
             global_module.load_state_dict(aggr_weights)
             test_metrics = aggr_logic.on_model_eval(global_module)
 

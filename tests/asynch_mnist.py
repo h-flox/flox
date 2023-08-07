@@ -1,8 +1,8 @@
-import flox
+import depr
 import unittest
 
-from flox.aggregator.asynch.standard import SimpleAsynchAggregatorLogic
-from flox.worker import SimpleWorkerLogic
+from depr.aggregator.asynch.standard import SimpleAsynchAggregatorLogic
+from depr.worker import SimpleWorkerLogic
 from modules import MnistModule
 
 
@@ -34,18 +34,18 @@ class MnistWorkerLogic(SimpleWorkerLogic):
 
 class AsynchMnistTest(unittest.TestCase):
     def test_asynch_aggregation(self):
-        workers = flox.create_workers(5, MnistWorkerLogic)
-        results = flox.federated_fit(
+        workers = depr.create_workers(5, MnistWorkerLogic)
+        results = depr.federated_fit(
             global_module=MnistModule(),
             aggr=MnistAsyncAggrLogic(),
             workers=workers,
             global_rounds=3,
             test=False,
             n_threads=4,
-            fit_kind="asynch"
+            fit_kind="asynch",
         )
         self.assertTrue(True, "Successfully completed training!")  # add assertion here
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

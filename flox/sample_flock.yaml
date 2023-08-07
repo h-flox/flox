@@ -1,0 +1,55 @@
+leader:
+  globus_compute_endpoint: ~
+  proxystore_endpoint: ~
+aggregators:
+  1:
+    parent: leader
+    workers: [ 1, 2, 3, 4, 5 ]
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  2:
+    parent: leader
+    workers: [ 6, 7, 8, 9, 10 ]
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+workers:
+  1:
+    aggregator: 1
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  2:
+    aggregator: 1
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  3:
+    aggregator: 1
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  4:
+    aggregator: 1
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  5:
+    aggregator: 1
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  6:
+    aggregator: 2
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  7:
+    aggregator: 2
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  8:
+    aggregator: 2
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  9:
+    aggregator: 2
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
+  10:
+    aggregator: 2
+    globus_compute_endpoint: ~
+    proxystore_endpoint: ~
