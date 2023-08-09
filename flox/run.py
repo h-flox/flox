@@ -19,6 +19,16 @@ def fit(
     device: Optional[torch.device] = None,
     prog_bar: bool = True,
 ):
+    """
+
+    :param flock: The topology of the system to run FL.
+    :param module_cls: The module class type.
+    :param num_rounds: The number of global rounds to perform aggregation.
+    :param test_dataset: Testing dataset.
+    :param torch.device device: Device to train on (e.g., `cpu` or `gpu`).
+    :param bool prog_bar: Whether to show a progress bar or not, defaults to `True`.
+    :return: tuple
+    """
     runner = "sync"
     if runner == "sync":
         module, train_history, test_history = _sync_federated_fit(
@@ -32,6 +42,10 @@ def fit(
     return module, train_history, test_history
 
 
+# TODO: Most of this code needs to be converted into the aggregation launch script
+#       It will be submitted to each aggregation endpoint with a list of their children.
+#       The endpoint that launches each aggregation point will be where the submitted task
+#       returns. For this, let's refer to Yadu's implementation.
 def _sync_federated_fit(
     flock: dict[int, Subset],
     module_cls,
@@ -117,18 +131,3 @@ def aggregation_task(
     local_module_weights = {res["worker"]: res["module_state_dict"] for res in results}
     avg_weights = SimpleAvg()(module, local_module_weights)
     module.load_state_dict(avg_weights)
-
-
-"""
-def simple_avg(module, workers, local_module_weights):
-    with torch.no_grad():
-        avg_module_weights = {}
-        nk = 1 / len(workers)
-        for state_dict in local_module_weights:
-            for name, value in state_dict.items():
-                if name not in avg_module_weights:
-                    avg_module_weights[name] = nk * torch.clone(value)
-                else:
-                    avg_module_weights[name] += nk * torch.clone(value)
-    return avg_module_weights
-"""
