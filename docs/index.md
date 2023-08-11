@@ -2,11 +2,13 @@
 
 For full documentation visit [mkdocs.org](https://www.mkdocs.org).
 
+![FLoX Graphic](graphics/flox_fig.png)
+
 ### Getting Started
 
 #### Installation
 
-THe package can be found on pypi
+The package can be found on pypi:
 
 ```bash
 pip install flox
@@ -17,7 +19,7 @@ pip install flox
 FLoX is a simple, highly-customizable, and easy-to-deploy framework for hierarchical, multi-tier federated learning
 systems built on top of the Globus Compute platform.
 
-```python
+```python title="Basic FLoX Example" linenums="1"
 from flox import Flock, federated_fit
 from torch import nn
 
@@ -37,17 +39,3 @@ federated_fit(
     log_out="my_results.csv"
 )
 ```
-
-## Commands
-
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
-
-## Project layout
-
-    mkdocs.yml # The configuration file.
-    docs/
-        index.md # The documentation homepage.
-        ... # Other markdown pages, images and other files.

@@ -1,40 +1,76 @@
 site_name: FLoX
 #site_url: https://flox.dev/
 
+repo_name: globus-labs/FLoX
+repo_url: https://github.com/globus-labs/FLoX
+
+
 nav:
   - Home: index.md
-  - About: about.md
-  - Federated Learning: federated_learning.md
-  - API Reference: reference/ #
+  - About:
+      - about/index.md
+      - about/federated_learning.md
+      - about/globus_compute.md
+      - about/proxystore.md
+  - Concepts:
+      - concepts/index.md
+      - concepts/flock.md
+  - API Reference: reference/
+  - Publications:
+      - publications/index.md
 
 theme:
-  name: "material"
-#  name: readthedocs
+  name: material
+  font:
+    text: Open Sans
+    code: Roboto Mono
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - navigation.path
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    #    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    - navigation.sections
 
 plugins:
-  - search
   - gen-files:
       scripts:
         - docs/generate_api.py
   - literate-nav:
       nav_file: SUMMARY.md
-  - section-index
   - mkdocstrings:
-      default_handler: python
+      custom_templates: docs/_templates
+      enable_inventory: true
       handlers:
         python:
           paths: [ flox ]
           load_external_modules: true
           options:
-            enable_inventory: true
-            heading_level: 2
             show_source: false
-#      default_handler: python
-#      handlers:
-#        python:
-#          paths: [ "../flox" ]
-#  - gen-files:
-#      TODO
+            docstring_section_style: list
+            docstring_style: google
+            inherited_members: yes
+            line_length: 60
+            members_order: source
+            merge_init_into_class: yes
+            separate_signature: yes
+            # Mutually exclusive with separate_signature
+            # show_root_members_full_path: yes
+            # Causes black error with show_root_full_path
+            # show_object_full_path: yes
+            show_root_full_path: yes
+            show_signature_annotations: yes
+            show_submodules: no
+  - search
+  - section-index
 
 markdown_extensions:
   # Math typesetting

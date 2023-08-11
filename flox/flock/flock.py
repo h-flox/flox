@@ -228,6 +228,14 @@ class Flock:
 
     @property
     def proxystore_ready(self) -> bool:
+        """
+        This property informs users of whether their `Flock` has all the necessary information to support
+        data transmission over Proxystore (`True`) or not (`False`). Proxystore just requires that each node
+        in the Flock has its own `proxystore_endpoint`.
+
+        It is worth noting that Proxystore is necessary to transmit mid-to-large size model (roughly > 5MB in size)
+        with Globus Compute.
+        """
         key = "proxystore_endpoint"
         for idx, data in self.topo.nodes(data=True):
             value = data[key]

@@ -1,23 +1,8 @@
-# FLoX: Federated Learning On funcX
-...
-
-## Quickstart
-To get started with FLoX, ...
-
-## Installation
-
-```bash
-pip install pyflox
-````
-
-## Contributing to FLoX
-...
-
-## Documentation
-...
+# Publications
 
 ## Citing FLoX
 If you use FLoX or any of this code in your work, please cite the following paper.
+
 > Nikita Kotsehub, Matt Baughman, Ryan Chard, Nathaniel Hudson, Panos Patros, Omer Rana, Ian Foster, and Kyle Chard. ["FLoX: Federated learning with faas at the edge."](https://ieeexplore.ieee.org/document/9973578) In 2022 IEEE 18th International Conference on e-Science (e-Science), pp. 11-20. IEEE, 2022.
 
 ```
@@ -30,3 +15,6 @@ If you use FLoX or any of this code in your work, please cite the following pape
   organization={IEEE}
 }
 ```
+
+## Featured Papers
++ ...

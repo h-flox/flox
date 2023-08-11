@@ -19,16 +19,19 @@ def fit(
     test_dataset: Optional[Dataset] = None,
     device: Optional[torch.device] = None,
     prog_bar: bool = True,
-):
-    """
+) -> tuple[nn.Module, dict, dict]:
+    """DEPRECATED.
 
-    :param flock: The topology of the system to run FL.
-    :param module_cls: The module class type.
-    :param num_rounds: The number of global rounds to perform aggregation.
-    :param test_dataset: Testing dataset.
-    :param torch.device device: Device to train on (e.g., `cpu` or `gpu`).
-    :param bool prog_bar: Whether to show a progress bar or not, defaults to `True`.
-    :return: tuple
+    Args:
+        flock (Flock):
+        module_cls (type[nn.Module]): Class of model to train.
+        num_rounds (int): Number of global aggregation rounds.
+        test_dataset (Optional[Dataset]): Test dataset by the aggregator.
+        device (Optional[torch.Device]):  The device to test on (e.g., GPU, CPU, TPU, MPS).
+        prog_bar (bool): Display a progress bar if True.
+
+    Returns:
+        tuple[nn.Module, dict, dict]: The trained model and train/test results.
     """
     runner = "sync"
     if runner == "sync":
