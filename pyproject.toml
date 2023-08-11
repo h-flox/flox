@@ -1,0 +1,17 @@
+[project]
+name = "flox"
+version = "0.1.0"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["federated learning", "serverless", "machine learning"]
+
+authors = [
+    { name = "Nathaniel Hudson", email = "hudsonn@uchicago.edu" },
+    { name = "Yadu Babuji", email = "yadunand@uchicago.edu" }
+]
+
+dependencies = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+]

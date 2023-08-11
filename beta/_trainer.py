@@ -1,6 +1,8 @@
 from torch import nn
 from torch.utils.data import DataLoader
 
+import flox.fit_sync
+
 
 class FloxTrainer:
     def __init__(self, max_epochs: int):
@@ -19,7 +21,7 @@ class FloxTrainer:
         running_loss = 0
         last_loss = 0
 
-        model.train(True)
+        flox.fit_sync.train(True)
         for i, data in enumerate(training_loader):
             inputs, targets = data
 

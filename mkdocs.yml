@@ -1,0 +1,57 @@
+site_name: FLoX
+#site_url: https://flox.dev/
+
+nav:
+  - Home: index.md
+  - About: about.md
+  - Federated Learning: federated_learning.md
+  - API Reference: reference/ #
+
+theme:
+  name: "material"
+#  name: readthedocs
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - docs/generate_api.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [ flox ]
+          load_external_modules: true
+          options:
+            enable_inventory: true
+            heading_level: 2
+            show_source: false
+#      default_handler: python
+#      handlers:
+#        python:
+#          paths: [ "../flox" ]
+#  - gen-files:
+#      TODO
+
+markdown_extensions:
+  # Math typesetting
+  - pymdownx.arithmatex:
+      generic: true
+
+  # Syntax highlighting for code blocks
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+# Javascript for math typesetting
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

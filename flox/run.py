@@ -8,6 +8,7 @@ from tqdm import tqdm
 from typing import Any, Optional
 
 from flox.aggregator.base import SimpleAvg
+from flox.flock.flock import Flock
 from flox.worker.trainer.torch import evaluate, local_fitting_task
 
 
@@ -47,7 +48,7 @@ def fit(
 #       The endpoint that launches each aggregation point will be where the submitted task
 #       returns. For this, let's refer to Yadu's implementation.
 def _sync_federated_fit(
-    flock: dict[int, Subset],
+    flock: Flock,
     module_cls,
     num_rounds,
     test_dataset: Optional[Dataset] = None,

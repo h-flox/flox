@@ -27,11 +27,19 @@ class FlockNodeKind(Enum):
                 f"Must be one of the following: {list(matches.keys())}."
             )
 
+    def to_str(self) -> str:
+        matches = {
+            FlockNodeKind.LEADER: "leader",
+            FlockNodeKind.AGGREGATOR: "aggregator",
+            FlockNodeKind.WORKER: "worker",
+        }
+        return matches[self]
+
 
 @dataclass(frozen=True)
 class FlockNode:
     idx: FlockNodeID  # Assigned during the Flock construction (i.e., not in .yaml/.json file)
     kind: FlockNodeKind
-    compute_endpoint_id: Optional[UUID]
-    proxystore_endpoint_id: Optional[UUID]
-    children_idx: Optional[Sequence[FlockNodeID]]
+    globus_compute_endpoint: Optional[UUID]
+    proxystore_endpoint: Optional[UUID]
+    # children_idx: Optional[Sequence[FlockNodeID]]
