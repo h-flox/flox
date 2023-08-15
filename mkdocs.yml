@@ -21,6 +21,7 @@ nav:
 
 theme:
   name: material
+  language: en
   font:
     text: Open Sans
     code: Roboto Mono
@@ -39,6 +40,19 @@ theme:
     - search.suggest
     - toc.follow
     - navigation.sections
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+      primary: teal
+      accent: purple
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+      primary: teal
+      accent: lime
 
 plugins:
   - gen-files:
@@ -84,9 +98,16 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
+  - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.mark
+  - footnotes
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
 
-# Javascript for math typesetting
+      # Javascript for math typesetting
 extra_javascript:
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6

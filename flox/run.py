@@ -112,7 +112,7 @@ def aggregation_task(
     train_history: dict[str, Any],
     curr_round: int,
 ):
-    # Collect the results from the endpoints (for now, we assume no failure).
+    # Here, we collect the results from the endpoints (for now, we assume no failure).
     results = [fut.result() for fut in futures]
 
     # Do the aggregation across all the results.

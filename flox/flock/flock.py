@@ -239,7 +239,7 @@ class Flock:
         key = "proxystore_endpoint"
         for idx, data in self.topo.nodes(data=True):
             value = data[key]
-            if any([value is None, isinstance(value, UUID) == False]):
+            if any([value is None, isinstance(value, UUID) is False]):
                 return False
         return True
 
@@ -248,12 +248,34 @@ class Flock:
     #     return self.nodes(by_kind=FlockNodeKind.LEADER)
 
     @property
-    def aggregators(self):
+    def aggregators(self) -> Generator[FlockNode]:
+        """
+        The aggregator nodes of the Flock.
+
+        Returns:
+            Generator[FlockNode]
+        """
         return self.nodes(by_kind=FlockNodeKind.AGGREGATOR)
 
     @property
     def workers(self) -> Generator[FlockNode]:
+        """
+        The worker nodes of the Flock.
+
+        Returns:
+            Generator[FlockNode]
+        """
         return self.nodes(by_kind=FlockNodeKind.WORKER)
+
+    @property
+    def number_of_aggregators(self) -> int:
+        """The number of aggregator nodes in the Flock."""
+        return len(list(self.aggregators))
+
+    @property
+    def number_of_workers(self) -> int:
+        """The number of worker nodes in the Flock."""
+        return len(list(self.workers))
 
     def nodes(self, by_kind: Optional[FlockNodeKind] = None) -> Generator[FlockNode]:
         for idx, data in self.topo.nodes(data=True):

@@ -1,4 +1,4 @@
-from flox.fit_sync import sync_federated_fit
+from flox._fit_sync import sync_federated_fit
 from flox.flock import Flock
 from torch import nn
 

@@ -1,7 +1,7 @@
 from torch import nn
 from torch.utils.data import DataLoader
 
-import flox.fit_sync
+import flox._fit_sync
 
 
 class FloxTrainer:

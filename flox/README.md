@@ -33,3 +33,16 @@ def local_fitting_fn(worker, worker_logic, module, *args, **kwargs):
     )
     return results
 ```
+
+```mermaid
+classDiagram
+    class Flock {
+        
+    }
+    
+    class FlockTrainer {
+        + fit(flock: Flock, strat: Strategy)
+    }
+    
+    FlockTrainer-->Flock
+```

@@ -25,3 +25,8 @@ dependencies = [
     "mkdocs-material",
     "mkdocstrings[python]",
 ]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
