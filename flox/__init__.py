@@ -1,6 +1,6 @@
-from flox.core import create_workers, federated_fit
+import importlib.metadata as metadata
+import sys
 
-__all__ = [
-    "create_workers",
-    "federated_fit"
-]
+from flox.run import fit
+
+__all__ = ["fit"]

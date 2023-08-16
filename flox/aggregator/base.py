@@ -1,60 +1,51 @@
-import lightning as L
+from __future__ import annotations
 
-from typing import Protocol, runtime_checkable, Iterable
+import torch
 
-from flox.worker import WorkerLogicInterface
+from typing import Any, NewType, Optional, TypeVar
 
-
-@runtime_checkable
-class AggregatorLogicInterface(Protocol):
-    def __init__(self):
-        pass
-
-    def on_module_broadcast(self):
-        ...
-
-    def on_worker_select(self, workers: dict[str, WorkerLogicInterface]) -> Iterable[str]:
-        ...
-
-    def on_module_receive(self):
-        ...
-
-    def on_module_aggregate(
-            self,
-            module: L.LightningModule,
-            workers: dict[str, WorkerLogicInterface],
-            updates: dict[str, L.LightningModule],
-            **kwargs
-    ):
-        ...
-
-    def on_module_evaluate(self, module: L.LightningModule):
-        ...
-
-    def stop_condition(self, state: dict) -> bool:
-        ...
+E = TypeVar("E")
+StateDict = NewType("StateDict", dict[str, torch.Tensor])
 
 
-class SimpleAggregatorLogic:
-    def __init__(self, **kwargs) -> None:
-        pass
+# TODO: At some point, we'll need to have a version that supports returning
+#       `dict[E, StateDict]` for personalized FL.
+class AggregatorFn:
+    @staticmethod
+    def __call__(
+        module: torch.nn.Module,
+        state_dicts: dict[E, StateDict],
+        extra_info: Optional[dict[E, Any] | dict[E, dict[str, Any]]] = None,
+        *args,
+        **kwargs,
+    ) -> StateDict:
+        raise NotImplementedError()
 
-    def on_model_broadcast(self):
-        pass
 
-    def on_module_aggregate(
-            self,
-            module: L.LightningModule,
-            workers: dict[str, WorkerLogicInterface],
-            updates: dict[str, L.LightningModule],
-            **kwargs
-    ):
-        pass
+class SimpleAvg(AggregatorFn):
+    """
+    Basic averaging for PyTorch model params (i.e., `state_dict` objects). There is no
+    weighting of the params.
+    """
 
-    def on_module_eval(self, module: L.LightningModule):
-        pass
+    @staticmethod
+    def __call__(
+        module: torch.nn.Module,
+        state_dicts: dict[E, StateDict],
+        extra_info: Optional[dict[E, Any] | dict[E, dict[str, Any]]] = None,
+        # NOTE: What goes into `extra_info` is Logic-specific...
+        *args,
+        **kwargs,
+    ) -> StateDict:
+        with torch.no_grad():
+            avg_weights = {}
+            nk = 1 / len(state_dicts)
+            for sd in state_dicts.values():
+                for name, value in sd.items():
+                    value = nk * torch.clone(value)
+                    if name not in avg_weights:
+                        avg_weights[name] = value
+                    else:
+                        avg_weights[name] += value
 
-    def stop_condition(self, state: dict) -> bool:
-        if state["curr_round"] < state["total_rounds"]:
-            return False
-        return True
+        return StateDict(avg_weights)
