@@ -11,10 +11,13 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor, ProcessPool
 from collections import defaultdict
 from torch import nn
 from torch.utils.data import Dataset, Subset
-from typing import Any, Mapping, Optional
+from typing import Any, Literal, Mapping, Optional, TypeAlias
 
 from flox.aggregator.base import SimpleAvg
 from flox.flock import Flock, FlockNodeID, FlockNode, FlockNodeKind
+
+Kind: TypeAlias = Literal["async", "sync"]
+Where: TypeAlias = Literal["local", "globus_compute"]
 
 
 def federated_fit(
@@ -22,8 +25,8 @@ def federated_fit(
     module_cls: type[nn.Module],
     datasets: Mapping[FlockNodeID, Subset],
     num_global_rounds: int,
-    kind: str = "sync",
-    where: str = "local",
+    kind: Kind = "sync",
+    where: Where = "local",
 ) -> pd.DataFrame:
     if kind == "sync":
         return _sync_federated_fit(flock, module_cls, datasets, num_global_rounds)
@@ -59,7 +62,7 @@ def _sync_federated_fit(
     dataframes = []
 
     for gr in range(num_global_rounds):
-        round_results = _sync_traverse(
+        round_fut = _sync_traverse(
             executor=executor,
             flock=flock,
             module_cls=module_cls,
@@ -68,9 +71,14 @@ def _sync_federated_fit(
             node=flock.leader,
             parent=None,
         )
-        print(round_results)
-        round_df = pd.DataFrame.from_dict(round_results)
+        round_results = round_fut.result()
+        round_history = round_results["history"]
+        round_df = pd.DataFrame.from_dict(round_history)
+        round_df["round"] = gr
         dataframes.append(round_df)
+
+        # Apply the aggregated weights to the leader's global module for the next round.
+        module.load_state_dict(round_results["state_dict"])
 
     results = pd.concat(dataframes)
     return results
@@ -112,6 +120,10 @@ def _sync_traverse(
         )
         for child_fut in children_futures:
             child_fut.add_done_callback(subtree_done_cbk)
+
+        print(f"Aggregator({node.idx}):")
+        for i, child_fut in enumerate(children_futures):
+            print(f"{i} :: child_fut.done() -> {child_fut.done()}")
         return aggregator_fut
 
 
@@ -119,21 +131,24 @@ def _aggr_node_cbk(
     executor: Executor,
     children_futures: list[Future],
     node: FlockNode,
-    aggr_future: Future,
+    aggregator_fut: Future,
     child_fut_to_resolve: Future,
 ):
     if all([fut.done() for fut in children_futures]):
         child_results = [fut.result() for fut in children_futures]
 
         future = executor.submit(_aggr_node_fn, node, child_results)
-        custom_callback = functools.partial(set_parent_future, aggr_future)
-        _ = future.add_done_callback(custom_callback)  # NOTE: Output here is a result.
+        custom_callback = functools.partial(set_parent_future, aggregator_fut)
+        result = future.add_done_callback(
+            custom_callback
+        )  # NOTE: Output here is a result.
+        print(result)
 
 
 def _aggr_node_fn(node: FlockNode, results: list[dict[str, Any]]):
-    local_module_weights = {
-        res["node/idx"]: res["module_state_dict"] for res in results
-    }
+    print(f"Running aggregation on {node=}")
+
+    local_module_weights = {res["node/idx"]: res["state_dict"] for res in results}
     global_module = None  # NOTE: For now, this is fine because `SimpleAvg` doesn't do anything with module.
     avg_state_dict = SimpleAvg()(global_module, local_module_weights)
     # NOTE: The key-value scheme returned by aggregators has to match with workers.
@@ -161,6 +176,7 @@ def _worker_node_fn(
         node, parent, module_cls, module_state_dict, dataset
     )
     # NOTE: The key-value scheme returned by workers has to match with aggregators.
+    print(f">>> Finished `_worker_local_fit()` for {node=}")
     return {
         "node/idx": node.idx,
         "node/kind": node.kind,
@@ -180,6 +196,8 @@ def _worker_local_fit(
     shuffle: bool = True,
     lr: float = 1e-3,
 ):
+    print(f">>> Starting `_worker_local_fit()` for {node=}")
+
     module = module_cls()
     module.load_state_dict(module_state_dict)
     optimizer = torch.optim.SGD(module.parameters(), lr=lr)

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import functools
 import json
 import networkx as nx
 import yaml
+
 
 from pathlib import Path
 from typing import Any, Generator, Optional
@@ -282,12 +284,12 @@ class Flock:
         """
         return self.nodes(by_kind=FlockNodeKind.WORKER)
 
-    @property
+    @functools.cached_property
     def number_of_aggregators(self) -> int:
         """The number of aggregator nodes in the Flock."""
         return len(list(self.aggregators))
 
-    @property
+    @functools.cached_property
     def number_of_workers(self) -> int:
         """The number of worker nodes in the Flock."""
         return len(list(self.workers))

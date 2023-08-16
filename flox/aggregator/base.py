@@ -23,13 +23,17 @@ class AggregatorFn:
 
 
 class SimpleAvg(AggregatorFn):
+    """
+    Basic averaging for PyTorch model params (i.e., `state_dict` objects). There is no
+    weighting of the params.
+    """
+
     @staticmethod
     def __call__(
         module: torch.nn.Module,
         state_dicts: dict[E, StateDict],
-        extra_info: Optional[
-            dict[E, Any] | dict[E, dict[str, Any]]
-        ] = None,  # NOTE: What goes here into this is Logic-specific...
+        extra_info: Optional[dict[E, Any] | dict[E, dict[str, Any]]] = None,
+        # NOTE: What goes into `extra_info` is Logic-specific...
         *args,
         **kwargs,
     ) -> StateDict:
