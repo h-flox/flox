@@ -11,6 +11,7 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor, ProcessPool
 from collections import defaultdict
 from torch import nn
 from torch.utils.data import Dataset, Subset
+from tqdm import tqdm
 from typing import Any, Literal, Mapping, Optional, TypeAlias
 
 from flox.aggregator.base import SimpleAvg
@@ -61,7 +62,7 @@ def _sync_federated_fit(
     module = module_cls()
     dataframes = []
 
-    for gr in range(num_global_rounds):
+    for gr in tqdm(range(num_global_rounds), desc="federated_fit::sync"):
         round_fut = _sync_traverse(
             executor=executor,
             flock=flock,
@@ -121,9 +122,9 @@ def _sync_traverse(
         for child_fut in children_futures:
             child_fut.add_done_callback(subtree_done_cbk)
 
-        print(f"Aggregator({node.idx}):")
-        for i, child_fut in enumerate(children_futures):
-            print(f"{i} :: child_fut.done() -> {child_fut.done()}")
+        # print(f"Aggregator({node.idx}):")
+        # for i, child_fut in enumerate(children_futures):
+        #     print(f"{i} :: child_fut.done() -> {child_fut.done()}")
         return aggregator_fut
 
 
@@ -142,11 +143,11 @@ def _aggr_node_cbk(
         result = future.add_done_callback(
             custom_callback
         )  # NOTE: Output here is a result.
-        print(result)
+        # print(result)
 
 
 def _aggr_node_fn(node: FlockNode, results: list[dict[str, Any]]):
-    print(f"Running aggregation on {node=}")
+    # print(f"Running aggregation on {node=}")
 
     local_module_weights = {res["node/idx"]: res["state_dict"] for res in results}
     global_module = None  # NOTE: For now, this is fine because `SimpleAvg` doesn't do anything with module.
@@ -176,7 +177,7 @@ def _worker_node_fn(
         node, parent, module_cls, module_state_dict, dataset
     )
     # NOTE: The key-value scheme returned by workers has to match with aggregators.
-    print(f">>> Finished `_worker_local_fit()` for {node=}")
+    # print(f">>> Finished `_worker_local_fit()` for {node=}")
     return {
         "node/idx": node.idx,
         "node/kind": node.kind,
@@ -196,7 +197,7 @@ def _worker_local_fit(
     shuffle: bool = True,
     lr: float = 1e-3,
 ):
-    print(f">>> Starting `_worker_local_fit()` for {node=}")
+    # print(f">>> Starting `_worker_local_fit()` for {node=}")
 
     module = module_cls()
     module.load_state_dict(module_state_dict)
