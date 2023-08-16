@@ -1,14 +1,12 @@
-import pytorch_lightning as pl
+from flox._fit_sync import sync_federated_fit
+from flox.flock import Flock
+from torch import nn
 
-from flox.aggregator.base import AggregatorLogic
-from flox.trainer.base import TrainerLogic
 
-
-def fit(
-        endpoint_ids: list[str],
-        module: pl.LightningModule,
-        aggr_logic: AggregatorLogic,
-        trainer_logic: TrainerLogic,
-        **kwargs
+def federated_fit(
+    module: nn.Module, flock: Flock, deploy: str = "local", mode: str = "sync"
 ):
-    pass
+    if mode == "sync":
+        return sync_federated_fit(module, flock, deploy)
+    else:
+        raise NotImplementedError()

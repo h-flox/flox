@@ -1,0 +1,114 @@
+site_name: FLoX
+#site_url: https://flox.dev/
+
+repo_name: globus-labs/FLoX
+repo_url: https://github.com/globus-labs/FLoX
+
+
+nav:
+  - Home: index.md
+  - About:
+      - about/index.md
+      - about/federated_learning.md
+      - about/globus_compute.md
+      - about/proxystore.md
+  - Concepts:
+      - concepts/index.md
+      - concepts/flock.md
+  - API Reference: reference/
+  - Publications:
+      - publications/index.md
+
+theme:
+  name: material
+  language: en
+  font:
+    text: Open Sans
+    code: Roboto Mono
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - navigation.path
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    #    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    - navigation.sections
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+      primary: teal
+      accent: purple
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+      primary: teal
+      accent: lime
+
+plugins:
+  - gen-files:
+      scripts:
+        - docs/generate_api.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - mkdocstrings:
+      custom_templates: docs/_templates
+      enable_inventory: true
+      handlers:
+        python:
+          paths: [ flox ]
+          load_external_modules: true
+          options:
+            show_source: false
+            docstring_section_style: list
+            docstring_style: google
+            inherited_members: yes
+            line_length: 60
+            members_order: source
+            merge_init_into_class: yes
+            separate_signature: yes
+            # Mutually exclusive with separate_signature
+            # show_root_members_full_path: yes
+            # Causes black error with show_root_full_path
+            # show_object_full_path: yes
+            show_root_full_path: yes
+            show_signature_annotations: yes
+            show_submodules: no
+  - search
+  - section-index
+
+markdown_extensions:
+  # Math typesetting
+  - pymdownx.arithmatex:
+      generic: true
+
+  # Syntax highlighting for code blocks
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - footnotes
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+      # Javascript for math typesetting
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

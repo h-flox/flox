@@ -1,2 +1,0 @@
-def fit():
-    pass
