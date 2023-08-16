@@ -137,6 +137,21 @@ class Flock:
 
         return True
 
+    def children(self, node: FlockNode | FlockNodeID | int) -> Generator[FlockNode]:
+        if isinstance(node, FlockNode):
+            idx = node.idx
+        else:
+            idx = node
+        gce = "globus_compute_endpoint"
+        pse = "proxystore_endpoint"
+        for child_idx in self.topo.successors(idx):
+            yield FlockNode(
+                idx=child_idx,
+                kind=self.topo.nodes[child_idx]["kind"],
+                globus_compute_endpoint=self.topo.nodes[child_idx][gce],
+                proxystore_endpoint=self.topo.nodes[child_idx][pse],
+            )
+
     # ================================================================================= #
 
     @staticmethod

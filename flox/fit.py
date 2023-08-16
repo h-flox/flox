@@ -12,6 +12,33 @@ from tqdm import tqdm
 from flox.aggregator.base import SimpleAvg
 from flox.flock import Flock, FlockNodeID, FlockNode
 
+"""
+===== NOTE =====
+This implementation of the flow is VERY specific to funcX / Globus Compute. We may want to try
+to engineer this (i.e., organize the repo) such that the logic of FLoX is cleanly separable 
+from Globus Compute. 
+
+
+===== Sketchup =====
+
+def flock_fit(flock, module):
+    traverse(flock, flock.leader, module)
+    
+def traverse(flock, node, module):
+    if node is worker (i.e., leaf):
+        future = submit(local_fit_fn, ...)
+        return future
+    else:
+        # This node is an aggregator and must aggregate the results of its children!
+        children_futures = [traverse(flock, child, module) for child in flock.children(node)]
+        this_node_future = Future() 
+        callback = partial(aggr_callback_fn, children_futures, this_node_future, node.idx)
+        for child_fut in children_futures:
+            child_fut.add_done_callback(callback)
+            
+        return aggr_future
+"""
+
 
 def flock_fit(
     flock: Flock,
@@ -49,6 +76,7 @@ def flock_fit(
 
 def _aggr_weights(
     flock: Flock,
+    # aggregator: FlockNode,
     global_module: nn.Module,
     futures: list[Future],
     train_history: dict[str, Any],
