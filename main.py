@@ -2,7 +2,7 @@ import argparse
 import os
 import torch
 
-from flox.run import fit
+from depr.run import fit
 from pandas import DataFrame
 from pathlib import Path
 from torch import nn

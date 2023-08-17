@@ -1,0 +1,2 @@
+class SciKitModel(BaseModel):
+    pass
