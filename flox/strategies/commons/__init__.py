@@ -73,7 +73,7 @@ def prob_random_worker_selection(
         seed ():
 
     Returns:
-
+        list[FlockNode]
     """
     rand_state = RandomState(seed)
     selected_children = []

@@ -2,14 +2,16 @@ import os
 import pandas as pd
 import pytest
 
-import flox.learn.prototype as flox_learn
 
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
 
 from flox.flock import Flock
+from flox.learn import federated_fit
 from flox.utils.data.federate import randomly_federate_dataset
+
+# from flox.learn.prototype import federated_fit
 
 
 class MyModule(nn.Module):
@@ -48,7 +50,7 @@ def test_2_tier_fit(data):
         shuffle=True,
         random_state=None,
     )
-    train_history = flox_learn.federated_fit(flock, MyModule, fed_data, 2)
+    train_history = federated_fit(flock, MyModule, fed_data, 2)
     assert isinstance(train_history, pd.DataFrame)
 
 
@@ -60,7 +62,7 @@ def test_3_tier_fit(data):
         shuffle=True,
         random_state=None,
     )
-    train_history = flox_learn.federated_fit(flock, MyModule, fed_data, 2)
+    train_history = federated_fit(flock, MyModule, fed_data, 2)
     assert isinstance(train_history, pd.DataFrame)
 
 
@@ -72,5 +74,5 @@ def test_complex_fit(data):
         shuffle=True,
         random_state=None,
     )
-    train_history = flox_learn.federated_fit(flock, MyModule, fed_data, 2)
+    train_history = federated_fit(flock, MyModule, fed_data, 2)
     assert isinstance(train_history, pd.DataFrame)

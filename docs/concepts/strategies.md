@@ -42,28 +42,28 @@ class MyStrategy(Strategy):
         super().__init__(*args, **kwargs)
         ...
 
-    def on_before_train_step(self):
+    def wrk_on_before_train_step(self):
         pass
 
-    def on_after_train_step(self, loss) -> 'loss':
+    def wrk_on_after_train_step(self, loss) -> 'loss':
         pass
 
-    def on_worker_selection(self):
+    def agg_on_worker_selection(self):
         pass
 
-    def on_param_aggregation(self, state_dicts, **kwargs):
+    def agg_on_param_aggregation(self, state_dicts, **kwargs):
         pass
 
-    def on_before_aggr_send_params(self):
+    def agg_on_before_submit_params(self):
         pass
 
-    def on_after_aggr_recv_params(self) -> 'state_dict':
+    def agg_on_after_collect_params(self) -> 'state_dict':
         pass
 
-    def on_before_worker_send_params(self) -> 'state_dict':
+    def wrk_on_before_submit_params(self) -> 'state_dict':
         pass
 
-    def on_worker_recv_params(self):
+    def wrk_on_recv_params(self):
         pass
 
 ```

@@ -1,7 +1,8 @@
-import flox.learn.prototype as flox_learn
+# import flox.learn.prototype as flox_learn
 import os
 
 from flox.flock import Flock
+from flox.learn import federated_fit
 from flox.utils.data.federate import randomly_federate_dataset
 from torch import nn
 from torchvision.datasets import FashionMNIST
@@ -42,7 +43,7 @@ def main():
         random_state=None,
     )
 
-    train_history = flox_learn.federated_fit(flock, MyModule, fed_data, 5)
+    train_history = federated_fit(flock, MyModule, fed_data, 5)
     train_history.head()
 
 

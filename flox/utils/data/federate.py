@@ -8,13 +8,15 @@ from scipy.stats import rv_continuous
 from torch.utils.data import Dataset, Subset
 from typing import Mapping, Optional
 
+from flox.utils.data import FederatedDataset
+
 
 def randomly_federate_dataset(
     flock: Flock,
     data: Dataset,
     shuffle: bool = True,
     random_state: Optional[RandomState] = None,
-) -> Mapping[FlockNodeID, Subset]:
+) -> FederatedDataset:  # Mapping[FlockNodeID, Subset]:
     if random_state is None:
         random_state = RandomState()
     n = flock.number_of_workers

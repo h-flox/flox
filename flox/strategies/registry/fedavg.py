@@ -35,7 +35,7 @@ class FedAvg(Strategy):
         self.always_include_child_aggregators = always_include_child_aggregators
         self.seed = seed
 
-    def on_worker_selection(
+    def agg_on_worker_selection(
         self, children: list[FlockNode], **kwargs
     ) -> list[FlockNode]:
         """
@@ -55,5 +55,5 @@ class FedAvg(Strategy):
             seed=self.seed,  # TODO: Change this because it will always do the same thing as is.
         )
 
-    def on_param_aggregation(self, state_dicts, *args, **kwargs):
+    def agg_on_param_aggregation(self, state_dicts, *args, **kwargs):
         pass
