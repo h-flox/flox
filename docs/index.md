@@ -1,10 +1,9 @@
 # Welcome to FLoX
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
-
 ![FLoX Graphic](graphics/flox_fig.png)
 
 ### Getting Started
+FLoX (**F**ederated **L**earning **o**n func**X**) is a simple, highly customizable, and easy-to-deploy framework for launching Federated Learning processes across a decentralized network. Built on top of _Globus Compute_ (formerly known as _funcX_), FLoX is designed to run on anything that can be started as a Globus Compute Endpoint.  
 
 #### Installation
 

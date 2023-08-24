@@ -15,6 +15,7 @@ nav:
   - Concepts:
       - concepts/index.md
       - concepts/flock.md
+      - concepts/strategies.md
   - API Reference: reference/
   - Publications:
       - publications/index.md
@@ -24,7 +25,7 @@ theme:
   language: en
   font:
     text: Open Sans
-    code: Roboto Mono
+    code: JetBrains Mono # Roboto Mono
   features:
     - content.code.annotate
     - content.code.copy
@@ -53,6 +54,9 @@ theme:
         name: Switch to light mode
       primary: teal
       accent: lime
+
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - gen-files:

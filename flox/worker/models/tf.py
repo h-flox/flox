@@ -1,0 +1,2 @@
+class TensorFlowModel(BaseModel):
+    pass

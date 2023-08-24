@@ -7,15 +7,16 @@ import pandas as pd
 import torch
 import torch.utils.data as torch_data
 
-from concurrent.futures import Executor, Future, ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from collections import defaultdict
 from torch import nn
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Subset
 from tqdm import tqdm
 from typing import Any, Literal, Mapping, Optional, TypeAlias
 
 from flox.aggregator.base import SimpleAvg
 from flox.flock import Flock, FlockNodeID, FlockNode, FlockNodeKind
+from flox.utils.misc import extend_dicts
 
 Kind: TypeAlias = Literal["async", "sync"]
 Where: TypeAlias = Literal["local", "globus_compute"]
@@ -29,6 +30,19 @@ def federated_fit(
     kind: Kind = "sync",
     where: Where = "local",
 ) -> pd.DataFrame:
+    """
+
+    Args:
+        flock ():
+        module_cls ():
+        datasets ():
+        num_global_rounds ():
+        kind ():
+        where ():
+
+    Returns:
+
+    """
     if kind == "sync":
         return _sync_federated_fit(flock, module_cls, datasets, num_global_rounds)
     elif kind == "async":
@@ -229,23 +243,3 @@ def _worker_local_fit(
         history["time"].append(str(datetime.datetime.now()))
 
     return module.state_dict(), history
-
-
-def extend_dicts(*dicts):
-    num_keys = None
-    new_dict = defaultdict(list)
-
-    for d in dicts:
-        assert isinstance(d, dict)
-
-        if num_keys is None:
-            num_keys = len(d)
-
-        if len(d) != num_keys:
-            raise ValueError()
-
-        for key, val in d.items():
-            assert isinstance(val, list)
-            new_dict[key].extend(val)
-
-    return new_dict
