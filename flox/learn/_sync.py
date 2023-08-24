@@ -24,7 +24,7 @@ def sync_federated_fit(
     module_cls: type[torch.nn.Module],
     datasets: FederatedDataset,
     num_global_rounds: int,
-    strategy: Strategy | str = "fedavg",
+    strategy: Strategy | str = "fedsgd",
     executor: str = "thread",
     max_workers: int = 1,
 ) -> pd.DataFrame:
@@ -73,6 +73,7 @@ def sync_federated_fit(
             module_cls=module_cls,
             module_state_dict=global_module.state_dict(),
             datasets=datasets,
+            strategy=strategy,
             parent=None,
         )
 
@@ -97,6 +98,7 @@ def _worker_task(
     module_cls: type[torch.nn.Module],
     module_state_dict: StateDict,
     dataset: torch_data.Dataset | torch_data.Subset,
+    strategy: Strategy,
     **train_hyper_params,
 ):
     state_dict, history = _local_fitting(
@@ -176,6 +178,7 @@ def _aggregator_task(
     module_cls: type[torch.nn.Module],
     module_state_dict: StateDict,
     datasets: FederatedDataset,
+    strategy: Strategy,
     parent: Optional[FlockNode] = None,
 ) -> Future:
     """
@@ -185,8 +188,7 @@ def _aggregator_task(
     Returns:
 
     """
-    node_kind = flock.topo.nodes[node.idx]["kind"]
-    # TODO: Implement ``Flock`` method to do the above easier.
+    node_kind = flock.get_kind(node)
 
     if node_kind is FlockNodeKind.WORKER:
         # Launch the local fitting function on the worker node.
@@ -198,18 +200,23 @@ def _aggregator_task(
             module_cls=module_cls,
             module_state_dict=module_state_dict,
             dataset=datasets[node.idx],
+            strategy=strategy,
             **hyper_params,
         )
     else:
         # Launch the recursive aggregation task to the children nodes.
+        children_nodes = list(flock.children(node))
+        strategy.agg_on_worker_selection(children_nodes)
+
         children_futures = []
-        for child in flock.children(node):
+        for child in children_nodes:
             future = _aggregator_task(
                 executor,
                 flock=flock,
                 module_cls=module_cls,
                 module_state_dict=module_state_dict,
                 datasets=datasets,
+                strategy=strategy,
                 node=child,
                 parent=node,  # Note: Set the parent to this call's `node`.
             )
@@ -221,6 +228,7 @@ def _aggregator_task(
             _children_done_callback,
             executor,
             children_futures,
+            strategy,
             node,
             future,
         )
@@ -234,6 +242,7 @@ def _aggregator_task(
 def _children_done_callback(
     executor: Executor,
     children_futures: list[Future],
+    strategy: Strategy,
     node: FlockNode,
     parent_future: Future,
     child_future_to_resolve: Future,
@@ -251,24 +260,29 @@ def _children_done_callback(
     """
     if all([future.done() for future in children_futures]):
         child_results = [future.result() for future in children_futures]
-        future = executor.submit(_aggregate, node=node, results=child_results)
+        future = executor.submit(
+            _aggregate, node=node, strategy=strategy, results=child_results
+        )
         aggregation_done_callback = functools.partial(_set_parent_future, parent_future)
         future.add_done_callback(aggregation_done_callback)
 
 
-def _aggregate(node: FlockNode, results: list[dict[str, Any]]) -> dict[str, Any]:
+def _aggregate(
+    node: FlockNode, strategy: Strategy, results: list[dict[str, Any]]
+) -> dict[str, Any]:
     """Aggregate the state dicts from each of the results.
 
     Args:
         node (FlockNode): The aggregator node.
+        strategy (Strategy): ...
         results (list[dicts[str, Any]]): Results from children of ``node``.
 
     Returns:
         dict[str, Any]: Aggregation results.
     """
-    local_module_weights = {res["node/idx"]: res["state_dict"] for res in results}
-    global_module = None  # NOTE: For now, this is fine because `SimpleAvg` doesn't do anything with module.
-    avg_state_dict = SimpleAvg()(global_module, local_module_weights)
+    local_module_weights = [res["state_dict"] for res in results]
+    avg_state_dict = strategy.agg_on_param_aggregation(local_module_weights)
+
     # NOTE: The key-value scheme returned by aggregators has to match with workers.
     histories = (res["history"] for res in results)
     return {

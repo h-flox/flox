@@ -154,6 +154,13 @@ class Flock:
                 proxystore_endpoint=self.topo.nodes[child_idx][pse],
             )
 
+    def get_kind(self, node: FlockNode | FlockNodeID | int) -> FlockNodeKind:
+        if isinstance(node, FlockNode):
+            idx = node.idx
+        else:
+            idx = node
+        return self.topo.nodes[idx]["kind"]
+
     # ================================================================================= #
 
     @staticmethod

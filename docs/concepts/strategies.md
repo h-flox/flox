@@ -5,7 +5,7 @@ Some prominent examples from the literature of what we consider "Strategies" inc
 
 * Federated Stochastic Gradient Descent (`FedSGD`)[^fedavg]
 * Federated Averaging (`FedAvg`)[^fedavg]
-* `FedProx`[^fedprox]
+* FedAvg with Proximal Term (`FedProx`)[^fedprox]
 
 ## What _exactly_ do Strategies do?
 In a nutshell, a lot. Federated Learning is a complex process with tasks being done on the worker nodes and the aggregator node(s). Thus, Strategies can touch a lot of different parts of the entire logic of an FL process. 
@@ -30,7 +30,7 @@ In a nutshell, a lot. Federated Learning is a complex process with tasks being d
 
 
 ## How are Strategies defined in FLoX?
-In FLoX, we define...
+FLoX was designed to support modularity to enable creative and novel solutions for FL research. Therefore, in FLoX, we define a base ``Strategy`` class which serves as a class of callbacks. Classes that extend this base class (e.g., `FedAvg` extends `Strategy`) can implement their own unique logic which is seamlessly incorporated into the FL process. 
 
 ```python
 from flox.strategies import Strategy

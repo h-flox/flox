@@ -20,7 +20,7 @@ class Strategy:
 
     registry = {}
 
-    def agg_on_param_aggregation(self, state_dicts, *args, **kwargs):
+    def agg_on_param_aggregation(self, state_dicts: list[StateDict], *args, **kwargs):
         pass
 
     def agg_on_before_submit_params(self, params: StateDict, *args, **kwargs):

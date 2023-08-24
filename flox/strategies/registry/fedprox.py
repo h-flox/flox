@@ -6,6 +6,23 @@ from flox.worker.state import FloxWorkerState
 
 
 class FedProx(FedAvg):
+    """Implementation of FedAvg with Proximal Term.
+
+    This strategy extends ``FedAvg`` and differs from it by computing a "proximal term"
+    and adding it to the computed loss during the training step before doing backpropagation.
+    This proximal term is the norm difference between the parameters of the global model
+    and the worker's locally-updated model. This proximal term is used to make aggregation
+    less sensitive to harshly heterogeneous (i.e., non-iid) data distributions across workers.
+
+    More information on the proximal term and its definition can be found in the docstring
+    for ``FedProx.wrk_on_after_train_step()`` and in the reference below.
+
+    > **Reference:**
+    >
+    > Li, Tian, et al. "Federated optimization in heterogeneous networks." Proceedings of
+    > Machine learning and systems 2 (2020): 429-450.
+    """
+
     def __init__(
         self,
         mu: float = 0.3,
@@ -17,11 +34,14 @@ class FedProx(FedAvg):
         """
 
         Args:
-            mu ():
-            participation ():
-            probabilistic ():
-            always_include_child_aggregators ():
-            seed ():
+            mu (float): Multiplier that weights the importance of the proximal term. If `mu=0` then
+                ``FedProx`` reduces to ``FedAvg``.
+            participation (float): Participation rate for random worker selection.
+            probabilistic (bool): Probabilistically chooses workers if True; otherwise will always
+                select `max(1, num_workers * participation)` workers.
+            always_include_child_aggregators (bool): If True, Will always include child nodes that are
+                aggregators; if False, then they are included at random.
+            seed (int): Random seed.
         """
         super().__init__(
             participation,

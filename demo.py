@@ -1,9 +1,11 @@
-# import flox.learn.prototype as flox_learn
 import os
+import pandas as pd
 
 from flox.flock import Flock
 from flox.learn import federated_fit
+from flox.strategies import FedSGD
 from flox.utils.data.federate import randomly_federate_dataset
+from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
@@ -43,8 +45,15 @@ def main():
         random_state=None,
     )
 
-    train_history = federated_fit(flock, MyModule, fed_data, 5)
-    train_history.head()
+    df_list = []
+    for strategy, strategy_label in zip([FedSGD], ["fed-sgd"]):
+        df = federated_fit(flock, MyModule, fed_data, 10, strategy=strategy())
+        df["strategy"] = strategy_label
+        df_list.append(df)
+
+    train_history = pd.concat(df_list).reset_index()
+    train_history.to_csv(Path("out/data/demo_history.csv"))
+    print("Finished!")
 
 
 if __name__ == "__main__":
