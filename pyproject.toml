@@ -24,9 +24,22 @@ dependencies = [
     "mkdocs",
     "mkdocs-material",
     "mkdocstrings[python]",
+    "torch",
+    "pandas",
+    "graphviz",
+    "pygraphviz",
+    "tqdm",
+    "scipy",
 ]
+
+[project.optional-dependencies]
+dev = ["black", "coverage", "jupyterlab", "matplotlib", "numpy", "pytest", "seaborn", "tensorboard", "torchvision"]
+monitoring = ["tensorboard"]
 
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
 ]
+
+[tool.setuptools]
+packages = ["flox"]
