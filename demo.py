@@ -3,7 +3,7 @@ import pandas as pd
 
 from flox.flock import Flock
 from flox.learn import federated_fit
-from flox.strategies import FedSGD
+from flox.strategies import FedSGD, FedAvg, FedProx
 from flox.utils.data.federate import randomly_federate_dataset
 from pathlib import Path
 from torch import nn
@@ -30,7 +30,7 @@ class MyModule(nn.Module):
 
 
 def main():
-    flock = Flock.from_yaml("examples/flock_files/complex.yaml")
+    flock = Flock.from_yaml("examples/flock_files/2-tier.yaml")
 
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
@@ -46,13 +46,19 @@ def main():
     )
 
     df_list = []
-    for strategy, strategy_label in zip([FedSGD], ["fed-sgd"]):
-        df = federated_fit(flock, MyModule, fed_data, 10, strategy=strategy())
+    for strategy, strategy_label in zip(
+        [FedProx, FedAvg, FedSGD],
+        ["fed-prox", "fed-avg", "fed-sgd"],
+    ):
+        print(f"Running FLoX with strategy={strategy_label}.")
+        df = federated_fit(
+            flock, MyModule, fed_data, 10, strategy=strategy(), where="local"
+        )
         df["strategy"] = strategy_label
         df_list.append(df)
 
     train_history = pd.concat(df_list).reset_index()
-    train_history.to_csv(Path("out/data/demo_history.csv"))
+    train_history.to_csv(Path("out/demo_history.csv"))
     print("Finished!")
 
 

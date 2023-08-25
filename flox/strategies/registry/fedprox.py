@@ -1,8 +1,7 @@
 import torch
 
-from flox.aggregator.state import AggregatorState
 from flox.strategies import Strategy, FedAvg
-from flox.worker.state import FloxWorkerState
+from flox.flock.states import FloxWorkerState, FloxAggregatorState
 
 
 class FedProx(FedAvg):
@@ -74,8 +73,8 @@ class FedProx(FedAvg):
         Returns:
 
         """
-        local_model = state.current_model
-        global_model = state.global_model
+        global_model = state.pre_local_train_model
+        local_model = state.post_local_train_model
 
         params = list(local_model.state_dict().values())
         params0 = list(global_model.state_dict().values())
