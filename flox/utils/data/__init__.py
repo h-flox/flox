@@ -4,13 +4,6 @@ to do local simulations (or remote simulations) with benchmark Machine Learning 
 More specifically, this module aims to make it easy to launch FL experiments with different statistical data
 distributions.
 """
-from typing import NewType, Mapping, Union
+from flox.utils.data.core import federated_split
 
-from torch.utils import data as torch_data
-
-from flox.flock import FlockNodeID
-
-FederatedDataset = NewType(
-    "FederatedDataset",
-    Mapping[FlockNodeID, Union[torch_data.Dataset, torch_data.Subset]],
-)
+__all__ = ["federated_split"]

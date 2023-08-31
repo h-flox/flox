@@ -4,7 +4,8 @@ import pandas as pd
 from flox.flock import Flock
 from flox.learn import federated_fit
 from flox.strategies import FedSGD, FedAvg, FedProx
-from flox.utils.data.federate import randomly_federate_dataset
+from flox.utils.data.beta import randomly_federate_dataset
+from flox.utils.data import federated_split
 from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST
@@ -38,12 +39,14 @@ def main():
         train=True,
         transform=ToTensor(),
     )
-    fed_data = randomly_federate_dataset(
-        flock,
-        mnist,
-        shuffle=True,
-        random_state=None,
-    )
+    # fed_data = randomly_federate_dataset(
+    #     flock,
+    #     mnist,
+    #     shuffle=True,
+    #     random_state=None,
+    # )
+    fed_data = federated_split(mnist, flock, 10, 1, 1)
+    assert len(fed_data) == len(list(flock.workers))
 
     df_list = []
     for strategy, strategy_label in zip(
@@ -52,7 +55,12 @@ def main():
     ):
         print(f"Running FLoX with strategy={strategy_label}.")
         df = federated_fit(
-            flock, MyModule, fed_data, 10, strategy=strategy(), where="local"
+            flock,
+            MyModule,
+            fed_data,
+            5,
+            strategy=strategy(),
+            where="local",
         )
         df["strategy"] = strategy_label
         df_list.append(df)

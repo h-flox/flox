@@ -91,7 +91,11 @@ plugins:
   - section-index
 
 markdown_extensions:
-  # Math typesetting
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+      # Math typesetting
   - pymdownx.arithmatex:
       generic: true
 
