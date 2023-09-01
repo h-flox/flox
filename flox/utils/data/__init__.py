@@ -9,8 +9,7 @@ from typing import NewType, Mapping, Union
 from torch.utils import data as torch_data
 
 from flox.flock import FlockNodeID
+from flox.utils.data.core import FederatedDataset, fed_barplot, federated_split
 
-FederatedDataset = NewType(
-    "FederatedDataset",
-    Mapping[FlockNodeID, Union[torch_data.Dataset, torch_data.Subset]],
-)
+
+__all__ = ["FederatedDataset", "fed_barplot", "federated_split"]

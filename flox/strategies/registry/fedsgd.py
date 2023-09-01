@@ -46,7 +46,17 @@ class FedSGD(Strategy):
     def agg_on_worker_selection(
         self, children: list[FlockNode], **kwargs
     ) -> list[FlockNode]:
-        """
+        """Performs a simple average of the model weights returned by the child nodes.
+
+        The average is done by:
+
+        $$
+            w^{t} \\triangleq \\frac{1}{K} \\sum_{k=1}^{K} w_{k}^{t}
+        $$
+
+        where $w^{t}$ is the aggregated model weights, $K$ is the number of returned
+        model updates, $t$ is the current round, and $w_{k}^{t}$ is the returned model
+        updates from child $k$ at round $t$.
 
         Args:
             children ():
