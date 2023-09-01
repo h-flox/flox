@@ -4,8 +4,12 @@ FLoX is a powerful, simple, and highly customizable *Federated Learning* (FL) fr
 workflows while also making it trivially easy to deploy them on real-world devices (e.g., Internet-of-Things and edge
 devices).
 
-## Federated Averaging (FedAvg)
+### What can FLoX do?
 
-A benchmark averaging algorithm.
+FLoX is supports several state-of-the-art approaches for FL processes, including hierarchical and asynchronous FL. 
 
-$$\omega_{t+1} \triangleq \sum_{k=1}^{K} \frac{n_{k}}{n} \omega_{t+1}^{k}$$
+|     | 2-tier         | Hierarhchical |
+| --- |----------------| --- |
+| **Synchronous**| :white_check_mark: | :white_check_mark: |
+| **Asynchronous** | :white_check_mark:            | :x: |
+

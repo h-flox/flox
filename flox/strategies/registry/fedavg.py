@@ -1,5 +1,7 @@
-from flox.flock import Flock, FlockNode
+from flox.flock import Flock, FlockNode, FlockNodeID
+from flox.flock.states import NodeState, FloxWorkerState
 from flox.strategies.base import Loss, Strategy
+from flox.strategies.building_blocks.averaging import average_state_dicts
 from flox.strategies.building_blocks.worker_selection import random_worker_selection
 from flox.strategies.registry.fedsgd import FedSGD
 from flox.typing import StateDict
@@ -39,5 +41,19 @@ class FedAvg(FedSGD):
             participation, probabilistic, always_include_child_aggregators, seed
         )
 
-    def agg_on_param_aggregation(self, state_dicts, *args, **kwargs):
-        pass
+    def wrk_on_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
+        if "dataset" not in kwargs:
+            raise ValueError("`dataset` must be provided")
+        state["num_data_samples"] = len(kwargs["dataset"])
+
+    def agg_on_param_aggregation(
+        self,
+        states: dict[FlockNodeID, NodeState],
+        state_dicts: dict[FlockNodeID, StateDict],
+        *args,
+        **kwargs,
+    ):
+        weights = {}
+        for node, state in states.items():
+            weights[node] = state["num_data_samples"]
+        return average_state_dicts(state_dicts, weights=weights)

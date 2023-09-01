@@ -1,7 +1,7 @@
 import os
 
 from flox.flock import Flock
-from flox.utils.data.federate import randomly_federate_dataset
+from flox.utils.data.beta import randomly_federate_dataset
 from numpy.random import RandomState
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
