@@ -22,12 +22,16 @@ def federated_split(
 ) -> FederatedDataset:
     """Splits up Datasets across worker nodes in a Flock using Dirichlet distributions for IID and non-IID settings.
 
+    It is recommended to use an alpha value of 1.0 for either `samples_alpha` want non-IID number of samples across
+    workers. Setting this alpha value to be < 1 will result in extreme cases where many workers will have 0 data
+    samples.
+
     Args:
-        data ():
-        workers ():
-        num_labels ():
-        samples_alpha ():
-        labels_alpha ():
+        data (Dataset): ...
+        workers (Flock): ...
+        num_labels (int): ...
+        samples_alpha (float): ...
+        labels_alpha (float): ...
 
     Returns:
 
