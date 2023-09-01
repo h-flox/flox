@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
@@ -10,6 +11,8 @@ from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
+
+from flox.utils.data.core import fed_barplot
 
 
 class MyModule(nn.Module):
@@ -45,8 +48,19 @@ def main():
     #     shuffle=True,
     #     random_state=None,
     # )
-    fed_data = federated_split(mnist, flock, 10, 1, 1)
+
+    non_iid, iid = 1.0, 1_000_000_000.0
+
+    fed_data = federated_split(
+        mnist, flock, 10, samples_alpha=iid, labels_alpha=non_iid
+    )
     assert len(fed_data) == len(list(flock.workers))
+
+    fed_barplot(fed_data, 10)
+    plt.legend()
+    plt.show()
+
+    return 0
 
     df_list = []
     for strategy, strategy_label in zip(

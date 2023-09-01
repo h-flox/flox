@@ -1,11 +1,16 @@
+import matplotlib as mpl
 import numpy as np
 
 from collections import defaultdict
 from scipy import stats
 from torch.utils.data import Dataset, DataLoader, Subset
-from typing import Mapping
+from typing import Mapping, NewType, Optional, Union
 
 from flox.flock import FlockNodeID, FlockNode, Flock
+
+FederatedDataset = NewType(
+    "FederatedDataset", Mapping[FlockNodeID, Union[Dataset, Subset]]
+)
 
 
 def federated_split(
@@ -14,8 +19,8 @@ def federated_split(
     num_labels: int,
     samples_alpha: float = 1.0,
     labels_alpha: float = 1.0,
-) -> Mapping[FlockNodeID, Subset]:
-    """
+) -> FederatedDataset:
+    """Splits up Datasets across worker nodes in a Flock using Dirichlet distributions for IID and non-IID settings.
 
     Args:
         data ():
@@ -64,3 +69,32 @@ def federated_split(
 
     subsets = {w.idx: Subset(data, indices[w.idx]) for w in flock.workers}
     return subsets
+
+
+def fed_barplot(
+    fed_data: FederatedDataset,
+    num_labels: int,
+    width: float = 0.5,
+    ax: Optional[mpl.axes.Axes] = None,
+):
+    label_counts_per_worker = {
+        label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
+    }
+
+    for idx, (worker, subset) in enumerate(fed_data.items()):
+        loader = DataLoader(subset, batch_size=1)
+        for batch in loader:
+            _, y = batch
+            label = y.item()
+            label_counts_per_worker[label][idx] += 1
+
+    if ax is None:
+        fig, ax = mpl.pyplot.subplots()
+
+    bottom = np.zeros(len(fed_data))
+    workers = list(range(len(fed_data)))
+    for label, worker_count in label_counts_per_worker.items():
+        p = ax.bar(workers, worker_count, width, label=label, bottom=bottom)
+        bottom += worker_count
+
+    return ax
