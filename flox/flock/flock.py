@@ -163,6 +163,16 @@ class Flock:
 
     # ================================================================================= #
 
+    @classmethod
+    @property
+    def required_attrs(cls) -> list[str]:
+        return [
+            "kind",
+            "globus_compute_endpoint",
+            "proxystore_endpoint",
+            "children",
+        ]
+
     @staticmethod
     def from_dict(
         content: dict[str, Any], _src: Optional[Path | str] = None

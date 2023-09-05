@@ -34,7 +34,7 @@ class MyModule(nn.Module):
 
 
 def main():
-    flock = Flock.from_yaml("../examples/flock_files/2-tier.yaml")
+    flock = Flock.from_yaml("../examples/flocks/2-tier.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
