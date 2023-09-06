@@ -11,8 +11,9 @@ from concurrent.futures import Executor, ProcessPoolExecutor, ThreadPoolExecutor
 from tqdm import tqdm
 from typing import Mapping, NewType, Optional, Union, Any
 
-from flox.aggregator.base import SimpleAvg
 from flox.flock import Flock, FlockNode, FlockNodeID, FlockNodeKind
+from flox.flock.states import FloxAggregatorState, FloxWorkerState
+from flox.learn.backends.base import GlobusComputeExecutor, LocalExecutor, FloxExecutor
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset
 from flox.typing import StateDict
@@ -52,10 +53,13 @@ def sync_federated_fit(
         pd.DataFrame: Results from the FL process.
     """
     if executor == "thread":
-        executor = ThreadPoolExecutor(max_workers)
+        executor = LocalExecutor("thread", max_workers)
     elif executor == "process":
-        executor = ProcessPoolExecutor(max_workers)
+        executor = LocalExecutor("pool", max_workers)
+    elif executor == "globus_compute":
+        executor = GlobusComputeExecutor()
 
+    executor = ThreadPoolExecutor(max_workers)
     if isinstance(strategy, str):
         strategy = Strategy.get_strategy(strategy)()
 
@@ -95,17 +99,24 @@ def sync_federated_fit(
 def _worker_task(
     node: FlockNode,
     parent: FlockNode,
+    strategy: Strategy,
     module_cls: type[torch.nn.Module],
     module_state_dict: StateDict,
     dataset: torch_data.Dataset | torch_data.Subset,
-    strategy: Strategy,
     **train_hyper_params,
 ):
-    state_dict, history = _local_fitting(
-        node, parent, module_cls, module_state_dict, dataset, **train_hyper_params
+    node_state, state_dict, history = _local_fitting(
+        node,
+        parent,
+        strategy,
+        module_cls,
+        module_state_dict,
+        dataset,
+        **train_hyper_params,
     )
     # NOTE: The key-value scheme returned by workers has to match with aggregators.
     return {
+        "node/state": node_state,
         "node/idx": node.idx,
         "node/kind": node.kind,
         "state_dict": state_dict,
@@ -116,6 +127,7 @@ def _worker_task(
 def _local_fitting(
     node: FlockNode,
     parent: FlockNode,
+    strategy: Strategy,
     module_cls: type[torch.nn.Module],
     module_state_dict: StateDict,
     dataset: Optional[torch_data.Dataset | torch_data.Subset] = None,
@@ -134,15 +146,24 @@ def _local_fitting(
     Returns:
 
     """
+
+    global_module = module_cls()
+    global_module.load_state_dict(module_state_dict)
+    node_state = FloxWorkerState(pre_local_train_model=global_module)
+
     num_epochs = train_hyper_params.get("num_epochs", 2)
     batch_size = train_hyper_params.get("batch_size", 32)
     lr = train_hyper_params.get("lr", 1e-3)
     shuffle = train_hyper_params.get("shuffle", True)
 
-    module = module_cls()
-    module.load_state_dict(module_state_dict)
-    optimizer = torch.optim.SGD(module.parameters(), lr=lr)
+    local_module = module_cls()
+    local_module.load_state_dict(module_state_dict)
+    optimizer = torch.optim.SGD(local_module.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
+
+    node_state.post_local_train_model = local_module
+
+    strategy.wrk_on_before_train_step(node_state, dataset=dataset)
 
     history = defaultdict(list)
     train_loader = torch_data.DataLoader(
@@ -154,8 +175,14 @@ def _local_fitting(
         for batch in train_loader:
             inputs, targets = batch
             optimizer.zero_grad()
-            preds = module(inputs)
+            preds = local_module(inputs)
             loss = criterion(preds, targets)
+
+            try:
+                strategy.wrk_on_after_train_step(node_state, loss)
+            except NotImplementedError:
+                pass
+
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
@@ -168,11 +195,11 @@ def _local_fitting(
         history["epoch"].append(epoch)
         history["time"].append(str(datetime.datetime.now()))
 
-    return module.state_dict(), history
+    return node_state, local_module.state_dict(), history
 
 
 def _aggregator_task(
-    executor: Executor,
+    executor: FloxExecutor,
     flock: Flock,
     node: FlockNode,
     module_cls: type[torch.nn.Module],
@@ -240,23 +267,23 @@ def _aggregator_task(
 
 
 def _children_done_callback(
-    executor: Executor,
+    executor: FloxExecutor,
     children_futures: list[Future],
     strategy: Strategy,
     node: FlockNode,
     parent_future: Future,
     child_future_to_resolve: Future,
-):
+) -> None:
     """
 
     Args:
-        executor ():
-        children_futures ():
-        node ():
-        parent_future ():
-
-    Returns:
-
+        executor (FloxExecutor):
+        children_futures (list[Future]):
+        strategy (Strategy):
+        node (FlockNode):
+        node (FlockNode):
+        parent_future (Future):
+        child_future_to_resolve (Future):
     """
     if all([future.done() for future in children_futures]):
         child_results = [future.result() for future in children_futures]
@@ -280,12 +307,19 @@ def _aggregate(
     Returns:
         dict[str, Any]: Aggregation results.
     """
-    local_module_weights = [res["state_dict"] for res in results]
-    avg_state_dict = strategy.agg_on_param_aggregation(local_module_weights)
+    child_states, child_state_dicts = {}, {}
+    for res in results:
+        idx = res["node/idx"]
+        child_states[idx] = res["node/state"]
+        child_state_dicts[idx] = res["state_dict"]
+
+    avg_state_dict = strategy.agg_on_param_aggregation(child_states, child_state_dicts)
 
     # NOTE: The key-value scheme returned by aggregators has to match with workers.
     histories = (res["history"] for res in results)
+    state = FloxAggregatorState()
     return {
+        "node/state": state,
         "node/idx": node.idx,
         "node/kind": node.kind,
         "state_dict": avg_state_dict,
@@ -297,8 +331,8 @@ def _set_parent_future(parent_future: Future, child_future: Future):
     """
 
     Args:
-        parent_future ():
-        child_future ():
+        parent_future (Future):
+        child_future (Future):
 
     Returns:
 

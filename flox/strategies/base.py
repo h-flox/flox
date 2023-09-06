@@ -1,11 +1,11 @@
 import torch
 
 from flox.aggregator.state import AggregatorState
-from flox.flock import Flock, FlockNode
+from flox.flock import Flock, FlockNode, FlockNodeID
 from flox.typing import StateDict
 from typing import TypeAlias
 
-from flox.worker.state import FloxWorkerState
+from flox.flock.states import FloxWorkerState
 
 Loss: TypeAlias = torch.Tensor
 
@@ -20,7 +20,13 @@ class Strategy:
 
     registry = {}
 
-    def agg_on_param_aggregation(self, state_dicts: list[StateDict], *args, **kwargs):
+    def agg_on_param_aggregation(
+        self,
+        states: dict[FlockNodeID, FloxWorkerState],
+        state_dicts: dict[FlockNodeID, StateDict],
+        *args,
+        **kwargs,
+    ):
         pass
 
     def agg_on_before_submit_params(self, params: StateDict, *args, **kwargs):

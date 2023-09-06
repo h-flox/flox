@@ -229,7 +229,7 @@ class Flock:
 
     @staticmethod
     def from_yaml(path: Path | str) -> "Flock":
-        """Imports a .yaml file as a Flock.
+        """Imports a `.yaml` file as a Flock.
 
         Examples:
             >>> flock = Flock.from_yaml("my_flock.yaml")

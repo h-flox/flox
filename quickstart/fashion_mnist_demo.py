@@ -45,17 +45,19 @@ def main():
     assert len(fed_data) == len(list(flock.workers))
 
     df_list = []
-    for strategy, strategy_label in zip(
-        [FedProx, FedAvg, FedSGD],
-        ["fed-prox", "fed-avg", "fed-sgd"],
-    ):
+    strategies = {
+        "fed-prox": FedProx,
+        # "fed-avg": FedAvg,
+        # "fed-sgd": FedSGD,
+    }
+    for strategy_label, strategy_cls in strategies.items():
         print(f">>> Running FLoX with strategy={strategy_label}.")
         df = federated_fit(
             flock,
             MyModule,
             fed_data,
             5,
-            strategy=strategy(),
+            strategy=strategy_cls(),
             where="local",
         )
         df["strategy"] = strategy_label
