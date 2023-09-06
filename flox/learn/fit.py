@@ -21,13 +21,13 @@ def federated_fit(
     """
 
     Args:
-        flock ():
-        module_cls ():
-        datasets ():
-        num_global_rounds ():
+        flock (Flock):
+        module_cls (type[torch.nn.Module]):
+        datasets (FederatedDataset):
+        num_global_rounds (int):
         strategy (Strategy):
-        kind ():
-        where ():
+        kind (Kind):
+        where (Where):
 
     Returns:
 

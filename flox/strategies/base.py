@@ -21,7 +21,7 @@ class Strategy:
 
     def agg_on_param_aggregation(
         self,
-        states: dict[FlockNodeID, NodeState],
+        states: dict[FlockNodeID, FloxWorkerState],
         state_dicts: dict[FlockNodeID, StateDict],
         *args,
         **kwargs,

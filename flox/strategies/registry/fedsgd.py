@@ -3,11 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from flox.flock import Flock, FlockNode, FlockNodeID
-from flox.flock.states import NodeState
+from flox.flock.states import FloxWorkerState
 from flox.strategies.base import Loss, Strategy
 from flox.strategies.building_blocks.averaging import average_state_dicts
 from flox.strategies.building_blocks.worker_selection import random_worker_selection
 from flox.typing import StateDict
+from flox.flock.states import FloxWorkerState
 
 
 class FedSGD(Strategy):
@@ -47,7 +48,17 @@ class FedSGD(Strategy):
     def agg_on_worker_selection(
         self, children: list[FlockNode], **kwargs
     ) -> list[FlockNode]:
-        """
+        """Performs a simple average of the model weights returned by the child nodes.
+
+        The average is done by:
+
+        $$
+            w^{t} \\triangleq \\frac{1}{K} \\sum_{k=1}^{K} w_{k}^{t}
+        $$
+
+        where $w^{t}$ is the aggregated model weights, $K$ is the number of returned
+        model updates, $t$ is the current round, and $w_{k}^{t}$ is the returned model
+        updates from child $k$ at round $t$.
 
         Args:
             children ():
@@ -66,7 +77,7 @@ class FedSGD(Strategy):
 
     def agg_on_param_aggregation(
         self,
-        states: dict[FlockNodeID, NodeState],
+        states: dict[FlockNodeID, FloxWorkerState],
         state_dicts: dict[FlockNodeID, StateDict],
         *args,
         **kwargs,

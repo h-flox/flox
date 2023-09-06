@@ -1,2 +1,0 @@
-class Callbacks:
-    pass

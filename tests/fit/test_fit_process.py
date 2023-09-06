@@ -43,7 +43,7 @@ def data():
 
 
 def test_2_tier_fit(data):
-    flock = Flock.from_yaml("examples/flock_files/2-tier.yaml")
+    flock = Flock.from_yaml("examples/flocks/2-tier.yaml")
     fed_data = randomly_federate_dataset(
         flock,
         data,
@@ -55,7 +55,7 @@ def test_2_tier_fit(data):
 
 
 def test_3_tier_fit(data):
-    flock = Flock.from_yaml("examples/flock_files/3-tier.yaml")
+    flock = Flock.from_yaml("examples/flocks/3-tier.yaml")
     fed_data = randomly_federate_dataset(
         flock,
         data,
@@ -67,7 +67,7 @@ def test_3_tier_fit(data):
 
 
 def test_complex_fit(data):
-    flock = Flock.from_yaml("examples/flock_files/complex.yaml")
+    flock = Flock.from_yaml("examples/flocks/complex.yaml")
     fed_data = randomly_federate_dataset(
         flock,
         data,

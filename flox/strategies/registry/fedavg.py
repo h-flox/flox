@@ -5,6 +5,7 @@ from flox.strategies.building_blocks.averaging import average_state_dicts
 from flox.strategies.building_blocks.worker_selection import random_worker_selection
 from flox.strategies.registry.fedsgd import FedSGD
 from flox.typing import StateDict
+from flox.flock.states import FloxWorkerState
 
 
 class FedAvg(FedSGD):

@@ -1,6 +1,6 @@
 import torch
 
-from flox.strategies import Strategy, FedAvg
+from flox.strategies import FedAvg
 from flox.flock.states import FloxWorkerState, FloxAggregatorState
 
 

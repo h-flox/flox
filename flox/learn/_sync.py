@@ -12,7 +12,8 @@ from tqdm import tqdm
 from typing import Mapping, NewType, Optional, Union, Any
 
 from flox.flock import Flock, FlockNode, FlockNodeID, FlockNodeKind
-from flox.flock.states import FloxWorkerState, FloxAggregatorState
+from flox.flock.states import FloxAggregatorState, FloxWorkerState
+from flox.learn.backends.base import GlobusComputeExecutor, LocalExecutor, FloxExecutor
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset
 from flox.typing import StateDict
@@ -52,10 +53,13 @@ def sync_federated_fit(
         pd.DataFrame: Results from the FL process.
     """
     if executor == "thread":
-        executor = ThreadPoolExecutor(max_workers)
+        executor = LocalExecutor("thread", max_workers)
     elif executor == "process":
-        executor = ProcessPoolExecutor(max_workers)
+        executor = LocalExecutor("pool", max_workers)
+    elif executor == "globus_compute":
+        executor = GlobusComputeExecutor()
 
+    executor = ThreadPoolExecutor(max_workers)
     if isinstance(strategy, str):
         strategy = Strategy.get_strategy(strategy)()
 
@@ -272,17 +276,17 @@ def _aggregation_callback(
     node: FlockNode,
     parent_future: Future,
     child_future_to_resolve: Future,
-):
+) -> None:
     """
 
     Args:
-        executor ():
-        children_futures ():
-        node ():
-        parent_future ():
-
-    Returns:
-
+        executor (FloxExecutor):
+        children_futures (list[Future]):
+        strategy (Strategy):
+        node (FlockNode):
+        node (FlockNode):
+        parent_future (Future):
+        child_future_to_resolve (Future):
     """
     if all([future.done() for future in children_futures]):
         child_results = [future.result() for future in children_futures]
@@ -318,6 +322,7 @@ def _aggregation_task(
 
     # NOTE: The key-value scheme returned by aggregators has to match with workers.
     histories = (res["history"] for res in results)
+    state = FloxAggregatorState()
     return {
         "node/state": node_state,
         "node/idx": node.idx,

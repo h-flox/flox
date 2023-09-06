@@ -34,54 +34,38 @@ class MyModule(nn.Module):
 
 
 def main():
-    flock = Flock.from_yaml("examples/flock_files/2-tier.yaml")
-
+    flock = Flock.from_yaml("../examples/flocks/2-tier.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
         train=True,
         transform=ToTensor(),
     )
-    # fed_data = randomly_federate_dataset(
-    #     flock,
-    #     mnist,
-    #     shuffle=True,
-    #     random_state=None,
-    # )
-
-    non_iid, iid = 1.0, 1_000_000_000.0
-
-    fed_data = federated_split(
-        mnist, flock, 10, samples_alpha=iid, labels_alpha=non_iid
-    )
+    fed_data = federated_split(mnist, flock, 10, 1.0, 1.0)
     assert len(fed_data) == len(list(flock.workers))
 
-    fed_barplot(fed_data, 10)
-    plt.legend()
-    plt.show()
-
-    return 0
-
     df_list = []
-    for strategy, strategy_label in zip(
-        [FedProx, FedAvg, FedSGD],
-        ["fed-prox", "fed-avg", "fed-sgd"],
-    ):
-        print(f"Running FLoX with strategy={strategy_label}.")
+    strategies = {
+        "fed-prox": FedProx,
+        # "fed-avg": FedAvg,
+        # "fed-sgd": FedSGD,
+    }
+    for strategy_label, strategy_cls in strategies.items():
+        print(f">>> Running FLoX with strategy={strategy_label}.")
         df = federated_fit(
             flock,
             MyModule,
             fed_data,
             5,
-            strategy=strategy(),
+            strategy=strategy_cls(),
             where="local",
         )
         df["strategy"] = strategy_label
         df_list.append(df)
 
     train_history = pd.concat(df_list).reset_index()
-    train_history.to_csv(Path("out/demo_history.csv"))
-    print("Finished!")
+    train_history.to_pickle(Path("out/demo_history.pkl"))
+    print(">>> Finished!")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ from torchvision.transforms import ToTensor
 
 
 def test_randomly_federate_dataset():
-    flock = Flock.from_yaml("examples/flock_files/2-tier.yaml")
+    flock = Flock.from_yaml("examples/flocks/2-tier.yaml")
     mnist = MNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
