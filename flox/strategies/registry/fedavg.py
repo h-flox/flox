@@ -1,4 +1,5 @@
 from flox.flock import Flock, FlockNode, FlockNodeID
+from flox.flock.states import NodeState, FloxWorkerState
 from flox.strategies.base import Loss, Strategy
 from flox.strategies.building_blocks.averaging import average_state_dicts
 from flox.strategies.building_blocks.worker_selection import random_worker_selection
@@ -48,7 +49,7 @@ class FedAvg(FedSGD):
 
     def agg_on_param_aggregation(
         self,
-        states: dict[FlockNodeID, FloxWorkerState],
+        states: dict[FlockNodeID, NodeState],
         state_dicts: dict[FlockNodeID, StateDict],
         *args,
         **kwargs,

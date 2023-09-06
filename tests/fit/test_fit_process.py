@@ -9,7 +9,7 @@ from torchvision.transforms import ToTensor
 
 from flox.flock import Flock
 from flox.learn import federated_fit
-from flox.utils.data.federate import randomly_federate_dataset
+from flox.utils.data.beta import randomly_federate_dataset
 
 # from flox.learn.prototype import federated_fit
 

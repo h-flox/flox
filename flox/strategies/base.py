@@ -1,11 +1,10 @@
 import torch
 
-from flox.aggregator.state import AggregatorState
 from flox.flock import Flock, FlockNode, FlockNodeID
 from flox.typing import StateDict
 from typing import TypeAlias
 
-from flox.flock.states import FloxWorkerState
+from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
 
 Loss: TypeAlias = torch.Tensor
 

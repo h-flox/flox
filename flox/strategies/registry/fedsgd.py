@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from flox.flock import Flock, FlockNode, FlockNodeID
+from flox.flock.states import FloxWorkerState
 from flox.strategies.base import Loss, Strategy
 from flox.strategies.building_blocks.averaging import average_state_dicts
 from flox.strategies.building_blocks.worker_selection import random_worker_selection

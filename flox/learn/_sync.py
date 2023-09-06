@@ -70,7 +70,7 @@ def sync_federated_fit(
     for rnd in range(num_global_rounds):
         # Launch the tasks recursively starting with the aggregation task on the
         # leader of the Flock.
-        rnd_future = _aggregator_task(
+        rnd_future = _traverse(
             executor,
             flock=flock,
             node=flock.leader,
@@ -94,6 +94,9 @@ def sync_federated_fit(
         prog_bar.update()
 
     return pd.concat(df_list).reset_index()
+
+
+###############################################################################################
 
 
 def _worker_task(
@@ -198,8 +201,8 @@ def _local_fitting(
     return node_state, local_module.state_dict(), history
 
 
-def _aggregator_task(
-    executor: FloxExecutor,
+def _traverse(
+    executor: Executor,
     flock: Flock,
     node: FlockNode,
     module_cls: type[torch.nn.Module],
@@ -224,10 +227,10 @@ def _aggregator_task(
             _worker_task,
             node=node,
             parent=parent,
+            strategy=strategy,
             module_cls=module_cls,
             module_state_dict=module_state_dict,
             dataset=datasets[node.idx],
-            strategy=strategy,
             **hyper_params,
         )
     else:
@@ -237,7 +240,7 @@ def _aggregator_task(
 
         children_futures = []
         for child in children_nodes:
-            future = _aggregator_task(
+            future = _traverse(
                 executor,
                 flock=flock,
                 module_cls=module_cls,
@@ -252,7 +255,7 @@ def _aggregator_task(
         # Initialize the Future that this aggregator will return to its parent.
         future = Future()
         subtree_done_callback = functools.partial(
-            _children_done_callback,
+            _aggregation_callback,
             executor,
             children_futures,
             strategy,
@@ -266,8 +269,8 @@ def _aggregator_task(
         return future
 
 
-def _children_done_callback(
-    executor: FloxExecutor,
+def _aggregation_callback(
+    executor: Executor,
     children_futures: list[Future],
     strategy: Strategy,
     node: FlockNode,
@@ -288,13 +291,13 @@ def _children_done_callback(
     if all([future.done() for future in children_futures]):
         child_results = [future.result() for future in children_futures]
         future = executor.submit(
-            _aggregate, node=node, strategy=strategy, results=child_results
+            _aggregation_task, node=node, strategy=strategy, results=child_results
         )
         aggregation_done_callback = functools.partial(_set_parent_future, parent_future)
         future.add_done_callback(aggregation_done_callback)
 
 
-def _aggregate(
+def _aggregation_task(
     node: FlockNode, strategy: Strategy, results: list[dict[str, Any]]
 ) -> dict[str, Any]:
     """Aggregate the state dicts from each of the results.
@@ -315,11 +318,13 @@ def _aggregate(
 
     avg_state_dict = strategy.agg_on_param_aggregation(child_states, child_state_dicts)
 
+    node_state = FloxAggregatorState()
+
     # NOTE: The key-value scheme returned by aggregators has to match with workers.
     histories = (res["history"] for res in results)
     state = FloxAggregatorState()
     return {
-        "node/state": state,
+        "node/state": node_state,
         "node/idx": node.idx,
         "node/kind": node.kind,
         "state_dict": avg_state_dict,
@@ -331,8 +336,8 @@ def _set_parent_future(parent_future: Future, child_future: Future):
     """
 
     Args:
-        parent_future (Future):
-        child_future (Future):
+        parent_future (Future): ...
+        child_future (Future): ...
 
     Returns:
 

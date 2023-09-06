@@ -1,18 +1,18 @@
-import sys
-
-sys.path.append("..")
-
+import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
 from flox.flock import Flock
 from flox.learn import federated_fit
 from flox.strategies import FedSGD, FedAvg, FedProx
+from flox.utils.data.beta import randomly_federate_dataset
 from flox.utils.data import federated_split
 from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
+
+from flox.utils.data.core import fed_barplot
 
 
 class MyModule(nn.Module):

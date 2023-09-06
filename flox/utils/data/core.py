@@ -2,7 +2,6 @@ import matplotlib as mpl
 import numpy as np
 
 from collections import defaultdict
-from matplotlib.axes import Axes
 from scipy import stats
 from torch.utils.data import Dataset, DataLoader, Subset
 from typing import Mapping, NewType, Optional, Union
@@ -80,7 +79,7 @@ def fed_barplot(
     fed_data: FederatedDataset,
     num_labels: int,
     width: float = 0.5,
-    ax: Optional[Axes] = None,
+    ax: Optional[mpl.axes.Axes] = None,
 ):
     label_counts_per_worker = {
         label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
