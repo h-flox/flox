@@ -59,7 +59,7 @@ def sync_federated_fit(
     elif executor == "globus_compute":
         executor = GlobusComputeExecutor()
 
-    executor = ThreadPoolExecutor(max_workers)
+    # executor = ThreadPoolExecutor(max_workers)
     if isinstance(strategy, str):
         strategy = Strategy.get_strategy(strategy)()
 
