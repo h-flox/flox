@@ -13,7 +13,10 @@ from typing import Mapping, NewType, Optional, Union, Any
 
 from flox.flock import Flock, FlockNode, FlockNodeID, FlockNodeKind
 from flox.flock.states import FloxAggregatorState, FloxWorkerState
-from flox.learn.backends.base import GlobusComputeExecutor, LocalExecutor, FloxExecutor
+from flox.learn.backends.base import FloxExecutor
+from flox.learn.backends.globus import GlobusComputeExecutor
+from flox.learn.backends.local import LocalExecutor
+from flox.learn.update import TaskUpdate
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset
 from flox.typing import StateDict
@@ -27,7 +30,7 @@ def sync_federated_fit(
     num_global_rounds: int,
     strategy: Strategy | str = "fedsgd",
     executor: str = "thread",
-    max_workers: int = 1,
+    num_workers: int = 1,
 ) -> pd.DataFrame:
     """Synchronous federated learning implementation.
 
@@ -47,19 +50,19 @@ def sync_federated_fit(
             (using the default parameters).
         executor (str): Which executor to launch tasks with, defaults to "thread" (i.e.,
             ``ThreadPoolExecutor``).
-        max_workers (int): Number of workers to execute tasks.
+        num_workers (int): Number of workers to execute tasks.
 
     Returns:
-        pd.DataFrame: Results from the FL process.
+        Results from the FL process.
     """
     if executor == "thread":
-        executor = LocalExecutor("thread", max_workers)
+        executor = LocalExecutor("thread", num_workers)
     elif executor == "process":
-        executor = LocalExecutor("pool", max_workers)
+        executor = LocalExecutor("pool", num_workers)
     elif executor == "globus_compute":
         executor = GlobusComputeExecutor()
 
-    # executor = ThreadPoolExecutor(max_workers)
+    # executor = ThreadPoolExecutor(num_workers)
     if isinstance(strategy, str):
         strategy = Strategy.get_strategy(strategy)()
 
@@ -82,15 +85,13 @@ def sync_federated_fit(
         )
 
         # Collect results from the aggregated future.
-        rnd_results = rnd_future.result()
-        rnd_history = rnd_results["history"]
-        rnd_df = pd.DataFrame.from_dict(rnd_history)
-        rnd_df["round"] = rnd
-        df_list.append(rnd_df)
+        round_update: TaskUpdate = rnd_future.result()
+        round_df = pd.DataFrame.from_dict(round_update.history)
+        round_df["round"] = rnd
+        df_list.append(round_df)
 
         # Apply the aggregated weights to the leader's global module for the next round.
-        global_module.load_state_dict(rnd_results["state_dict"])
-
+        global_module.load_state_dict(round_update.state_dict)
         prog_bar.update()
 
     return pd.concat(df_list).reset_index()
@@ -107,7 +108,9 @@ def _worker_task(
     module_state_dict: StateDict,
     dataset: torch_data.Dataset | torch_data.Subset,
     **train_hyper_params,
-):
+) -> TaskUpdate:
+    # TODO: Generalize this so that users can provide a "Trainer" object with the training logic in a Lightning-like
+    #       format.
     node_state, state_dict, history = _local_fitting(
         node,
         parent,
@@ -117,14 +120,7 @@ def _worker_task(
         dataset,
         **train_hyper_params,
     )
-    # NOTE: The key-value scheme returned by workers has to match with aggregators.
-    return {
-        "node/state": node_state,
-        "node/idx": node.idx,
-        "node/kind": node.kind,
-        "state_dict": state_dict,
-        "history": history,
-    }
+    return TaskUpdate(node_state, node.idx, node.kind, state_dict, history)
 
 
 def _local_fitting(
@@ -202,7 +198,7 @@ def _local_fitting(
 
 
 def _traverse(
-    executor: Executor,
+    executor: FloxExecutor,
     flock: Flock,
     node: FlockNode,
     module_cls: type[torch.nn.Module],
@@ -220,8 +216,8 @@ def _traverse(
     """
     node_kind = flock.get_kind(node)
 
+    # Launch the local fitting function on the worker node.
     if node_kind is FlockNodeKind.WORKER:
-        # Launch the local fitting function on the worker node.
         hyper_params = {}
         return executor.submit(
             _worker_task,
@@ -233,40 +229,40 @@ def _traverse(
             dataset=datasets[node.idx],
             **hyper_params,
         )
-    else:
-        # Launch the recursive aggregation task to the children nodes.
-        children_nodes = list(flock.children(node))
-        strategy.agg_on_worker_selection(children_nodes)
 
-        children_futures = []
-        for child in children_nodes:
-            future = _traverse(
-                executor,
-                flock=flock,
-                module_cls=module_cls,
-                module_state_dict=module_state_dict,
-                datasets=datasets,
-                strategy=strategy,
-                node=child,
-                parent=node,  # Note: Set the parent to this call's `node`.
-            )
-            children_futures.append(future)
+    # Launch the recursive aggregation task to the children nodes.
+    children_nodes = list(flock.children(node))
+    strategy.agg_on_worker_selection(children_nodes)
 
-        # Initialize the Future that this aggregator will return to its parent.
-        future = Future()
-        subtree_done_callback = functools.partial(
-            _aggregation_callback,
+    children_futures = []
+    for child in children_nodes:
+        future = _traverse(
             executor,
-            children_futures,
-            strategy,
-            node,
-            future,
+            flock=flock,
+            module_cls=module_cls,
+            module_state_dict=module_state_dict,
+            datasets=datasets,
+            strategy=strategy,
+            node=child,
+            parent=node,  # Note: Set the parent to this call's `node`.
         )
+        children_futures.append(future)
 
-        for child_fut in children_futures:
-            child_fut.add_done_callback(subtree_done_callback)
+    # Initialize the Future that this aggregator will return to its parent.
+    future = Future()
+    subtree_done_callback = functools.partial(
+        _aggregation_callback,
+        executor,
+        children_futures,
+        strategy,
+        node,
+        future,
+    )
 
-        return future
+    for child_fut in children_futures:
+        child_fut.add_done_callback(subtree_done_callback)
+
+    return future
 
 
 def _aggregation_callback(
@@ -289,58 +285,54 @@ def _aggregation_callback(
         child_future_to_resolve (Future):
     """
     if all([future.done() for future in children_futures]):
-        child_results = [future.result() for future in children_futures]
+        child_updates = [future.result() for future in children_futures]
         future = executor.submit(
-            _aggregation_task, node=node, strategy=strategy, results=child_results
+            _aggregation_task, node=node, strategy=strategy, updates=child_updates
         )
         aggregation_done_callback = functools.partial(_set_parent_future, parent_future)
         future.add_done_callback(aggregation_done_callback)
 
 
 def _aggregation_task(
-    node: FlockNode, strategy: Strategy, results: list[dict[str, Any]]
-) -> dict[str, Any]:
+    node: FlockNode, strategy: Strategy, updates: list[TaskUpdate]
+) -> TaskUpdate:
     """Aggregate the state dicts from each of the results.
 
     Args:
         node (FlockNode): The aggregator node.
         strategy (Strategy): ...
-        results (list[dicts[str, Any]]): Results from children of ``node``.
+        updates (list[dicts[str, Any]]): Results from children of ``node``.
 
     Returns:
         dict[str, Any]: Aggregation results.
     """
     child_states, child_state_dicts = {}, {}
-    for res in results:
-        idx = res["node/idx"]
-        child_states[idx] = res["node/state"]
-        child_state_dicts[idx] = res["state_dict"]
+    for update in updates:
+        idx = update.node_idx
+        child_states[idx] = update.node_state
+        child_state_dicts[idx] = update.state_dict
 
     avg_state_dict = strategy.agg_on_param_aggregation(child_states, child_state_dicts)
 
     node_state = FloxAggregatorState()
 
     # NOTE: The key-value scheme returned by aggregators has to match with workers.
-    histories = (res["history"] for res in results)
+    histories = (update.history for update in updates)
     state = FloxAggregatorState()
-    return {
-        "node/state": node_state,
-        "node/idx": node.idx,
-        "node/kind": node.kind,
-        "state_dict": avg_state_dict,
-        "history": extend_dicts(*histories),
-    }
+    return TaskUpdate(
+        node_state, node.idx, node.kind, avg_state_dict, extend_dicts(*histories)
+    )
 
 
-def _set_parent_future(parent_future: Future, child_future: Future):
-    """
+def _set_parent_future(parent_future: Future, child_future: Future) -> Any:
+    """Sets the result of the `parent_future` to the result of its `child_future` and returns it.
 
     Args:
-        parent_future (Future): ...
-        child_future (Future): ...
+        parent_future (Future): The parent Future.
+        child_future (Future): The child Future.
 
     Returns:
-
+        The result of `child_future` which is now set to be the result of `parent_future`.
     """
     assert child_future.done()
     if child_future.exception():

@@ -6,16 +6,19 @@ repo_url: https://github.com/nathaniel-hudson/FLoX
 
 
 nav:
-  - Home: index.md
-  - About:
-      - about/index.md
-      - about/federated_learning.md
-      - about/globus_compute.md
-      - about/proxystore.md
-  - Concepts:
-      - concepts/index.md
-      - concepts/flock.md
-      - concepts/strategies.md
+  - Home:
+      - index.md
+      - home/federated_learning.md
+      - home/globus_compute.md
+      - home/proxystore.md
+  - Getting Started:
+      - getting_started/index.md
+      - getting_started/flock.md
+      - Strategies:
+          - getting_started/strategies/index.md
+          - getting_started/strategies/callbacks.md
+          - getting_started/strategies/custom.md
+      - getting_started/trainer.md
   - API Reference: reference/
   - Publications:
       - publications/index.md
@@ -76,7 +79,7 @@ plugins:
             docstring_style: google
             inherited_members: yes
             line_length: 60
-            members_order: alphabetical
+            members_order: source # alphabetical
             merge_init_into_class: yes
             separate_signature: yes
             # Mutually exclusive with separate_signature
@@ -86,6 +89,7 @@ plugins:
             show_root_full_path: yes
             show_signature_annotations: yes
             show_submodules: False
+  #            summary: true
   - search
   - section-index
 

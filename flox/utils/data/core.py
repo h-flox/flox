@@ -1,4 +1,4 @@
-import matplotlib as mpl
+import matplotlib
 import numpy as np
 
 from collections import defaultdict
@@ -33,8 +33,16 @@ def federated_split(
         samples_alpha (float): ...
         labels_alpha (float): ...
 
-    Returns:
+    Examples:
+        >>> from torchvision.datasets import MNIST
+        >>> flock = Flock.from_yaml("my_flock.yml")
+        >>> data = MNIST()
+        >>> fed_data = federated_split(data, flock, num_labels=10, samples_alpha=1., labels_alpha=1.)
+        >>> next(iter(fed_data.items()))
+        >>> # (FlockNodeID(1), Subset()) # TODO: Run a real example and paste it here.
 
+    Returns:
+        A federated version of the dataset that is split up statistically based on the arguments alpha arguments.
     """
     assert samples_alpha > 0
     assert labels_alpha > 0
@@ -79,8 +87,19 @@ def fed_barplot(
     fed_data: FederatedDataset,
     num_labels: int,
     width: float = 0.5,
-    ax: Optional[mpl.axes.Axes] = None,
-):
+    ax: Optional[matplotlib.axes.Axes] = None,
+) -> matplotlib.axes.Axes:
+    """Plots the label/sample distributions across worker nodes of a ``FederatedDataset`` as a stacked barplot.
+
+    Args:
+        fed_data (FederatedDataset): The federated data cross a ``Flock``.
+        num_labels (int): The total number of unique labels in ``fed_data``.
+        width (float): The width of the bars.
+        ax (matplotlib.axes.Axes): The ``axes`` to draw onto, if provided. If one is not provided, a new one is created.
+
+    Returns:
+        The ``axes`` object that was drawn onto.
+    """
     label_counts_per_worker = {
         label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
     }
@@ -93,12 +112,12 @@ def fed_barplot(
             label_counts_per_worker[label][idx] += 1
 
     if ax is None:
-        fig, ax = mpl.pyplot.subplots()
+        fig, ax = matplotlib.pyplot.subplots()
 
     bottom = np.zeros(len(fed_data))
     workers = list(range(len(fed_data)))
     for label, worker_count in label_counts_per_worker.items():
-        p = ax.bar(workers, worker_count, width, label=label, bottom=bottom)
+        ax.bar(workers, worker_count, width, label=label, bottom=bottom)
         bottom += worker_count
 
     return ax

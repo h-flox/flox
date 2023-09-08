@@ -70,7 +70,17 @@ class Flock:
         self.node_counter += 1
         return FlockNodeID(idx)
 
-    def add_edge(self, idx1: FlockNodeID, idx2: FlockNodeID, **attr):
+    def add_edge(self, idx1: FlockNodeID, idx2: FlockNodeID, **attr) -> None:
+        """
+
+        Args:
+            idx1 (FlockNodeID):
+            idx2 (FlockNodeID):
+            **attr ():
+
+        Throws:
+            ValueError - Cannot add edges between nodes that do not already exist in the ``Flock`` instance.
+        """
         if any([idx1 not in self.topo.nodes, idx2 not in self.topo.nodes]):
             raise ValueError(
                 "`Flock` does not support adding edges between nodes that do not already exist. "
