@@ -1,5 +1,6 @@
 from concurrent.futures import Future
 
+from flox.flock import FlockNode
 from flox.learn.backends.base import FloxExecutor
 
 
@@ -11,12 +12,13 @@ class GlobusComputeExecutor(FloxExecutor):
     def __init__(self):
         super().__init__()
 
-    def submit(self, fn, /, *args, **kwargs) -> Future:
+    def submit(self, fn, node: FlockNode, /, *args, **kwargs) -> Future:
         import globus_compute_sdk as globus_compute
 
-        endpoint_id = None
+        endpoint_id = node.globus_compute_endpoint
+        print(f"{endpoint_id=}")
         with globus_compute.Executor(endpoint_id) as gce:
-            future = gce.submit(fn, *args, **kwargs)
+            future = gce.submit(fn, node, *args, **kwargs)
         return future
 
     def collect(self):

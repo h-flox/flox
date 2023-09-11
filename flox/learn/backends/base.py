@@ -1,6 +1,8 @@
 from abc import ABC
 from concurrent.futures import Future
 
+from flox.flock import FlockNode
+
 
 class FloxExecutor(ABC):
     """
@@ -10,7 +12,7 @@ class FloxExecutor(ABC):
     def __init__(self):
         pass
 
-    def submit(self, fn, /, *args, **kwargs) -> Future:
+    def submit(self, fn, node: FlockNode, /, *args, **kwargs) -> Future:
         raise NotImplementedError()
 
     def collect(self):

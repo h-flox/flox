@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from flox.flock import Flock, FlockNode, FlockNodeID
-from flox.flock.states import FloxWorkerState
+from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
 from flox.strategies.base import Loss, Strategy
 from flox.strategies.building_blocks.averaging import average_state_dicts
 from flox.strategies.building_blocks.worker_selection import random_worker_selection
@@ -77,9 +77,10 @@ class FedSGD(Strategy):
 
     def agg_on_param_aggregation(
         self,
-        states: dict[FlockNodeID, FloxWorkerState],
-        state_dicts: dict[FlockNodeID, StateDict],
+        state: FloxAggregatorState,
+        children_states: dict[FlockNodeID, NodeState],
+        children_state_dicts: dict[FlockNodeID, StateDict],
         *args,
         **kwargs,
     ):
-        return average_state_dicts(state_dicts, weights=None)
+        return average_state_dicts(children_state_dicts, weights=None)

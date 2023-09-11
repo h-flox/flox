@@ -2,6 +2,7 @@ import matplotlib
 import numpy as np
 
 from collections import defaultdict
+from matplotlib.axes import Axes
 from scipy import stats
 from torch.utils.data import Dataset, DataLoader, Subset
 from typing import Mapping, NewType, Optional, Union
@@ -87,15 +88,15 @@ def fed_barplot(
     fed_data: FederatedDataset,
     num_labels: int,
     width: float = 0.5,
-    ax: Optional[matplotlib.axes.Axes] = None,
-) -> matplotlib.axes.Axes:
+    ax: Optional[Axes] = None,
+) -> Axes:
     """Plots the label/sample distributions across worker nodes of a ``FederatedDataset`` as a stacked barplot.
 
     Args:
         fed_data (FederatedDataset): The federated data cross a ``Flock``.
         num_labels (int): The total number of unique labels in ``fed_data``.
         width (float): The width of the bars.
-        ax (matplotlib.axes.Axes): The ``axes`` to draw onto, if provided. If one is not provided, a new one is created.
+        ax (Axes): The ``axes`` to draw onto, if provided. If one is not provided, a new one is created.
 
     Returns:
         The ``axes`` object that was drawn onto.

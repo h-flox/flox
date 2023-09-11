@@ -19,25 +19,58 @@ class Strategy:
 
     registry = {}
 
+    @classmethod
+    def get_strategy(cls, name: str):
+        name = name.lower()
+        if name in cls.registry:
+            return cls.registry[name]
+        else:
+            raise KeyError(f"Strategy name ({name=}) is not in the Strategy registry.")
+
+    ####################################################################################
+    #                              AGGREGATOR CALLBACKS.                               #
+    ####################################################################################
+
     def agg_on_param_aggregation(
         self,
-        states: dict[FlockNodeID, FloxWorkerState],
-        state_dicts: dict[FlockNodeID, StateDict],
+        state: FloxAggregatorState,
+        children_states: dict[FlockNodeID, NodeState],
+        children_state_dicts: dict[FlockNodeID, StateDict],
         *args,
         **kwargs,
     ):
         pass
 
-    def agg_on_before_submit_params(self, params: StateDict, *args, **kwargs):
-        return params
+    def agg_on_before_submit_params(
+        self, state: FloxAggregatorState, state_dict: StateDict, *args, **kwargs
+    ):
+        """Callback before sharing parameters to child nodes.
 
-    def agg_on_after_collect_params(self, *args, **kwargs) -> StateDict:
+        Args:
+            state (FloxAggregatorState):
+            state_dict (StateDict):
+            *args ():
+            **kwargs ():
+
+        Returns:
+
+        """
+        return state_dict
+
+    def agg_on_after_collect_params(
+        self, state: FloxAggregatorState, *args, **kwargs
+    ) -> StateDict:
         pass
 
-    def agg_on_worker_selection(self, children: list[FlockNode], *args, **kwargs):
+    def agg_on_worker_selection(
+        self, state: FloxAggregatorState, children: list[FlockNode], *args, **kwargs
+    ):
         return children
 
-    def wrk_on_before_train_step(self, *args, **kwargs):
+    ####################################################################################
+    #                                WORKER CALLBACKS.                                 #
+    ####################################################################################
+    def wrk_on_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
         pass
 
     def wrk_on_after_train_step(
@@ -54,11 +87,3 @@ class Strategy:
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls.registry[cls.__name__.lower()] = cls
-
-    @classmethod
-    def get_strategy(cls, name: str):
-        name = name.lower()
-        if name in cls.registry:
-            return cls.registry[name]
-        else:
-            raise KeyError(f"Strategy name ({name=}) is not in the Strategy registry.")

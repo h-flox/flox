@@ -75,7 +75,8 @@ class FlockNode:
             (recommended if you are using Globus Compute); defaults to None.
     """
 
-    idx: FlockNodeID  # Assigned during the Flock construction (i.e., not in .yaml/.json file)
+    idx: FlockNodeID
+    """Assigned during the Flock construction (i.e., not in .yaml/.json file)"""
 
     kind: FlockNodeKind
     """Which kind of node."""

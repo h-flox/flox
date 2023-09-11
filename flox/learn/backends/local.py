@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, Future
 
+from flox.flock import FlockNode
 from flox.learn.backends.base import FloxExecutor
 
 
@@ -21,8 +22,8 @@ class LocalExecutor(FloxExecutor):
                 "Must be either 'pool' or 'thread'."
             )
 
-    def submit(self, fn, /, *args, **kwargs) -> Future:
-        return self.pool.submit(fn, *args, **kwargs)
+    def submit(self, fn, node: FlockNode, /, *args, **kwargs) -> Future:
+        return self.pool.submit(fn, node, *args, **kwargs)
 
     def collect(self):
         pass

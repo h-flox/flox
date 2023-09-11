@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("..")
+
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
@@ -33,8 +37,25 @@ class MyModule(nn.Module):
         return logits
 
 
+class SmallModule(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        self.linear_stack = nn.Sequential(
+            nn.Linear(28 * 28, 128),
+            nn.ReLU(),
+            nn.Linear(128, 10),
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)
+        logits = self.linear_stack(x)
+        return logits
+
+
 def main():
-    flock = Flock.from_yaml("../examples/flocks/2-tier.yaml")
+    # flock = Flock.from_yaml("../examples/flocks/2-tier.yaml")
+    flock = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
@@ -54,11 +75,11 @@ def main():
         print(f">>> Running FLoX with strategy={strategy_label}.")
         df = federated_fit(
             flock,
-            MyModule,
+            SmallModule,
             fed_data,
             5,
             strategy=strategy_cls(),
-            where="local",
+            where="local",  # "globus_compute",
         )
         df["strategy"] = strategy_label
         df_list.append(df)

@@ -18,7 +18,7 @@ nav:
           - getting_started/strategies/index.md
           - getting_started/strategies/callbacks.md
           - getting_started/strategies/custom.md
-      - getting_started/trainer.md
+      - getting_started/nn.md
   - API Reference: reference/
   - Publications:
       - publications/index.md
