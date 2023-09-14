@@ -1,7 +1,7 @@
 from concurrent.futures import Future
 
 from flox.flock import FlockNode
-from flox.learn.backends.base import FloxExecutor
+from flox.learn.backends import FloxExecutor
 
 
 class GlobusComputeExecutor(FloxExecutor):

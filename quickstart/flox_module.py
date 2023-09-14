@@ -5,8 +5,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
-from flox.learn.nn.model import FloxModule
-from flox.learn.nn.trainer import Trainer
+from flox.learn import FloxModule
+from flox.learn import Trainer
 
 
 class MyModule(FloxModule):

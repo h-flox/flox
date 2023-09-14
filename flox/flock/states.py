@@ -81,6 +81,12 @@ class FloxWorkerState(NodeState):
         self.pre_local_train_model = pre_local_train_model
         self.post_local_train_model = post_local_train_model
 
+    def __repr__(self) -> str:
+        template = (
+            "FloxWorkerState(pre_local_train_model={}, post_local_train_model={})"
+        )
+        return template.format(self.pre_local_train_model, self.post_local_train_model)
+
 
 # NodeState = NewType("NodeState", Union[FloxAggregatorState, FloxWorkerState])
 # """A `Type` included for convenience. It is equivalent to ``Union[FloxAggregatorState, FloxWorkerState]``."""

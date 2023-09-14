@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pandas import DataFrame
 from typing import Any
 
 from flox.flock import FlockNodeKind, FlockNodeID
@@ -25,5 +26,5 @@ class TaskUpdate:
     state_dict: StateDict
     """The ``StateDict`` of the PyTorch module (either aggregated or trained locally)."""
 
-    history: dict[str, Any]
+    history: DataFrame
     """The history of results."""

@@ -46,7 +46,7 @@ class FedSGD(Strategy):
         self.seed = seed
 
     def agg_on_worker_selection(
-        self, children: list[FlockNode], **kwargs
+        self, state: FloxAggregatorState, children: list[FlockNode], **kwargs
     ) -> list[FlockNode]:
         """Performs a simple average of the model weights returned by the child nodes.
 
@@ -61,7 +61,8 @@ class FedSGD(Strategy):
         updates from child $k$ at round $t$.
 
         Args:
-            children ():
+            state (FloxAggregatorState): ...
+            children (list[FlockNode]):
             **kwargs ():
 
         Returns:

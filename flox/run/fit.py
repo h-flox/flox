@@ -1,9 +1,7 @@
 import torch
 
-from typing import Literal, Mapping, TypeAlias
-
-from flox.flock import Flock, FlockNodeID
-from flox.learn._sync import sync_federated_fit
+from flox.flock import Flock
+from flox.run.synchronous import sync_federated_fit
 from flox.learn.types import Kind, Where
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset

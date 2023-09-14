@@ -1,15 +1,14 @@
 import datetime
-from typing import Any, Optional
+from typing import Optional
 
 import pandas as pd
 import torch
 
-from collections import defaultdict
 from torch.utils.data import DataLoader
 
 from flox.flock.states import FloxWorkerState
 from flox.learn.logger.csv import CSVLogger
-from flox.learn.nn.model import FloxModule
+from flox.learn.nn import FloxModule
 from flox.strategies import Strategy
 
 
@@ -20,9 +19,6 @@ class Trainer:
             self.logger = CSVLogger()
         else:
             raise ValueError("Illegal value for `logger`.")
-
-    def log(self):
-        pass
 
     def fit(
         self,
@@ -64,4 +60,7 @@ class Trainer:
         return self.logger.to_pandas()
 
     def test(self):
+        pass
+
+    def validate(self):
         pass

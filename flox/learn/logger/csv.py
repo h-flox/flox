@@ -1,6 +1,6 @@
-from flox.learn.logger.base import BaseLogger
-
 from typing import Any
+
+from flox.learn.logger.base import BaseLogger
 
 
 class CSVLogger(BaseLogger):
