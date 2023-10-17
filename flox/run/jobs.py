@@ -1,17 +1,44 @@
-from __future__ import annotations
-
 # NOTE: These import statements are *just* for type hints. Each 'job' function must be
 #       a PURE function with all there dependencies imported within them.
-from flox.flock import FlockNode
-from flox.learn.nn.model import FloxModule
-from flox.run.update import TaskUpdate
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from pandas import DataFrame
+
+from flox.flock import FlockNode, FlockNodeID, FlockNodeKind
+from flox.flock.states import NodeState
+from flox.nn.model import FloxModule
 from flox.strategies import Strategy
 from flox.typing import StateDict
 from typing import Optional
 from torch.utils.data import Dataset, Subset
 
 
-def local_fitting_job(
+@dataclass
+class JobResult:
+    """A simple dataclass that is returned by jobs executed on Aggregator and Worker nodes in a ``Flock``.
+
+    Aggregators and Worker nodes have to return the same type of object to support hierarchical execution.
+    """
+
+    node_state: NodeState
+    """The state of the ``Flock`` node based on its kind."""
+
+    node_idx: FlockNodeID
+    """The ID of the ``Flock`` node."""
+
+    node_kind: FlockNodeKind
+    """The kind of the ``Flock`` node."""
+
+    state_dict: StateDict
+    """The ``StateDict`` of the PyTorch module (either aggregated or trained locally)."""
+
+    history: DataFrame
+    """The history of results."""
+
+
+def local_training_job(
     node: FlockNode,
     parent: FlockNode,
     strategy: Strategy,
@@ -19,7 +46,7 @@ def local_fitting_job(
     module_state_dict: StateDict,
     dataset: Optional[Dataset | Subset] = None,
     **train_hyper_params,
-):
+) -> JobResult:
     """Perform local training on a worker node.
 
     Args:
@@ -32,11 +59,10 @@ def local_fitting_job(
         **train_hyper_params ():
 
     Returns:
-
+        Local fitting results.
     """
     from flox.flock.states import FloxWorkerState
-    from flox.learn.nn.trainer import Trainer
-    from flox.run.update import TaskUpdate
+    from flox.nn.trainer import Trainer
     from torch.utils.data import DataLoader
 
     global_model = module_cls()
@@ -58,6 +84,7 @@ def local_fitting_job(
     history = trainer.fit(
         local_model,
         train_loader,
+        # TODO: Include `trainer_params` as an argument to this so users can easily customize Trainer.
         num_epochs=train_hyper_params.get("num_epochs", 1),
         node_state=node_state,
         strategy=strategy,
@@ -68,40 +95,37 @@ def local_fitting_job(
     history["parent/idx"] = parent.idx
     history["parent/kind"] = parent.kind.to_str()
 
-    return TaskUpdate(
-        node_state, node.idx, node.kind, local_model.state_dict(), history
-    )
+    return JobResult(node_state, node.idx, node.kind, local_model.state_dict(), history)
 
 
 def aggregation_job(
-    node: FlockNode, strategy: Strategy, updates: list[TaskUpdate]
-) -> TaskUpdate:
+    node: FlockNode, strategy: Strategy, results: list[JobResult]
+) -> JobResult:
     """Aggregate the state dicts from each of the results.
 
     Args:
         node (FlockNode): The aggregator node.
         strategy (Strategy): ...
-        updates (list[TaskUpdate]): Results from children of ``node``.
+        results (list[JobResult]): Results from children of ``node``.
 
     Returns:
-        dict[str, Any]: Aggregation results.
+        Aggregation results.
     """
     import pandas as pd
 
     from flox.flock.states import FloxAggregatorState
-    from flox.run.update import TaskUpdate
 
     child_states, child_state_dicts = {}, {}
-    for update in updates:
-        idx = update.node_idx
-        child_states[idx] = update.node_state
-        child_state_dicts[idx] = update.state_dict
+    for result in results:
+        idx = result.node_idx
+        child_states[idx] = result.node_state
+        child_state_dicts[idx] = result.state_dict
 
     node_state = FloxAggregatorState()
-    avg_state_dict = strategy.agg_on_param_aggregation(
+    avg_state_dict = strategy.agg_param_aggregation(
         node_state, child_states, child_state_dicts
     )
 
-    # history = extend_dicts(*(update.history for update in updates))
-    history = pd.concat([update.history for update in updates])
-    return TaskUpdate(node_state, node.idx, node.kind, avg_state_dict, history)
+    # history = extend_dicts(*(res.history for res in results))
+    history = pd.concat([res.history for res in results])
+    return JobResult(node_state, node.idx, node.kind, avg_state_dict, history)

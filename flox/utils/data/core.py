@@ -27,6 +27,8 @@ def federated_split(
     workers. Setting this alpha value to be < 1 will result in extreme cases where many workers will have 0 data
     samples.
 
+    Note: Currently, this function only works with labeled datasets.
+
     Args:
         data (Dataset): ...
         workers (Flock): ...
@@ -99,7 +101,7 @@ def fed_barplot(
         ax (Axes): The ``axes`` to draw onto, if provided. If one is not provided, a new one is created.
 
     Returns:
-        The ``axes`` object that was drawn onto.
+        The ``Axes`` object that was drawn onto.
     """
     label_counts_per_worker = {
         label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)

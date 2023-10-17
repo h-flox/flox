@@ -28,6 +28,9 @@ In a nutshell, a lot. Federated Learning is a complex process with tasks being d
 ### Local Training
 ...
 
+## How Strategies are Run
+
+
 
 [^fedavg]: McMahan, Brendan, et al. "Communication-efficient learning of deep networks from decentralized data." Artificial intelligence and statistics. PMLR, 2017. [(Link)](http://proceedings.mlr.press/v54/mcmahan17a/mcmahan17a.pdf)
 [^fedprox]: Li, Tian, et al. "Federated optimization in heterogeneous networks." Proceedings of Machine learning and systems 2 (2020): 429-450. [(Link)](https://proceedings.mlsys.org/paper_files/paper/2020/file/1f5fe83998a09396ebe6477d9475ba0c-Paper.pdf)

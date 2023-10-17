@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from concurrent.futures import Future
 
 from flox.flock import FlockNode
@@ -12,8 +12,10 @@ class FloxExecutor(ABC):
     def __init__(self):
         pass
 
+    @abstractmethod
     def submit(self, fn, node: FlockNode, /, *args, **kwargs) -> Future:
         raise NotImplementedError()
 
+    @abstractmethod
     def collect(self):
-        pass
+        raise NotImplementedError()

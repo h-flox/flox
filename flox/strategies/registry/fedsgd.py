@@ -5,8 +5,8 @@ from typing import Any
 from flox.flock import Flock, FlockNode, FlockNodeID
 from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
 from flox.strategies.base import Loss, Strategy
-from flox.strategies.building_blocks.averaging import average_state_dicts
-from flox.strategies.building_blocks.worker_selection import random_worker_selection
+from flox.strategies.commons.averaging import average_state_dicts
+from flox.strategies.commons.worker_selection import random_worker_selection
 from flox.typing import StateDict
 from flox.flock.states import FloxWorkerState
 
@@ -45,7 +45,7 @@ class FedSGD(Strategy):
         self.always_include_child_aggregators = always_include_child_aggregators
         self.seed = seed
 
-    def agg_on_worker_selection(
+    def agg_worker_selection(
         self, state: FloxAggregatorState, children: list[FlockNode], **kwargs
     ) -> list[FlockNode]:
         """Performs a simple average of the model weights returned by the child nodes.
@@ -76,7 +76,7 @@ class FedSGD(Strategy):
             seed=self.seed,  # TODO: Change this because it will always do the same thing as is.
         )
 
-    def agg_on_param_aggregation(
+    def agg_param_aggregation(
         self,
         state: FloxAggregatorState,
         children_states: dict[FlockNodeID, NodeState],

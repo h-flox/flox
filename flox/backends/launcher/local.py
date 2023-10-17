@@ -1,7 +1,7 @@
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, Future
 
 from flox.flock import FlockNode
-from flox.learn.backends.base import FloxExecutor
+from flox.backends.launcher.base import FloxExecutor
 
 
 class LocalExecutor(FloxExecutor):

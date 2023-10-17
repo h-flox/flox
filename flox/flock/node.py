@@ -85,4 +85,4 @@ class FlockNode:
     """The `globus-compute-endpoint` uuid for using Globus Compute"""
 
     proxystore_endpoint: Optional[UUID] = None
-    """The `proxystore-endpoint` uuid for using Globus Compute"""
+    """The `transfer-endpoint` uuid for using Globus Compute"""

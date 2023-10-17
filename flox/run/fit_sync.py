@@ -10,11 +10,10 @@ from typing import Optional
 
 from flox.flock import Flock, FlockNode, FlockNodeKind
 from flox.flock.states import FloxAggregatorState
-from flox.learn.backends.base import FloxExecutor
-from flox.learn.backends.globus import GlobusComputeExecutor
-from flox.learn.backends.local import LocalExecutor
-from flox.run.update import TaskUpdate
-from flox.run.jobs import local_fitting_job, aggregation_job
+from flox.backends.launcher.base import FloxExecutor
+from flox.backends.launcher import GlobusComputeExecutor
+from flox.backends.launcher import LocalExecutor
+from flox.run.jobs import local_training_job, aggregation_job, JobResult
 from flox.run.utils import set_parent_future
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset
@@ -53,10 +52,8 @@ def sync_federated_fit(
     Returns:
         Results from the FL process.
     """
-    if executor == "thread":
-        executor = LocalExecutor("thread", num_workers)
-    elif executor == "process":
-        executor = LocalExecutor("pool", num_workers)
+    if executor == "thread" or executor == "process":
+        executor = LocalExecutor(executor, num_workers)
     elif executor == "globus_compute":
         executor = GlobusComputeExecutor()
 
@@ -83,7 +80,7 @@ def sync_federated_fit(
         )
 
         # Collect results from the aggregated future.
-        round_update: TaskUpdate = rnd_future.result()
+        round_update: JobResult = rnd_future.result()
         round_df = round_update.history  # pd.DataFrame.from_dict(round_update.history)
         round_df["round"] = round_no
         df_list.append(round_df)
@@ -104,7 +101,7 @@ def sync_flock_traverse(
     datasets: FederatedDataset,
     strategy: Strategy,
     parent: Optional[FlockNode] = None,
-) -> Future:
+) -> Future[JobResult]:
     """
     Launches an aggregation task on the provided ``FlockNode`` and the appropriate tasks
     for its child nodes.
@@ -112,11 +109,11 @@ def sync_flock_traverse(
     Returns:
 
     """
-    # Launch the LOCAL FITTING job on the worker node.
+    # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
         hyper_params = {}
         return executor.submit(
-            local_fitting_job,
+            local_training_job,
             node,
             parent=parent,
             strategy=strategy,
@@ -126,12 +123,13 @@ def sync_flock_traverse(
             **hyper_params,
         )
 
-    # Launch the recursive AGGREGATION job on the children nodes.
+    # Otherwise, launch the recursive AGGREGATION job.
     state = FloxAggregatorState()
     children_nodes = list(flock.children(node))
-    strategy.agg_on_worker_selection(state, children_nodes)
+    strategy.agg_worker_selection(state, children_nodes)
     children_futures = []
 
+    # Launch the appropriate jobs on the children nodes.
     for child in children_nodes:
         future = sync_flock_traverse(
             executor,
@@ -141,7 +139,7 @@ def sync_flock_traverse(
             datasets=datasets,
             strategy=strategy,
             node=child,
-            parent=node,  # Note: Set the parent to this call's `node`.
+            parent=node,
         )
         children_futures.append(future)
 
@@ -171,20 +169,20 @@ def aggregation_callback(
     child_future_to_resolve: Future,
 ) -> None:
     """
+    Callback that is used to set up when the children futures are completed before aggregation.
 
     Args:
         executor (FloxExecutor):
         children_futures (list[Future]):
         strategy (Strategy):
         node (FlockNode):
-        node (FlockNode):
         parent_future (Future):
         child_future_to_resolve (Future):
     """
     if all([future.done() for future in children_futures]):
-        child_updates = [future.result() for future in children_futures]
+        children_results = [future.result() for future in children_futures]
         future = executor.submit(
-            aggregation_job, node, strategy=strategy, updates=child_updates
+            aggregation_job, node, strategy=strategy, results=children_results
         )
         aggregation_done_callback = functools.partial(set_parent_future, parent_future)
         future.add_done_callback(aggregation_done_callback)

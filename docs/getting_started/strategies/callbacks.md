@@ -19,16 +19,16 @@ class MyStrategy(Strategy):
     def wrk_on_after_train_step(self, loss) -> 'loss':
         pass
 
-    def agg_on_worker_selection(self):
+    def agg_worker_selection(self):
         pass
 
-    def agg_on_param_aggregation(self, state_dicts, **kwargs):
+    def agg_param_aggregation(self, state_dicts, **kwargs):
         pass
 
-    def agg_on_before_submit_params(self):
+    def agg_before_share_params(self):
         pass
 
-    def agg_on_after_collect_params(self) -> 'state_dict':
+    def agg_after_collect_params(self) -> 'state_dict':
         pass
 
     def wrk_on_before_submit_params(self) -> 'state_dict':

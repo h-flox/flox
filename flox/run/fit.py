@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import torch
 
 from flox.flock import Flock
-from flox.run.synchronous import sync_federated_fit
-from flox.learn.types import Kind, Where
+from flox.run.fit_sync import sync_federated_fit
+from flox.nn.types import Kind, Where
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset
 
@@ -12,7 +14,7 @@ def federated_fit(
     module_cls: type[torch.nn.Module],
     datasets: FederatedDataset,
     num_global_rounds: int,
-    strategy: Strategy,
+    strategy: Strategy | str,
     kind: Kind = "sync",
     where: Where = "local",
 ):

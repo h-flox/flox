@@ -7,8 +7,8 @@ import pandas as pd
 import torch
 
 from flox.flock import Flock
-from flox.learn import federated_fit
-from flox.learn.nn import FloxModule
+from flox.run import federated_fit
+from flox.nn import FloxModule
 from flox.strategies import FedProx
 from flox.utils.data import federated_split
 from pathlib import Path
@@ -42,22 +42,6 @@ class MyModule(FloxModule):
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         return torch.optim.SGD(self.parameters(), lr=self.lr)
-
-
-class SmallModule(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.flatten = nn.Flatten()
-        self.linear_stack = nn.Sequential(
-            nn.Linear(28 * 28, 128),
-            nn.ReLU(),
-            nn.Linear(128, 10),
-        )
-
-    def forward(self, x):
-        x = self.flatten(x)
-        logits = self.linear_stack(x)
-        return logits
 
 
 def main():

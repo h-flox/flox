@@ -10,15 +10,15 @@ nav:
       - index.md
       - home/federated_learning.md
       - home/globus_compute.md
-      - home/proxystore.md
+      - home/transfer.md
   - Getting Started:
       - getting_started/index.md
       - getting_started/flock.md
       - Strategies:
           - getting_started/strategies/index.md
+          - getting_started/strategies/what.md
           - getting_started/strategies/callbacks.md
           - getting_started/strategies/custom.md
-      - getting_started/nn.md
   - API Reference: reference/
   - Publications:
       - publications/index.md
@@ -90,6 +90,7 @@ plugins:
             show_signature_annotations: yes
             show_submodules: False
   #            summary: true
+  - mermaid2
   - search
   - section-index
 
@@ -110,7 +111,12 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
   - pymdownx.mark
   - footnotes
   - attr_list

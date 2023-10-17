@@ -10,7 +10,8 @@ keywords = ["federated learning", "serverless", "machine learning"]
 
 authors = [
     { name = "Nathaniel Hudson", email = "hudsonn@uchicago.edu" },
-    { name = "Yadu Babuji", email = "yadunand@uchicago.edu" }
+    { name = "Yadu Babuji", email = "yadunand@uchicago.edu" },
+    { name = "Valerie Hayot-Sasson", email = "valeriehayot@gmail.com" }
 ]
 
 maintainers = [

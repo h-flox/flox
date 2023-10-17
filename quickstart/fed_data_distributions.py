@@ -21,7 +21,7 @@ if __name__ == "__main__":
         transform=ToTensor(),
     )
 
-    alphas = [0.1, 1, 10, 1_000]
+    alphas = [0.01, 0.1, 1, 10, 1_000]
     # alphas = [1]
     fig, axes = plt.subplots(nrows=len(alphas), ncols=len(alphas))
     for i, samples_alpha in enumerate(alphas):

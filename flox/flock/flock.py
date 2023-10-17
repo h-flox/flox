@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import functools
 import json
+import matplotlib as mpl
 import networkx as nx
 import yaml
 
 
+from matplotlib.axes import Axes
 from pathlib import Path
 from typing import Any, Generator, Optional
 from uuid import UUID
@@ -70,23 +72,23 @@ class Flock:
         self.node_counter += 1
         return FlockNodeID(idx)
 
-    def add_edge(self, idx1: FlockNodeID, idx2: FlockNodeID, **attr) -> None:
+    def add_edge(self, u: FlockNodeID, v: FlockNodeID, **attrs) -> None:
         """
 
         Args:
-            idx1 (FlockNodeID):
-            idx2 (FlockNodeID):
-            **attr ():
+            u (FlockNodeID):
+            v (FlockNodeID):
+            **attrs ():
 
         Throws:
             ValueError - Cannot add edges between nodes that do not already exist in the ``Flock`` instance.
         """
-        if any([idx1 not in self.topo.nodes, idx2 not in self.topo.nodes]):
+        if any([u not in self.topo.nodes, v not in self.topo.nodes]):
             raise ValueError(
                 "`Flock` does not support adding edges between nodes that do not already exist. "
                 "Try adding each node first."
             )
-        self.topo.add_edge(idx1, idx2, **attr)
+        self.topo.add_edge(u, v, **attrs)
 
     def draw(
         self,
@@ -94,14 +96,39 @@ class Flock:
         with_labels: bool = True,
         label_color: str = "white",
         prog: str = "dot",
-        node_kind_attrs: Optional[dict[FlockNodeKind, str]] = None,
-        frameon: bool = False,
-    ) -> None:
+        node_kind_attrs: Optional[dict[FlockNodeKind, dict[str, Any]]] = None,
+        show_axis_border: bool = False,
+        ax: Optional[Axes] = None,
+    ) -> Axes:
+        """
+        Draws the flock using Matplotlib. The nodes are organized as a tree with the proper hierarchy based on depth
+        from the Leader node (root).
+
+        Args:
+            color_by_kind (bool): Color nodes by kind, if True.
+            with_labels (bool): Display labels of nodes, if True.
+            label_color (str): Color of labels.
+            prog (str): How the topology is organized. Leave alone for the default behavior of displaying it as a tree.
+                This is passed into the `prog` argument for ``networkx.nx_agraph.graphviz_layout()``.
+            node_kind_attrs (): Determines how node attributes should be plotted. By default, nodes will be colored
+                and marked by kind.
+            show_axis_border (bool): Show the border along the axis if True; defaults to False.
+            ax (Optional[Axes]): Axes object to draw onto. If none is provided, then one will be created.
+
+        Returns:
+            Axes object that was drawn onto.
+        """
+        if ax is None:
+            fig, ax = mpl.pyplot.subplots()
+
+        if not show_axis_border:
+            ax.axis("off")
+
         pos = nx.nx_agraph.graphviz_layout(self.topo, prog=prog)
 
         if not color_by_kind:
-            nx.draw(self.topo, pos, with_labels=with_labels)
-            return
+            nx.draw(self.topo, pos, with_labels=with_labels, ax=ax)
+            return ax
 
         leader = [self.leader.idx]
         aggregators = list(aggr.idx for aggr in self.aggregators)
@@ -125,11 +152,14 @@ class Flock:
                 node_shape=node_kind_attrs[kind]["shape"],
                 node_size=node_kind_attrs[kind]["size"],
                 label=kind.to_str(),
+                ax=ax,
             )
 
         nx.draw_networkx_edges(self.topo, pos)
         if with_labels:
-            nx.draw_networkx_labels(self.topo, pos, font_color=label_color)
+            nx.draw_networkx_labels(self.topo, pos, font_color=label_color, ax=ax)
+
+        return ax
 
     def validate_topo(self) -> bool:
         # STEP 1: Confirm that there only exists ONE leader in the Flock.
@@ -175,13 +205,13 @@ class Flock:
 
     @classmethod
     @property
-    def required_attrs(cls) -> list[str]:
-        return [
+    def required_attrs(cls) -> set[str]:
+        return {
             "kind",
             "globus_compute_endpoint",
             "proxystore_endpoint",
             "children",
-        ]
+        }
 
     @staticmethod
     def from_dict(
@@ -219,7 +249,6 @@ class Flock:
 
         return Flock(topo=topo, _src=_src)
 
-    # TODO: Figure out how to address the issue of JSON requiring string keys for `from_json()`.
     @staticmethod
     def from_json(path: Path | str) -> "Flock":
         """Imports a .json file as a Flock.
@@ -233,6 +262,7 @@ class Flock:
         Returns:
             An instance of a Flock.
         """
+        # TODO: Figure out how to address the issue of JSON requiring string keys for `from_json()`.
         with open(path, "r") as f:
             content = json.load(f)
         return Flock.from_dict(content, _src=path)
@@ -337,3 +367,6 @@ class Flock:
 
     def __repr__(self):
         return f"Flock(`{self._src}`)"
+
+    def __getitem__(self, item: FlockNodeID):
+        return self.topo.nodes[item]
