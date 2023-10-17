@@ -1,24 +1,27 @@
-import matplotlib.pyplot as plt
+import sys
+
+sys.path.append("..")
+
 import os
 import pandas as pd
+import torch
 
 from flox.flock import Flock
-from flox.learn import federated_fit
-from flox.strategies import FedSGD, FedAvg, FedProx
-from flox.utils.data.beta import randomly_federate_dataset
+from flox.run import federated_fit
+from flox.nn import FloxModule
+from flox.strategies import FedProx
 from flox.utils.data import federated_split
 from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
 
-from flox.utils.data.core import fed_barplot
 
-
-class MyModule(nn.Module):
-    def __init__(self):
+class MyModule(FloxModule):
+    def __init__(self, lr: float = 0.01):
         super().__init__()
-        self.flatten = nn.Flatten()
+        self.lr = lr
+        self.flatten = torch.nn.Flatten()
         self.linear_stack = nn.Sequential(
             nn.Linear(28 * 28, 512),
             nn.ReLU(),
@@ -29,12 +32,21 @@ class MyModule(nn.Module):
 
     def forward(self, x):
         x = self.flatten(x)
-        logits = self.linear_stack(x)
-        return logits
+        return self.linear_stack(x)
+
+    def training_step(self, batch, batch_idx):
+        inputs, targets = batch
+        preds = self(inputs)
+        loss = torch.nn.functional.cross_entropy(preds, targets)
+        return loss
+
+    def configure_optimizers(self) -> torch.optim.Optimizer:
+        return torch.optim.SGD(self.parameters(), lr=self.lr)
 
 
 def main():
-    flock = Flock.from_yaml("../examples/flocks/2-tier.yaml")
+    flock = Flock.from_yaml("../examples/flocks/complex.yaml")
+    # flock = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
@@ -58,13 +70,13 @@ def main():
             fed_data,
             5,
             strategy=strategy_cls(),
-            where="local",
+            where="local",  # "globus_compute",
         )
         df["strategy"] = strategy_label
         df_list.append(df)
 
-    train_history = pd.concat(df_list).reset_index()
-    train_history.to_pickle(Path("out/demo_history.pkl"))
+    train_history = pd.concat(df_list).reset_index(drop=True)
+    train_history.to_feather(Path("out/demo_history.feather"))
     print(">>> Finished!")
 
 

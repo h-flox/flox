@@ -1,21 +1,24 @@
 site_name: FLoX
 #site_url: https://flox.dev/
 
-repo_name: globus-labs/FLoX
-repo_url: https://github.com/globus-labs/FLoX
+repo_name: nathaniel-hudson/FLoX
+repo_url: https://github.com/nathaniel-hudson/FLoX
 
 
 nav:
-  - Home: index.md
-  - About:
-      - about/index.md
-      - about/federated_learning.md
-      - about/globus_compute.md
-      - about/proxystore.md
-  - Concepts:
-      - concepts/index.md
-      - concepts/flock.md
-      - concepts/strategies.md
+  - Home:
+      - index.md
+      - home/federated_learning.md
+      - home/globus_compute.md
+      - home/transfer.md
+  - Getting Started:
+      - getting_started/index.md
+      - getting_started/flock.md
+      - Strategies:
+          - getting_started/strategies/index.md
+          - getting_started/strategies/what.md
+          - getting_started/strategies/callbacks.md
+          - getting_started/strategies/custom.md
   - API Reference: reference/
   - Publications:
       - publications/index.md
@@ -31,26 +34,25 @@ theme:
     - content.code.copy
     - content.code.select
     - navigation.path
-    - navigation.sections
     - navigation.tabs
     - navigation.tabs.sticky
-    #    - navigation.top
     - navigation.tracking
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
-    - navigation.sections
   palette:
-    - scheme: default
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       toggle:
-        icon: material/toggle-switch-off-outline
+        icon: material/brightness-7
         name: Switch to dark mode
       primary: deep purple
       accent: orange
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       toggle:
-        icon: material/toggle-switch
+        icon: material/brightness-4
         name: Switch to light mode
       primary: deep purple
       accent: amber
@@ -66,27 +68,29 @@ plugins:
       nav_file: SUMMARY.md
   - mkdocstrings:
       custom_templates: docs/_templates
-      enable_inventory: true
+      enable_inventory: false
       handlers:
         python:
           paths: [ flox ]
           load_external_modules: true
           options:
             show_source: false
-            docstring_section_style: list
+            docstring_section_style: list # spacy
             docstring_style: google
             inherited_members: yes
             line_length: 60
-            members_order: source
+            members_order: source # alphabetical
             merge_init_into_class: yes
             separate_signature: yes
             # Mutually exclusive with separate_signature
-            # show_root_members_full_path: yes
+            show_root_members_full_path: no
             # Causes black error with show_root_full_path
             # show_object_full_path: yes
             show_root_full_path: yes
             show_signature_annotations: yes
-            show_submodules: no
+            show_submodules: False
+  #            summary: true
+  - mermaid2
   - search
   - section-index
 
@@ -107,7 +111,12 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
   - pymdownx.mark
   - footnotes
   - attr_list

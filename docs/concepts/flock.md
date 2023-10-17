@@ -1,2 +1,0 @@
-## What is a Flock?
-Federated Learning is done over a scattered collection of devices that collectively train a machine learning model. In FLoX, we refer to the topology that defines these devices and their connectivity as a ***Flock***, coined after a flock of birds.

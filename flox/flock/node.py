@@ -9,7 +9,7 @@ FlockNodeID = NewType("FlockNodeID", int)
 
 class FlockNodeKind(Enum):
     """
-    The differnet types of nodes that can exist in a FLock topology.
+    The different kinds of nodes that can exist in a Flock topology.
     """
 
     LEADER = auto()  # root
@@ -20,17 +20,18 @@ class FlockNodeKind(Enum):
     def from_str(s: str) -> "FlockNodeKind":
         """
         Converts a string (namely, 'leader', 'aggregator', and 'worker') into their respective item in this Enum.
+
         For convenience, this function is *not* sensitive to capitalization or trailing whitespace (i.e.,
         `FlockNodeKind.from_str('LeaAder  ')` and `FlockNodeKind.from_str('leader')` are both valid and equivalent).
 
         Args:
-            s (str): Text to convert into the respective Enum item.
+            s (str): String to convert into the respective Enum item.
 
         Throws:
             ValueError: Thrown by illegal string values do not match the above description.
 
         Returns:
-            FlockNodeKind
+            FlockNodeKind corresponding to the passed in String.
         """
         s = s.lower().strip()
         matches = {
@@ -40,18 +41,17 @@ class FlockNodeKind(Enum):
         }
         if s in matches:
             return matches[s]
-        else:
-            raise ValueError(
-                f"Illegal `str` value given to `FlockNodeKind.from_str()`. "
-                f"Must be one of the following: {list(matches.keys())}."
-            )
+        raise ValueError(
+            f"Illegal `str` value given to `FlockNodeKind.from_str()`. "
+            f"Must be one of the following: {list(matches.keys())}."
+        )
 
     def to_str(self) -> str:
         """
         Returns the string representation of the Enum item.
 
         Returns:
-            str
+            String corresponding to the FlockNodeKind.
         """
         matches = {
             FlockNodeKind.LEADER: "leader",
@@ -75,7 +75,14 @@ class FlockNode:
             (recommended if you are using Globus Compute); defaults to None.
     """
 
-    idx: FlockNodeID  # Assigned during the Flock construction (i.e., not in .yaml/.json file)
+    idx: FlockNodeID
+    """Assigned during the Flock construction (i.e., not in .yaml/.json file)"""
+
     kind: FlockNodeKind
+    """Which kind of node."""
+
     globus_compute_endpoint: Optional[UUID] = None
+    """The `globus-compute-endpoint` uuid for using Globus Compute"""
+
     proxystore_endpoint: Optional[UUID] = None
+    """The `transfer-endpoint` uuid for using Globus Compute"""

@@ -3,7 +3,20 @@
 ![FLoX Graphic](graphics/flox_fig.png)
 
 ### Getting Started
-FLoX (**F**ederated **L**earning **o**n func**X**) is a simple, highly customizable, and easy-to-deploy framework for launching Federated Learning processes across a decentralized network. Built on top of _Globus Compute_ (formerly known as _funcX_), FLoX is designed to run on anything that can be started as a Globus Compute Endpoint.  
+FLoX is a simple, highly customizable, and easy-to-deploy framework for launching Federated Learning processes across a 
+decentralized network. It is designed to simulate FL workflows while also making it trivially easy to deploy them on 
+real-world devices (e.g., Internet-of-Things and edge devices). Built on top of _Globus Compute_ (formerly known as 
+_funcX_), FLoX is designed to run on anything that can be started as a Globus Compute Endpoint.  
+
+
+### What can FLoX do?
+
+FLoX is supports several state-of-the-art approaches for FL processes, including hierarchical and asynchronous FL. 
+
+|     | 2-tier         | Hierarhchical         |
+| --- |----------------|-----------------------|
+| **Synchronous**| :white_check_mark: | :white_check_mark:    |
+| **Asynchronous** | :white_check_mark:            | :x:                   |
 
 #### Installation
 
@@ -38,3 +51,5 @@ federated_fit(
     log_out="my_results.csv"
 )
 ```
+
+

@@ -1,0 +1,25 @@
+0:
+  kind: leader
+  globus_compute_endpoint: a4cadb2c-68fb-4197-8603-3d04f3b33744
+  proxystore_endpoint: ~
+  children: [ 1, 2 ]
+1: # `gce-1`
+  kind: aggregator
+  globus_compute_endpoint: a4cadb2c-68fb-4197-8603-3d04f3b33744
+  proxystore_endpoint: ~
+  children: [ 3, 4 ]
+2: # `gce-2`
+  kind: worker
+  globus_compute_endpoint: a4cadb2c-68fb-4197-8603-3d04f3b33744
+  proxystore_endpoint: ~
+  children: [ ]
+3: # `gce-3`
+  kind: worker
+  globus_compute_endpoint: a4cadb2c-68fb-4197-8603-3d04f3b33744
+  proxystore_endpoint: ~
+  children: [ ]
+4: # `gce-4`
+  kind: worker
+  globus_compute_endpoint: a4cadb2c-68fb-4197-8603-3d04f3b33744
+  proxystore_endpoint: ~
+  children: [ ]

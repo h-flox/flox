@@ -1,8 +1,6 @@
-from flox.flock import Flock, FlockNode, FlockNodeID
-from flox.flock.states import NodeState, FloxWorkerState
-from flox.strategies.base import Loss, Strategy
-from flox.strategies.building_blocks.averaging import average_state_dicts
-from flox.strategies.building_blocks.worker_selection import random_worker_selection
+from flox.flock import FlockNodeID
+from flox.flock.states import NodeState, FloxAggregatorState
+from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.registry.fedsgd import FedSGD
 from flox.typing import StateDict
 from flox.flock.states import FloxWorkerState
@@ -47,14 +45,16 @@ class FedAvg(FedSGD):
             raise ValueError("`dataset` must be provided")
         state["num_data_samples"] = len(kwargs["dataset"])
 
-    def agg_on_param_aggregation(
+    def agg_param_aggregation(
         self,
-        states: dict[FlockNodeID, NodeState],
-        state_dicts: dict[FlockNodeID, StateDict],
+        state: FloxAggregatorState,
+        children_states: dict[FlockNodeID, NodeState],
+        children_state_dicts: dict[FlockNodeID, StateDict],
         *args,
         **kwargs,
     ):
         weights = {}
-        for node, state in states.items():
-            weights[node] = state["num_data_samples"]
-        return average_state_dicts(state_dicts, weights=weights)
+        for node, child_state in children_states.items():
+            weights[node] = child_state["num_data_samples"]
+        state["num_data_samples"] = sum(weights.values())
+        return average_state_dicts(children_state_dicts, weights=weights)
