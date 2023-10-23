@@ -75,7 +75,7 @@ plugins:
           load_external_modules: true
           options:
             show_source: false
-            docstring_section_style: list # spacy
+            docstring_section_style: spacy # list
             docstring_style: google
             inherited_members: yes
             line_length: 60

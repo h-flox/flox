@@ -5,13 +5,11 @@ from collections import defaultdict
 from matplotlib.axes import Axes
 from scipy import stats
 from torch.utils.data import Dataset, DataLoader, Subset
-from typing import Mapping, NewType, Optional, Union
+from typing import Optional
 
-from flox.flock import FlockNodeID, FlockNode, Flock
-
-FederatedDataset = NewType(
-    "FederatedDataset", Mapping[FlockNodeID, Union[Dataset, Subset]]
-)
+from flox.flock import Flock
+from flox.utils.data.base import FederatedDataset
+from flox.utils.data.subsets import FederatedSubsets
 
 
 def federated_split(
@@ -20,7 +18,7 @@ def federated_split(
     num_labels: int,
     samples_alpha: float = 1.0,
     labels_alpha: float = 1.0,
-) -> FederatedDataset:
+) -> FederatedSubsets:
     """Splits up Datasets across worker nodes in a Flock using Dirichlet distributions for IID and non-IID settings.
 
     It is recommended to use an alpha value of 1.0 for either `samples_alpha` want non-IID number of samples across
@@ -42,7 +40,7 @@ def federated_split(
         >>> data = MNIST()
         >>> fed_data = federated_split(data, flock, num_labels=10, samples_alpha=1., labels_alpha=1.)
         >>> next(iter(fed_data.items()))
-        >>> # (FlockNodeID(1), Subset()) # TODO: Run a real example and paste it here.
+        >>> # (FlockNodeID(1), Subset(...)) # TODO: Run a real example and paste it here.
 
     Returns:
         A federated version of the dataset that is split up statistically based on the arguments alpha arguments.
@@ -82,20 +80,22 @@ def federated_split(
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
-    subsets = {w.idx: Subset(data, indices[w.idx]) for w in flock.workers}
-    return subsets
+    mapping = {w.idx: Subset(data, indices[w.idx]) for w in flock.workers}
+    return FederatedSubsets(mapping)
 
 
 def fed_barplot(
-    fed_data: FederatedDataset,
+    fed_data: FederatedSubsets,
     num_labels: int,
     width: float = 0.5,
     ax: Optional[Axes] = None,
 ) -> Axes:
-    """Plots the label/sample distributions across worker nodes of a ``FederatedDataset`` as a stacked barplot.
+    """Plots the label/sample distributions across worker nodes of a ``FederatedSubsets`` as a stacked barplot.
+
+    NOTE: This
 
     Args:
-        fed_data (FederatedDataset): The federated data cross a ``Flock``.
+        fed_data (FederatedSubsets): The federated data cross a ``Flock``.
         num_labels (int): The total number of unique labels in ``fed_data``.
         width (float): The width of the bars.
         ax (Axes): The ``axes`` to draw onto, if provided. If one is not provided, a new one is created.
@@ -103,11 +103,23 @@ def fed_barplot(
     Returns:
         The ``Axes`` object that was drawn onto.
     """
+    if all(
+        [
+            isinstance(fed_data, FederatedDataset),
+            not isinstance(fed_data, FederatedSubsets),
+        ]
+    ):
+        raise ValueError(
+            f"This function (`fed_barplot`) does not support data of type "
+            f"``{type(fed_data).__name__}``. `fed_data` argument MUST be of "
+            f"type ``FederatedSubsets``."
+        )
+
     label_counts_per_worker = {
         label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
     }
 
-    for idx, (worker, subset) in enumerate(fed_data.items()):
+    for idx, (worker, subset) in enumerate(fed_data.mapping.items()):
         loader = DataLoader(subset, batch_size=1)
         for batch in loader:
             _, y = batch
@@ -117,8 +129,8 @@ def fed_barplot(
     if ax is None:
         fig, ax = matplotlib.pyplot.subplots()
 
-    bottom = np.zeros(len(fed_data))
-    workers = list(range(len(fed_data)))
+    bottom = np.zeros(len(fed_data.mapping))
+    workers = list(range(len(fed_data.mapping)))
     for label, worker_count in label_counts_per_worker.items():
         ax.bar(workers, worker_count, width, label=label, bottom=bottom)
         bottom += worker_count

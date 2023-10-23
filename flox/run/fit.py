@@ -8,13 +8,15 @@ from flox.nn.types import Kind, Where
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset
 
+from typing import Optional
+
 
 def federated_fit(
     flock: Flock,
     module_cls: type[torch.nn.Module],
     datasets: FederatedDataset,
     num_global_rounds: int,
-    strategy: Strategy | str,
+    strategy: Optional[Strategy | str] = None,
     kind: Kind = "sync",
     where: Where = "local",
 ):
@@ -32,6 +34,7 @@ def federated_fit(
     Returns:
 
     """
+    strategy = "fedsgd" if strategy is None else strategy
     if kind == "sync":
         executor = "thread" if where == "local" else "globus_compute"
         return sync_federated_fit(
