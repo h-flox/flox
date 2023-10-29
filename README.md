@@ -1,4 +1,4 @@
-# FLoX: Federated Learning On funcX
+# FLoX: FaaS-driven Federated Learning on Globus Compute
 ...
 
 ## Quickstart
@@ -17,10 +17,11 @@ python3 -m pytest
 ```
 
 ## Contributing to FLoX
-...
+For now, we are wanting to keep the FLoX dev team small as we rapidly prototype implementation details. However, 
+if you have ideas or feature requests, please submit an issue so we can start a conversation.
 
 ## Documentation
-...
+Documentation is available. We are actively writing more and more documentation as develop FLoX.  
 
 ## Citing FLoX
 If you use FLoX or any of this code in your work, please cite the following paper.

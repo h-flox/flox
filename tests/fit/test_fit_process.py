@@ -10,7 +10,7 @@ from torchvision.transforms import ToTensor
 from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.run import federated_fit
-from flox.utils.data import federated_split
+from flox.data.utils import federated_split
 
 
 class MyModule(FloxModule):

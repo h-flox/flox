@@ -1,15 +1,14 @@
 import matplotlib
 import numpy as np
 
-from collections import defaultdict
 from matplotlib.axes import Axes
+from collections import defaultdict
 from scipy import stats
 from torch.utils.data import Dataset, DataLoader, Subset
 from typing import Optional
 
 from flox.flock import Flock
-from flox.utils.data.base import FederatedDataset
-from flox.utils.data.subsets import FederatedSubsets
+from flox.data.subsets import FederatedSubsets
 
 
 def federated_split(
@@ -25,7 +24,7 @@ def federated_split(
     workers. Setting this alpha value to be < 1 will result in extreme cases where many workers will have 0 data
     samples.
 
-    Note: Currently, this function only works with labeled datasets.
+    Note: Currently, this function only works with labeled data.
 
     Args:
         data (Dataset): ...
@@ -92,8 +91,6 @@ def fed_barplot(
 ) -> Axes:
     """Plots the label/sample distributions across worker nodes of a ``FederatedSubsets`` as a stacked barplot.
 
-    NOTE: This
-
     Args:
         fed_data (FederatedSubsets): The federated data cross a ``Flock``.
         num_labels (int): The total number of unique labels in ``fed_data``.
@@ -103,12 +100,7 @@ def fed_barplot(
     Returns:
         The ``Axes`` object that was drawn onto.
     """
-    if all(
-        [
-            isinstance(fed_data, FederatedDataset),
-            not isinstance(fed_data, FederatedSubsets),
-        ]
-    ):
+    if not isinstance(fed_data, FederatedSubsets):
         raise ValueError(
             f"This function (`fed_barplot`) does not support data of type "
             f"``{type(fed_data).__name__}``. `fed_data` argument MUST be of "

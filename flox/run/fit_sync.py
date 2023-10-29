@@ -16,14 +16,14 @@ from flox.backends.launcher import LocalExecutor
 from flox.run.jobs import local_training_job, aggregation_job, JobResult
 from flox.run.utils import set_parent_future
 from flox.strategies import Strategy
-from flox.utils.data import FederatedDataset
+from flox.data import FloxDataset
 from flox.typing import StateDict
 
 
 def sync_federated_fit(
     flock: Flock,
     module_cls: type[torch.nn.Module],
-    datasets: FederatedDataset,
+    datasets: FloxDataset,
     num_global_rounds: int,
     strategy: Strategy | str = "fedsgd",
     executor: str = "thread",
@@ -37,7 +37,7 @@ def sync_federated_fit(
     Args:
         flock (Flock): The topology of nodes for the FL process.
         module_cls (type[torch.nn.Module]): The class for the PyTorch Module to train.
-        datasets (FederatedDataset): Datasets for workers to train.
+        datasets (FloxDataset): Datasets for workers to train.
         num_global_rounds (int): Total number of global (aggregation) rounds are performed
             during the entire FL process.
         strategy (Strategy | str): The strategy logic to use during the FL process.
@@ -98,7 +98,7 @@ def sync_flock_traverse(
     node: FlockNode,
     module_cls: type[torch.nn.Module],
     module_state_dict: StateDict,
-    datasets: FederatedDataset,
+    datasets: FloxDataset,
     strategy: Strategy,
     parent: Optional[FlockNode] = None,
 ) -> Future[JobResult]:

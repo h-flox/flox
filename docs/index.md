@@ -1,6 +1,8 @@
 # Welcome to FLoX
 
-![FLoX Graphic](graphics/flox_fig.png)
+<center>
+![](graphics/logo.png){: style="height: 250px;"}
+</center>
 
 ### Getting Started
 FLoX is a simple, highly customizable, and easy-to-deploy framework for launching Federated Learning processes across a 
@@ -23,7 +25,7 @@ FLoX is supports several state-of-the-art approaches for FL processes, including
 The package can be found on pypi:
 
 ```bash
-pip install flox
+pip install pyflox
 ```
 
 #### Usage

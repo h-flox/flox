@@ -6,7 +6,7 @@ from flox.flock import Flock
 from flox.run.fit_sync import sync_federated_fit
 from flox.nn.types import Kind, Where
 from flox.strategies import Strategy
-from flox.utils.data import FederatedDataset
+from flox.data import FloxDataset
 
 from typing import Optional
 
@@ -14,7 +14,7 @@ from typing import Optional
 def federated_fit(
     flock: Flock,
     module_cls: type[torch.nn.Module],
-    datasets: FederatedDataset,
+    datasets: FloxDataset,
     num_global_rounds: int,
     strategy: Optional[Strategy | str] = None,
     kind: Kind = "sync",
@@ -25,7 +25,7 @@ def federated_fit(
     Args:
         flock (Flock):
         module_cls (type[torch.nn.Module]):
-        datasets (FederatedDataset):
+        datasets (FloxDataset):
         num_global_rounds (int):
         strategy (Strategy):
         kind (Kind):

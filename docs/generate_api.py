@@ -15,10 +15,7 @@ for path in sorted(Path(project_dir).rglob("**/*.py")):
     doc_path = path.relative_to(project_dir).with_suffix(".md")
     full_doc_path = Path(reference_dir, doc_path)
 
-    print(f"{module_path=}\n{doc_path=}\n{full_doc_path=}\n")
-
     parts = tuple(module_path.parts)
-
     if parts[-1] == "__init__":
         parts = parts[:-1]
         doc_path = doc_path.with_name("index.md")

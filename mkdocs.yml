@@ -10,7 +10,7 @@ nav:
       - index.md
       - home/federated_learning.md
       - home/globus_compute.md
-      - home/transfer.md
+      - home/proxystore.md
   - Getting Started:
       - getting_started/index.md
       - getting_started/flock.md
@@ -47,20 +47,24 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      primary: deep purple
-      accent: orange
+      primary: black
+      accent: blue
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      primary: deep purple
-      accent: amber
+      primary: black
+      accent: light blue
 
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/mkdocstrings.css
 
 plugins:
+  - mermaid2
+  - search
+  - section-index
   - gen-files:
       scripts:
         - docs/generate_api.py
@@ -68,13 +72,15 @@ plugins:
       nav_file: SUMMARY.md
   - mkdocstrings:
       custom_templates: docs/_templates
-      enable_inventory: false
+      enable_inventory: true
       handlers:
         python:
+          setup_commands:
+            - import pytkdocs_tweaks
+            - pytkdocs_tweaks.main()
           paths: [ flox ]
           load_external_modules: true
           options:
-            show_source: false
             docstring_section_style: spacy # list
             docstring_style: google
             inherited_members: yes
@@ -82,17 +88,12 @@ plugins:
             members_order: source # alphabetical
             merge_init_into_class: yes
             separate_signature: yes
-            # Mutually exclusive with separate_signature
-            show_root_members_full_path: no
-            # Causes black error with show_root_full_path
-            # show_object_full_path: yes
             show_root_full_path: yes
             show_signature_annotations: yes
-            show_submodules: False
-  #            summary: true
-  - mermaid2
-  - search
-  - section-index
+            show_source: false
+            show_submodules: no
+            # summary: true
+
 
 markdown_extensions:
   - pymdownx.emoji:
