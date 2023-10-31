@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import torch
+from pandas import DataFrame
 
 from flox.flock import Flock
+from flox.nn import FloxModule
 from flox.run.fit_sync import sync_federated_fit
 from flox.nn.types import Kind, Where
 from flox.strategies import Strategy
@@ -19,7 +21,7 @@ def federated_fit(
     strategy: Optional[Strategy | str] = None,
     kind: Kind = "sync",
     where: Where = "local",
-):
+) -> tuple[FloxModule, DataFrame]:
     """
 
     Args:

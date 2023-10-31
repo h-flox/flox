@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 
 from concurrent.futures import Executor, Future
+
 from tqdm import tqdm
 from typing import Optional
 
@@ -13,6 +14,7 @@ from flox.flock.states import FloxAggregatorState
 from flox.backends.launcher.base import FloxExecutor
 from flox.backends.launcher import GlobusComputeExecutor
 from flox.backends.launcher import LocalExecutor
+from flox.nn import FloxModule
 from flox.run.jobs import local_training_job, aggregation_job, JobResult
 from flox.run.utils import set_parent_future
 from flox.strategies import Strategy
@@ -22,13 +24,13 @@ from flox.typing import StateDict
 
 def sync_federated_fit(
     flock: Flock,
-    module_cls: type[torch.nn.Module],
+    module_cls: type[FloxModule],
     datasets: FloxDataset,
     num_global_rounds: int,
     strategy: Strategy | str = "fedsgd",
     executor: str = "thread",
     num_workers: int = 1,
-) -> pd.DataFrame:
+) -> tuple[FloxModule, pd.DataFrame]:
     """Synchronous federated learning implementation.
 
     This implementation traverses the provide Flock network using DFS. During traversal,
@@ -36,7 +38,7 @@ def sync_federated_fit(
 
     Args:
         flock (Flock): The topology of nodes for the FL process.
-        module_cls (type[torch.nn.Module]): The class for the PyTorch Module to train.
+        module_cls (type[FloxModule]): The class for the PyTorch Module to train.
         datasets (FloxDataset): Datasets for workers to train.
         num_global_rounds (int): Total number of global (aggregation) rounds are performed
             during the entire FL process.
@@ -89,7 +91,7 @@ def sync_federated_fit(
         global_module.load_state_dict(round_update.state_dict)
         prog_bar.update()
 
-    return pd.concat(df_list)
+    return global_module, pd.concat(df_list)
 
 
 def sync_flock_traverse(

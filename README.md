@@ -29,7 +29,7 @@ If you use FLoX or any of this code in your work, please cite the following pape
 
 ```bibtex
 @inproceedings{kotsehub2022flox,
-  title={Flox: Federated learning with faas at the edge},
+  title={Flox: Federated learning with FaaS at the edge},
   author={Kotsehub, Nikita and Baughman, Matt and Chard, Ryan and Hudson, Nathaniel and Patros, Panos and Rana, Omer and Foster, Ian and Chard, Kyle},
   booktitle={2022 IEEE 18th International Conference on e-Science (e-Science)},
   pages={11--20},

@@ -2,10 +2,10 @@ import numpy as np
 import os
 
 from pathlib import Path
+from torch.utils.data import Dataset
 from typing import Optional
 
 from flox.flock import Flock
-from flox.data import FederatedDataDir
 
 TEST_DIR = ".tmp_test_dirs"
 
@@ -45,8 +45,15 @@ def test_load():
     flock = Flock.from_yaml("examples/flocks/2-tier.yaml")
     setup(flock)
 
-    class TestDataDirs(FederatedDataDir):
-        def load(self, idx):
+    class DataInDirs(Dataset):
+        def __init__(self):
+            super().__init__()
+            pass
+
+        def __getitem__(self, idx: int) -> tuple:
+            pass
+
+        def __len__(self) -> int:
             pass
 
     os.system("tree")
