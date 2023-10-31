@@ -67,11 +67,11 @@ plugins:
   - section-index
   - gen-files:
       scripts:
-        - docs/generate_api.py
+        - docs-mkdocs/generate_api.py
   - literate-nav:
       nav_file: SUMMARY.md
   - mkdocstrings:
-      custom_templates: docs/_templates
+      custom_templates: docs-mkdocs/_templates
       enable_inventory: true
       handlers:
         python:
