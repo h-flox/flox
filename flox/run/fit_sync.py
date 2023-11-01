@@ -6,19 +6,25 @@ import torch
 
 from concurrent.futures import Executor, Future
 from tqdm import tqdm
+from typing import Literal
 from typing import Optional
+from typing import TypeAlias
 
 from flox.flock import Flock, FlockNode, FlockNodeKind
 from flox.flock.states import FloxAggregatorState
 from flox.backends.launcher.base import FloxExecutor
 from flox.backends.launcher import GlobusComputeExecutor
 from flox.backends.launcher import LocalExecutor
-from flox.run.jobs import local_training_job, aggregation_job, JobResult
+from flox.backends.transfer.base import BaseTransfer
+from flox.backends.transfer.proxystore import ProxyStoreTransfer
+from flox.run.jobs import local_training_job, aggregation_job
 from flox.run.utils import set_parent_future
 from flox.strategies import Strategy
 from flox.utils.data import FederatedDataset
 from flox.typing import StateDict
 
+Where: TypeAlias = Literal["local", "globus_compute"]
+Transfer: TypeAlias = BaseTransfer | ProxyStoreTransfer
 
 def sync_federated_fit(
     flock: Flock,
@@ -28,6 +34,7 @@ def sync_federated_fit(
     strategy: Strategy | str = "fedsgd",
     executor: str = "thread",
     num_workers: int = 1,
+    where: Where = "local"
 ) -> pd.DataFrame:
     """Synchronous federated learning implementation.
 
@@ -52,10 +59,17 @@ def sync_federated_fit(
     Returns:
         Results from the FL process.
     """
+    transfer: Transfer
+    
     if executor == "thread" or executor == "process":
         executor = LocalExecutor(executor, num_workers)
     elif executor == "globus_compute":
         executor = GlobusComputeExecutor()
+        
+    if where == "local":
+        transfer = BaseTransfer()
+    else:
+        transfer = ProxyStoreTransfer(flock=flock)
 
     # executor = ThreadPoolExecutor(num_workers)
     if isinstance(strategy, str):
@@ -70,6 +84,7 @@ def sync_federated_fit(
         # leader of the Flock.
         rnd_future = sync_flock_traverse(
             executor,
+            transfer=transfer,
             flock=flock,
             node=flock.leader,
             module_cls=module_cls,
@@ -80,7 +95,8 @@ def sync_federated_fit(
         )
 
         # Collect results from the aggregated future.
-        round_update: JobResult = rnd_future.result()
+        # TODO: FIX: removed type definition JobResult for a test
+        round_update = rnd_future.result()
         round_df = round_update.history  # pd.DataFrame.from_dict(round_update.history)
         round_df["round"] = round_no
         df_list.append(round_df)
@@ -94,6 +110,7 @@ def sync_federated_fit(
 
 def sync_flock_traverse(
     executor: FloxExecutor,
+    transfer: Transfer,
     flock: Flock,
     node: FlockNode,
     module_cls: type[torch.nn.Module],
@@ -101,7 +118,7 @@ def sync_flock_traverse(
     datasets: FederatedDataset,
     strategy: Strategy,
     parent: Optional[FlockNode] = None,
-) -> Future[JobResult]:
+) -> Future: #TODO: Fix
     """
     Launches an aggregation task on the provided ``FlockNode`` and the appropriate tasks
     for its child nodes.
@@ -109,19 +126,29 @@ def sync_flock_traverse(
     Returns:
 
     """
+
     # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
+        if isinstance(transfer, ProxyStoreTransfer):
+            dataset = transfer.store.proxy(datasets[node.idx])
+        else:
+            dataset = datasets[node.idx]
+
         hyper_params = {}
         return executor.submit(
             local_training_job,
             node,
+            transfer=transfer,
             parent=parent,
             strategy=strategy,
             module_cls=module_cls,
             module_state_dict=module_state_dict,
-            dataset=datasets[node.idx],
+            dataset=dataset,
             **hyper_params,
         )
+
+    if isinstance(transfer, ProxyStoreTransfer):
+        datasets = transfer.store.proxy(datasets)
 
     # Otherwise, launch the recursive AGGREGATION job.
     state = FloxAggregatorState()
@@ -133,6 +160,7 @@ def sync_flock_traverse(
     for child in children_nodes:
         future = sync_flock_traverse(
             executor,
+            transfer=transfer,
             flock=flock,
             module_cls=module_cls,
             module_state_dict=module_state_dict,
@@ -152,6 +180,7 @@ def sync_flock_traverse(
         strategy,
         node,
         future,
+        transfer=transfer,
     )
 
     for child_fut in children_futures:
@@ -167,6 +196,7 @@ def aggregation_callback(
     node: FlockNode,
     parent_future: Future,
     child_future_to_resolve: Future,
+    transfer: Transfer,
 ) -> None:
     """
     Callback that is used to set up when the children futures are completed before aggregation.
@@ -182,7 +212,7 @@ def aggregation_callback(
     if all([future.done() for future in children_futures]):
         children_results = [future.result() for future in children_futures]
         future = executor.submit(
-            aggregation_job, node, strategy=strategy, results=children_results
+            aggregation_job, node, transfer=transfer, strategy=strategy, results=children_results
         )
         aggregation_done_callback = functools.partial(set_parent_future, parent_future)
         future.add_done_callback(aggregation_done_callback)

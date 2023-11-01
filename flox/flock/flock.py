@@ -313,7 +313,11 @@ class Flock:
         key = "proxystore_endpoint"
         for idx, data in self.topo.nodes(data=True):
             value = data[key]
-            if any([value is None, isinstance(value, UUID) is False]):
+
+            try:
+                if any([value is None, UUID(value) is False]):
+                    return False
+            except ValueError:
                 return False
         return True
 
