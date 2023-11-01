@@ -20,7 +20,7 @@ class ProxyStoreTransfer(BaseTransfer):
             endpoints=[node.proxystore_endpoint for node in flock.nodes()]
         )
         store = Store(name=name, connector=self.connector)
-        self.config = self.store.config()
+        self.config = store.config()
 
     def report(self, node_state, node_idx, node_kind, state_dict, history) -> proxystore.proxy.Proxy[JobResult]:
         jr = JobResult(
