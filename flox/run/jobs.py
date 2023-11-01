@@ -2,51 +2,27 @@
 #       a PURE function with all their dependencies imported within them.
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from pandas import DataFrame
-
 from flox.flock import FlockNode, FlockNodeID, FlockNodeKind
-from flox.flock.states import NodeState
 from flox.nn.model import FloxModule
+from flox.reporting import Result
 from flox.strategies import Strategy
 from flox.typing import StateDict
 from typing import Optional
 from torch.utils.data import Dataset, Subset
+from flox.backends.transfer.base import BaseTransfer
 
-
-@dataclass
-class JobResult:
-    """A simple dataclass that is returned by jobs executed on Aggregator and Worker nodes in a ``Flock``.
-
-    Aggregators and Worker nodes have to return the same type of object to support hierarchical execution.
-    """
-
-    node_state: NodeState
-    """The state of the ``Flock`` node based on its kind."""
-
-    node_idx: FlockNodeID
-    """The ID of the ``Flock`` node."""
-
-    node_kind: FlockNodeKind
-    """The kind of the ``Flock`` node."""
-
-    state_dict: StateDict
-    """The ``StateDict`` of the PyTorch module (either aggregated or trained locally)."""
-
-    history: DataFrame
-    """The history of results."""
-
+Transfer: BaseTransfer
 
 def local_training_job(
     node: FlockNode,
+    transfer: Transfer, 
     parent: FlockNode,
     strategy: Strategy,
     module_cls: type[FloxModule],
     module_state_dict: StateDict,
     dataset: Optional[Dataset | Subset] = None,
     **train_hyper_params,
-) -> JobResult:
+) -> Result:
     """Perform local training on a worker node.
 
     Args:
@@ -95,12 +71,12 @@ def local_training_job(
     history["parent/idx"] = parent.idx
     history["parent/kind"] = parent.kind.to_str()
 
-    return JobResult(node_state, node.idx, node.kind, local_model.state_dict(), history)
+    return transfer.report(node_state, node.idx, node.kind, local_model.state_dict(), history)
 
 
 def aggregation_job(
-    node: FlockNode, strategy: Strategy, results: list[JobResult]
-) -> JobResult:
+    node: FlockNode, transfer: Transfer, strategy: Strategy, results: list[Result]
+) -> Result:
     """Aggregate the state dicts from each of the results.
 
     Args:
@@ -127,4 +103,4 @@ def aggregation_job(
 
     # history = extend_dicts(*(res.history for res in results))
     history = pd.concat([res.history for res in results])
-    return JobResult(node_state, node.idx, node.kind, avg_state_dict, history)
+    return transfer.report(node_state, node.idx, node.kind, avg_state_dict, history)
