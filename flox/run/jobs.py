@@ -1,5 +1,5 @@
 # NOTE: These import statements are *just* for type hints. Each 'job' function must be
-#       a PURE function with all there dependencies imported within them.
+#       a PURE function with all their dependencies imported within them.
 from __future__ import annotations
 
 from dataclasses import dataclass

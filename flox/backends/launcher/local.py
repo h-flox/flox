@@ -1,10 +1,10 @@
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, Future
 
 from flox.flock import FlockNode
-from flox.backends.launcher.base import FloxExecutor
+from flox.backends.launcher.base import Launcher
 
 
-class LocalExecutor(FloxExecutor):
+class LocalLauncher(Launcher):
     """
     Class that executes tasks locally.
     """

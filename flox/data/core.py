@@ -20,4 +20,7 @@ class FloxDatasetKind(IntEnum):
 
 
 def flox_compatible_data(obj) -> bool:
-    pass
+    kind = FloxDatasetKind.from_obj(obj)
+    if kind is FloxDatasetKind.INVALID:
+        return False
+    return True

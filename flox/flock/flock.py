@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import json
-import matplotlib as mpl
+import matplotlib.pyplot as plt
 import networkx as nx
 import yaml
 
@@ -119,7 +119,7 @@ class Flock:
             Axes object that was drawn onto.
         """
         if ax is None:
-            fig, ax = mpl.pyplot.subplots()
+            fig, ax = plt.subplots()
 
         if not show_axis_border:
             ax.axis("off")
@@ -217,6 +217,43 @@ class Flock:
     def from_dict(
         content: dict[str, Any], _src: Optional[Path | str] = None
     ) -> "Flock":
+        """
+        Imports a ``dict`` object to create a Flock network.
+
+        Args:
+            content (dict[str, Any]): Dictionary that defines the Flock network.
+            _src (Optional[Path | str]): Identifies the source file used to define
+                the Flock network. This should **not** be used by users. It is used by
+                ``Flock`` class methods that are built on top of this method
+                (e.g., ``Flock.from_yaml()``).
+
+        Examples:
+            >>> topo = {
+            >>>     0: {
+            >>>         'kind': 'leader',
+            >>>         'globus_compute_endpoint': LEADER_GC_UUID,
+            >>>         'proxystore_endpoint': LEADER_PS_UUID,
+            >>>         'children': [1, 2]
+            >>>     },
+            >>>     1: {
+            >>>         'kind': 'worker',
+            >>>         'globus_compute_endpoint': w1_gc_endpoint,
+            >>>         'proxystore_endpoint': w1_ps_endpoint,
+            >>>         'children': []
+            >>>     },
+            >>>     2: {
+            >>>         'kind': 'worker',
+            >>>         'globus_compute_endpoint': w2_gc_endpoint,
+            >>>         'proxystore_endpoint': w2_ps_endpoint,
+            >>>         'children': []
+            >>>     }
+            >>> }
+            >>> flock = Flock.from_dict(topo)
+            >>> print(flock.number_of_workers) # outputs 2
+
+        Returns:
+            An instance of a Flock.
+        """
         topo = nx.DiGraph()
         required_attrs: set[str] = {
             "kind",
@@ -296,7 +333,7 @@ class Flock:
         key = "globus_compute_endpoint"
         for idx, data in self.topo.nodes(data=True):
             value = data[key]
-            if any([value is None, isinstance(value, UUID) == False]):
+            if any([value is None, isinstance(value, UUID) is False]):
                 return False
         return True
 

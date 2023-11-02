@@ -1,9 +1,5 @@
 # Welcome to FLoX
 
-<center>
-![](graphics/logo.png){: style="height: 250px;"}
-</center>
-
 ### Getting Started
 FLoX is a simple, highly customizable, and easy-to-deploy framework for launching Federated Learning processes across a 
 decentralized network. It is designed to simulate FL workflows while also making it trivially easy to deploy them on 

@@ -25,11 +25,23 @@ class Strategy:
 
     @classmethod
     def get_strategy(cls, name: str):
+        """
+
+        Args:
+            name ():
+
+        Returns:
+
+        """
         name = name.lower()
         if name in cls.registry:
             return cls.registry[name]
         else:
             raise KeyError(f"Strategy name ({name=}) is not in the Strategy registry.")
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.registry[cls.__name__.lower()] = cls
 
     ####################################################################################
     #                              AGGREGATOR CALLBACKS.                               #
@@ -125,23 +137,61 @@ class Strategy:
     #                                WORKER CALLBACKS.                                 #
     ####################################################################################
     def wrk_on_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
+        """
+
+        Args:
+            state ():
+            *args ():
+            **kwargs ():
+
+        Returns:
+
+        """
         pass
 
     def wrk_on_after_train_step(
         self, state: FloxWorkerState, loss: Loss, *args, **kwargs
     ) -> Loss:
+        """
+
+        Args:
+            state ():
+            loss ():
+            *args ():
+            **kwargs ():
+
+        Returns:
+
+        """
         return loss
 
     def wrk_on_before_submit_params(
         self, state: FloxWorkerState, *args, **kwargs
     ) -> StateDict:
+        """
+
+        Args:
+            state ():
+            *args ():
+            **kwargs ():
+
+        Returns:
+
+        """
         pass
 
     def wrk_on_recv_params(
         self, state: FloxWorkerState, params: StateDict, *args, **kwargs
     ):
-        return params
+        """
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        cls.registry[cls.__name__.lower()] = cls
+        Args:
+            state ():
+            params ():
+            *args ():
+            **kwargs ():
+
+        Returns:
+
+        """
+        return params

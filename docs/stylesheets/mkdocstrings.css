@@ -56,11 +56,3 @@ span.doc.doc-object-name.doc-function-name {
     font-style: normal;
 }
 
-/*
-div.doc.doc-object.doc-class {
-  border-bottom-style: solid;
-  border-top-style: solid;
-  border-color: var(--md-code-bg-color);
-  border-width: 1px;
-}
-*/

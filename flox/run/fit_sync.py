@@ -11,7 +11,7 @@ from typing import Optional
 
 from flox.flock import Flock, FlockNode, FlockNodeKind
 from flox.flock.states import FloxAggregatorState
-from flox.backends.launcher.base import FloxExecutor
+from flox.backends.launcher.base import Launcher
 from flox.backends.launcher import GlobusComputeExecutor
 from flox.backends.launcher import LocalExecutor
 from flox.nn import FloxModule
@@ -47,7 +47,7 @@ def sync_federated_fit(
             ``Strategy``.  If the provided argument is of type ``str``, then the ``Strategy``
             base class will check its registry for a registered ``Strategy`` of that name
             (using the default parameters).
-        executor (str): Which executor to launch tasks with, defaults to "thread" (i.e.,
+        executor (str): Which launcher to launch tasks with, defaults to "thread" (i.e.,
             ``ThreadPoolExecutor``).
         num_workers (int): Number of workers to execute tasks.
 
@@ -59,7 +59,7 @@ def sync_federated_fit(
     elif executor == "globus_compute":
         executor = GlobusComputeExecutor()
 
-    # executor = ThreadPoolExecutor(num_workers)
+    # launcher = ThreadPoolExecutor(num_workers)
     if isinstance(strategy, str):
         strategy = Strategy.get_strategy(strategy)()
 
@@ -95,7 +95,7 @@ def sync_federated_fit(
 
 
 def sync_flock_traverse(
-    executor: FloxExecutor,
+    launcher: Launcher,
     flock: Flock,
     node: FlockNode,
     module_cls: type[torch.nn.Module],
@@ -114,7 +114,7 @@ def sync_flock_traverse(
     # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
         hyper_params = {}
-        return executor.submit(
+        return launcher.submit(
             local_training_job,
             node,
             parent=parent,
@@ -134,7 +134,7 @@ def sync_flock_traverse(
     # Launch the appropriate jobs on the children nodes.
     for child in children_nodes:
         future = sync_flock_traverse(
-            executor,
+            launcher,
             flock=flock,
             module_cls=module_cls,
             module_state_dict=module_state_dict,
@@ -149,7 +149,7 @@ def sync_flock_traverse(
     future = Future()
     subtree_done_callback = functools.partial(
         aggregation_callback,
-        executor,
+        launcher,
         children_futures,
         strategy,
         node,
@@ -163,7 +163,7 @@ def sync_flock_traverse(
 
 
 def aggregation_callback(
-    executor: Executor,
+    launcher: Launcher,
     children_futures: list[Future],
     strategy: Strategy,
     node: FlockNode,
@@ -174,7 +174,7 @@ def aggregation_callback(
     Callback that is used to set up when the children futures are completed before aggregation.
 
     Args:
-        executor (FloxExecutor):
+        launcher (Launcher):
         children_futures (list[Future]):
         strategy (Strategy):
         node (FlockNode):
@@ -183,7 +183,7 @@ def aggregation_callback(
     """
     if all([future.done() for future in children_futures]):
         children_results = [future.result() for future in children_futures]
-        future = executor.submit(
+        future = launcher.submit(
             aggregation_job, node, strategy=strategy, results=children_results
         )
         aggregation_done_callback = functools.partial(set_parent_future, parent_future)

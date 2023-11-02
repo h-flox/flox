@@ -1,6 +1,35 @@
+/**
+ * Styling for code snippets.
+ */
 .md-typeset code,
 .md-typeset kbd,
 .md-typeset pre {
     font-feature-settings: "kern", "liga";
     font-variant-ligatures: normal;
 }
+
+
+/** This code adds the FLoX logo to the top of the left sidebar. */
+/*
+@media (prefers-color-scheme: light) {
+    .md-sidebar--primary::before {
+        content: "";
+        background: url("../assets/logos/light-logo.png");
+        background-size: contain;
+        width: 100%;
+        padding-top: 100%;
+        display: block;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .md-sidebar--primary::before {
+        content: "";
+        background: url("../assets/logos/dark-logo.png");
+        background-size: contain;
+        width: 100%;
+        padding-top: 100%;
+        display: block;
+    }
+}
+*/

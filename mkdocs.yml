@@ -1,8 +1,12 @@
 site_name: FLoX
 #site_url: https://flox.dev/
-
 repo_name: nathaniel-hudson/FLoX
 repo_url: https://github.com/nathaniel-hudson/FLoX
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 
 nav:
@@ -23,12 +27,26 @@ nav:
   - Publications:
       - publications/index.md
 
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/mkdocstrings.css
+
 theme:
   name: material
   language: en
+  icon: #assets/logos/favicon-dark.svg
+    logo: material/bird
+    favicon: material/bird
+  #  favicon: ...
   font:
     text: Open Sans
-    code: JetBrains Mono # Roboto Mono
+    code: Source Code Pro # Roboto Mono
   features:
     - content.code.annotate
     - content.code.copy
@@ -36,6 +54,7 @@ theme:
     - navigation.path
     - navigation.tabs
     - navigation.tabs.sticky
+    - navigation.top
     - navigation.tracking
     - search.highlight
     - search.share
@@ -47,19 +66,21 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      primary: black
-      accent: blue
+      primary: indigo
+      accent: deep orange
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      primary: black
-      accent: light blue
+      primary: indigo
+      accent: amber
 
-extra_css:
-  - stylesheets/extra.css
-  - stylesheets/mkdocstrings.css
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
 
 plugins:
   - mermaid2
@@ -93,6 +114,11 @@ plugins:
             show_source: false
             show_submodules: no
             # summary: true
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 
 markdown_extensions:
