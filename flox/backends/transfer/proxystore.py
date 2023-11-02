@@ -31,3 +31,6 @@ class ProxyStoreTransfer(BaseTransfer):
             history=history
         )
         return Store.from_config(self.config).proxy(jr)
+        
+    def proxy(self, data) -> proxystore.proxy.Proxy:
+        return Store.from_config(self.config).proxy(data)

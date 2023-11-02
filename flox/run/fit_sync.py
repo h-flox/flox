@@ -130,7 +130,7 @@ def sync_flock_traverse(
     # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
         if isinstance(transfer, ProxyStoreTransfer):
-            dataset = transfer.store.proxy(datasets[node.idx])
+            dataset = transfer.proxy(datasets[node.idx])
         else:
             dataset = datasets[node.idx]
 
@@ -148,7 +148,7 @@ def sync_flock_traverse(
         )
 
     if isinstance(transfer, ProxyStoreTransfer):
-        datasets = transfer.store.proxy(datasets)
+        datasets = transfer.proxy(datasets)
 
     # Otherwise, launch the recursive AGGREGATION job.
     state = FloxAggregatorState()
