@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import warnings
 
 from matplotlib.axes import Axes
 from collections import defaultdict
@@ -8,7 +9,7 @@ from torch.utils.data import Dataset, DataLoader, Subset
 from typing import Optional
 
 from flox.flock import Flock
-from flox.data.subsets import FederatedSubsets
+from flox.data import FederatedSubsets
 
 
 # TODO: Implement something similar for regression-based data.
@@ -77,8 +78,18 @@ def federated_split(
         temp_workers = []
         for w in flock.workers:
             if worker_samples[w.idx] < num_samples_for_workers[w.idx]:
-                probs.append(label_probs[w.idx][label])
-                temp_workers.append(w.idx)
+                try:
+                    probs.append(label_probs[w.idx][label])
+                    temp_workers.append(w.idx)
+                except IndexError as err:
+                    if isinstance(label, float):
+                        warnings.warn(
+                            "Label cannot be of type `float` (must be an `int`). Perhaps, use "
+                            "`y.to(torch.int32)` in your `Dataset` object definition to resolve this issue.",
+                            category=RuntimeWarning,
+                        )
+                    raise err
+
         probs = np.array(probs)
         probs = probs / probs.sum()
 

@@ -1,20 +1,26 @@
-from dataclasses import dataclass, field
-from typing import Any, Iterable, NewType, Optional, Union
-
 import torch
+
+from dataclasses import field
+from typing import Any, Iterable, Optional
+
+from flox.flock import FlockNodeID
 
 
 class NodeState:
+    idx: FlockNodeID
+    """The ID of the ``FlockNode`` that the ``NodeState`` corresponds with."""
+
     cache: dict[str, Any] = field(default_factory=dict)
     """A dictionary containing extra data. This can be used as a temporary "store" to pass data between
     callbacks for custom ``Strategy`` objects."""
 
-    def __init__(self):
+    def __init__(self, idx: FlockNodeID):
         if type(self) is NodeState:
             raise NotImplementedError(
                 "Cannot instantiate instance of ``NodeState`` (must instantiate instance of "
                 "subclasses: ``FloxAggregatorState`` or ``FloxWorkerState``)."
             )
+        self.idx = idx
         self.cache = {}
 
     def __iter__(self) -> Iterable[str]:
@@ -59,8 +65,8 @@ class NodeState:
 class FloxAggregatorState(NodeState):
     """State of an Aggregator node in a ``Flock``."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, idx: FlockNodeID):
+        super().__init__(idx)
 
 
 class FloxWorkerState(NodeState):
@@ -74,10 +80,11 @@ class FloxWorkerState(NodeState):
 
     def __init__(
         self,
+        idx: FlockNodeID,
         pre_local_train_model: torch.nn.Module,
         post_local_train_model: Optional[torch.nn.Module] = None,
     ):
-        super().__init__()
+        super().__init__(idx)
         self.pre_local_train_model = pre_local_train_model
         self.post_local_train_model = post_local_train_model
 

@@ -12,8 +12,8 @@ from typing import Optional
 from flox.flock import Flock, FlockNode, FlockNodeKind
 from flox.flock.states import FloxAggregatorState
 from flox.backends.launcher.base import Launcher
-from flox.backends.launcher import GlobusComputeExecutor
-from flox.backends.launcher import LocalExecutor
+from flox.backends.launcher import GlobusComputeLauncher
+from flox.backends.launcher import LocalLauncher
 from flox.nn import FloxModule
 from flox.run.jobs import local_training_job, aggregation_job, JobResult
 from flox.run.utils import set_parent_future
@@ -28,7 +28,7 @@ def sync_federated_fit(
     datasets: FloxDataset,
     num_global_rounds: int,
     strategy: Strategy | str = "fedsgd",
-    executor: str = "thread",
+    launcher: str = "thread",
     num_workers: int = 1,
 ) -> tuple[FloxModule, pd.DataFrame]:
     """Synchronous federated learning implementation.
@@ -47,19 +47,18 @@ def sync_federated_fit(
             ``Strategy``.  If the provided argument is of type ``str``, then the ``Strategy``
             base class will check its registry for a registered ``Strategy`` of that name
             (using the default parameters).
-        executor (str): Which launcher to launch tasks with, defaults to "thread" (i.e.,
+        launcher (str): Which launcher to launch tasks with, defaults to "thread" (i.e.,
             ``ThreadPoolExecutor``).
         num_workers (int): Number of workers to execute tasks.
 
     Returns:
         Results from the FL process.
     """
-    if executor == "thread" or executor == "process":
-        executor = LocalExecutor(executor, num_workers)
-    elif executor == "globus_compute":
-        executor = GlobusComputeExecutor()
+    if launcher == "thread" or launcher == "process":
+        launcher = LocalLauncher(launcher, num_workers)
+    elif launcher == "globus_compute":
+        launcher = GlobusComputeLauncher()
 
-    # launcher = ThreadPoolExecutor(num_workers)
     if isinstance(strategy, str):
         strategy = Strategy.get_strategy(strategy)()
 
@@ -71,7 +70,7 @@ def sync_federated_fit(
         # Launch the tasks recursively starting with the aggregation task on the
         # leader of the Flock.
         rnd_future = sync_flock_traverse(
-            executor,
+            launcher,
             flock=flock,
             node=flock.leader,
             module_cls=module_cls,
