@@ -6,7 +6,7 @@ description = "FLoX is a flexible, easy-to-deploy framework for serverless feder
 readme = "README.md"
 
 license = { file = "LICENSE" }
-keywords = ["federated learning", "serverless", "machine learning"]
+keywords = ["federated learning", "machine learning", "serverless"]
 
 authors = [
     { name = "Nathaniel Hudson", email = "hudsonn@uchicago.edu" },
@@ -16,6 +16,7 @@ authors = [
 
 maintainers = [
     { name = "Nathaniel Hudson", email = "hudsonn@uchicago.edu" },
+    { name = "Valerie Hayot-Sasson", email = "valeriehayot@gmail.com" },
     { name = "Yadu Babuji", email = "yadunand@uchicago.edu" }
 ]
 
@@ -27,7 +28,6 @@ dependencies = [
     "mkdocstrings[python]",
     "torch",
     "pandas",
-    "graphviz",
     "pygraphviz",
     "tqdm",
     "scipy",

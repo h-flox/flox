@@ -1,5 +1,5 @@
 # NOTE: These import statements are *just* for type hints. Each 'job' function must be
-#       a PURE function with all there dependencies imported within them.
+#       a PURE function with all their dependencies imported within them.
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -71,7 +71,7 @@ def local_training_job(
     local_model.load_state_dict(module_state_dict)
 
     node_state = FloxWorkerState(
-        pre_local_train_model=global_model, post_local_train_model=local_model
+        node.idx, pre_local_train_model=global_model, post_local_train_model=local_model
     )
     train_loader = DataLoader(
         dataset,
@@ -112,7 +112,6 @@ def aggregation_job(
         Aggregation results.
     """
     import pandas as pd
-
     from flox.flock.states import FloxAggregatorState
 
     child_states, child_state_dicts = {}, {}
@@ -121,7 +120,7 @@ def aggregation_job(
         child_states[idx] = result.node_state
         child_state_dicts[idx] = result.state_dict
 
-    node_state = FloxAggregatorState()
+    node_state = FloxAggregatorState(node.idx)
     avg_state_dict = strategy.agg_param_aggregation(
         node_state, child_states, child_state_dicts
     )

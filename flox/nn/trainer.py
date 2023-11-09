@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import datetime
-from typing import Optional
+from typing import Optional, Any
 
 import pandas as pd
 import torch
 
+from pathlib import Path
 from torch.utils.data import DataLoader
 
 from flox.flock.states import FloxWorkerState
@@ -14,7 +17,10 @@ from flox.strategies import Strategy
 
 class Trainer:
     def __init__(
-        self, logger: str = "csv", device="cpu", config: Optional[dict] = None
+        self,
+        logger: str = "csv",
+        device="cpu",
+        config: Optional[dict[str, Any]] = None,
     ):
         self.device = device
         self.config = config  # TODO: Not implemented to do anything at the moment.
@@ -28,8 +34,10 @@ class Trainer:
         model: FloxModule,
         train_dataloader: DataLoader,
         num_epochs: int,
-        node_state: Optional[FloxWorkerState] = None,
         strategy: Optional[Strategy] = None,
+        node_state: Optional[FloxWorkerState] = None,
+        valid_dataloader: Optional[DataLoader] = None,
+        valid_ckpt_path: Optional[Path | str] = None,
     ) -> pd.DataFrame:
         model.train()
         optimizer = model.configure_optimizers()
@@ -48,6 +56,7 @@ class Trainer:
                         """
                         The current strategy does not override the `wrk_on_after_train_step()` callback.
                         """
+                        pass
 
                     optimizer.step()
 
@@ -61,10 +70,38 @@ class Trainer:
                         }
                     )
 
+                    # If a validation ``Dataset`` has been provided (i.e., the users
+                    # have specified an object instance for it), then run validation.
+                    if valid_dataloader is not None:
+                        self.validate(model, valid_dataloader, epoch, valid_ckpt_path)
+
         return self.logger.to_pandas()
 
-    def test(self):
-        pass
+    def test(
+        self,
+        model: FloxModule,
+        test_dataloader: DataLoader,
+        ckpt_path: Optional[Path | str] = None,
+    ):
+        with torch.no_grad():
+            for i, batch in enumerate(test_dataloader):
+                model.test_step(batch, i)
 
-    def validate(self):
-        pass
+    def validate(
+        self,
+        model: FloxModule,
+        valid_dataloader: DataLoader,
+        epoch: int,
+        ckpt_path: Optional[Path | str] = None,
+    ):
+        with torch.no_grad():
+            for batch_idx, batch in enumerate(valid_dataloader):
+                loss = model.validation_step(batch, batch_idx)
+                self.logger.log_dict(
+                    {
+                        "valid/loss": loss.item(),
+                        "valid/epoch": epoch,
+                        "valid/batch_idx": batch_idx,
+                        "valid/time": datetime.datetime.now(),
+                    }
+                )

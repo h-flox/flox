@@ -4,9 +4,9 @@ from concurrent.futures import Future
 from flox.flock import FlockNode
 
 
-class FloxExecutor(ABC):
+class Launcher(ABC):
     """
-    Base class for executing functions in an FL process.
+    Base class for launching functions in an FL process.
     """
 
     def __init__(self):

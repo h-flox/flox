@@ -10,9 +10,7 @@ from torchvision.transforms import ToTensor
 from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.run import federated_fit
-from flox.utils.data.beta import randomly_federate_dataset
-
-# from flox.nn.prototype import federated_fit
+from flox.data.utils import federated_split
 
 
 class MyModule(FloxModule):
@@ -47,42 +45,48 @@ def data():
     return FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
-        train=True,
+        train=False,
         transform=ToTensor(),
     )
 
 
 def test_2_tier_fit(data):
     flock = Flock.from_yaml("examples/flocks/2-tier.yaml")
-    fed_data = randomly_federate_dataset(
-        flock,
+    fed_data = federated_split(
         data,
-        shuffle=True,
-        random_state=None,
+        flock,
+        10,
+        samples_alpha=10.0,
+        labels_alpha=10.0,
     )
-    train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
 
 def test_3_tier_fit(data):
     flock = Flock.from_yaml("examples/flocks/3-tier.yaml")
-    fed_data = randomly_federate_dataset(
-        flock,
+    fed_data = federated_split(
         data,
-        shuffle=True,
-        random_state=None,
+        flock,
+        10,
+        samples_alpha=10.0,
+        labels_alpha=10.0,
     )
-    train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
 
 def test_complex_fit(data):
     flock = Flock.from_yaml("examples/flocks/complex.yaml")
-    fed_data = randomly_federate_dataset(
-        flock,
+    fed_data = federated_split(
         data,
-        shuffle=True,
-        random_state=None,
+        flock,
+        10,
+        samples_alpha=10.0,
+        labels_alpha=10.0,
     )
-    train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)

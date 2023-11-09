@@ -1,8 +1,12 @@
 site_name: FLoX
 #site_url: https://flox.dev/
-
 repo_name: nathaniel-hudson/FLoX
 repo_url: https://github.com/nathaniel-hudson/FLoX
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 
 nav:
@@ -10,7 +14,7 @@ nav:
       - index.md
       - home/federated_learning.md
       - home/globus_compute.md
-      - home/transfer.md
+      - home/proxystore.md
   - Getting Started:
       - getting_started/index.md
       - getting_started/flock.md
@@ -23,12 +27,26 @@ nav:
   - Publications:
       - publications/index.md
 
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/mkdocstrings.css
+
 theme:
   name: material
   language: en
+  icon: #assets/logos/favicon-dark.svg
+    logo: material/bird
+    favicon: material/bird
+  #  favicon: ...
   font:
     text: Open Sans
-    code: JetBrains Mono # Roboto Mono
+    code: Source Code Pro # Roboto Mono
   features:
     - content.code.annotate
     - content.code.copy
@@ -36,6 +54,7 @@ theme:
     - navigation.path
     - navigation.tabs
     - navigation.tabs.sticky
+    - navigation.top
     - navigation.tracking
     - search.highlight
     - search.share
@@ -47,20 +66,26 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      primary: deep purple
-      accent: orange
+      primary: indigo
+      accent: deep orange
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      primary: deep purple
+      primary: indigo
       accent: amber
 
-extra_css:
-  - stylesheets/extra.css
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
 
 plugins:
+  - mermaid2
+  - search
+  - section-index
   - gen-files:
       scripts:
         - docs/generate_api.py
@@ -68,31 +93,33 @@ plugins:
       nav_file: SUMMARY.md
   - mkdocstrings:
       custom_templates: docs/_templates
-      enable_inventory: false
+      enable_inventory: true
       handlers:
         python:
+          setup_commands:
+            - import pytkdocs_tweaks
+            - pytkdocs_tweaks.main()
           paths: [ flox ]
           load_external_modules: true
           options:
-            show_source: false
-            docstring_section_style: list # spacy
+            docstring_section_style: spacy # list
             docstring_style: google
             inherited_members: yes
             line_length: 60
             members_order: source # alphabetical
             merge_init_into_class: yes
             separate_signature: yes
-            # Mutually exclusive with separate_signature
-            show_root_members_full_path: no
-            # Causes black error with show_root_full_path
-            # show_object_full_path: yes
             show_root_full_path: yes
             show_signature_annotations: yes
-            show_submodules: False
-  #            summary: true
-  - mermaid2
-  - search
-  - section-index
+            show_source: false
+            show_submodules: no
+            # summary: true
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
 
 markdown_extensions:
   - pymdownx.emoji:

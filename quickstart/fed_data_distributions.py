@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 
 from flox.flock import Flock
-from flox.utils.data import fed_barplot, federated_split
+from flox.data.utils import federated_split, fed_barplot
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
 

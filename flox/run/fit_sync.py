@@ -5,30 +5,32 @@ import pandas as pd
 import torch
 
 from concurrent.futures import Executor, Future
+
 from tqdm import tqdm
 from typing import Optional
 
 from flox.flock import Flock, FlockNode, FlockNodeKind
 from flox.flock.states import FloxAggregatorState
-from flox.backends.launcher.base import FloxExecutor
-from flox.backends.launcher import GlobusComputeExecutor
-from flox.backends.launcher import LocalExecutor
+from flox.backends.launcher.impl_base import Launcher
+from flox.backends.launcher import GlobusComputeLauncher
+from flox.backends.launcher import LocalLauncher
+from flox.nn import FloxModule
 from flox.run.jobs import local_training_job, aggregation_job, JobResult
 from flox.run.utils import set_parent_future
 from flox.strategies import Strategy
-from flox.utils.data import FederatedDataset
+from flox.data import FloxDataset
 from flox.typing import StateDict
 
 
 def sync_federated_fit(
     flock: Flock,
-    module_cls: type[torch.nn.Module],
-    datasets: FederatedDataset,
+    module_cls: type[FloxModule],
+    datasets: FloxDataset,
     num_global_rounds: int,
     strategy: Strategy | str = "fedsgd",
-    executor: str = "thread",
-    num_workers: int = 1,
-) -> pd.DataFrame:
+    launcher: str = "thread",
+    max_workers: int = 1,
+) -> tuple[FloxModule, pd.DataFrame]:
     """Synchronous federated learning implementation.
 
     This implementation traverses the provide Flock network using DFS. During traversal,
@@ -36,8 +38,8 @@ def sync_federated_fit(
 
     Args:
         flock (Flock): The topology of nodes for the FL process.
-        module_cls (type[torch.nn.Module]): The class for the PyTorch Module to train.
-        datasets (FederatedDataset): Datasets for workers to train.
+        module_cls (type[FloxModule]): The class for the PyTorch Module to train.
+        datasets (FloxDataset): Datasets for workers to train.
         num_global_rounds (int): Total number of global (aggregation) rounds are performed
             during the entire FL process.
         strategy (Strategy | str): The strategy logic to use during the FL process.
@@ -45,19 +47,18 @@ def sync_federated_fit(
             ``Strategy``.  If the provided argument is of type ``str``, then the ``Strategy``
             base class will check its registry for a registered ``Strategy`` of that name
             (using the default parameters).
-        executor (str): Which executor to launch tasks with, defaults to "thread" (i.e.,
+        launcher (str): Which launcher to launch tasks with, defaults to "thread" (i.e.,
             ``ThreadPoolExecutor``).
-        num_workers (int): Number of workers to execute tasks.
+        max_workers (int): Number of workers to execute tasks.
 
     Returns:
         Results from the FL process.
     """
-    if executor == "thread" or executor == "process":
-        executor = LocalExecutor(executor, num_workers)
-    elif executor == "globus_compute":
-        executor = GlobusComputeExecutor()
+    if launcher == "thread" or launcher == "process":
+        launcher = LocalLauncher(launcher, max_workers)
+    elif launcher == "globus_compute":
+        launcher = GlobusComputeLauncher()
 
-    # executor = ThreadPoolExecutor(num_workers)
     if isinstance(strategy, str):
         strategy = Strategy.get_strategy(strategy)()
 
@@ -69,7 +70,7 @@ def sync_federated_fit(
         # Launch the tasks recursively starting with the aggregation task on the
         # leader of the Flock.
         rnd_future = sync_flock_traverse(
-            executor,
+            launcher,
             flock=flock,
             node=flock.leader,
             module_cls=module_cls,
@@ -89,16 +90,16 @@ def sync_federated_fit(
         global_module.load_state_dict(round_update.state_dict)
         prog_bar.update()
 
-    return pd.concat(df_list)
+    return global_module, pd.concat(df_list)
 
 
 def sync_flock_traverse(
-    executor: FloxExecutor,
+    launcher: Launcher,
     flock: Flock,
     node: FlockNode,
-    module_cls: type[torch.nn.Module],
+    module_cls: type[FloxModule],
     module_state_dict: StateDict,
-    datasets: FederatedDataset,
+    datasets: FloxDataset,
     strategy: Strategy,
     parent: Optional[FlockNode] = None,
 ) -> Future[JobResult]:
@@ -106,13 +107,22 @@ def sync_flock_traverse(
     Launches an aggregation task on the provided ``FlockNode`` and the appropriate tasks
     for its child nodes.
 
-    Returns:
+    Args:
+        launcher (Launcher): ...
+        node (FlockNode): ...
+        module_cls (type[FloxModule]): ...
+        module_state_dict (StateDict): ...
+        datasets (FloxDataset): ...
+        strategy (Strategy): ...
+        parent (Optional[FlockNode]): ...
 
+    Returns:
+        The ``Future[JobResult]`` of the current ``node`` (either a worker or an aggregator).
     """
     # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
         hyper_params = {}
-        return executor.submit(
+        return launcher.submit(
             local_training_job,
             node,
             parent=parent,
@@ -124,7 +134,7 @@ def sync_flock_traverse(
         )
 
     # Otherwise, launch the recursive AGGREGATION job.
-    state = FloxAggregatorState()
+    state = FloxAggregatorState(node.idx)
     children_nodes = list(flock.children(node))
     strategy.agg_worker_selection(state, children_nodes)
     children_futures = []
@@ -132,7 +142,7 @@ def sync_flock_traverse(
     # Launch the appropriate jobs on the children nodes.
     for child in children_nodes:
         future = sync_flock_traverse(
-            executor,
+            launcher,
             flock=flock,
             module_cls=module_cls,
             module_state_dict=module_state_dict,
@@ -147,7 +157,7 @@ def sync_flock_traverse(
     future = Future()
     subtree_done_callback = functools.partial(
         aggregation_callback,
-        executor,
+        launcher,
         children_futures,
         strategy,
         node,
@@ -160,8 +170,10 @@ def sync_flock_traverse(
     return future
 
 
+# TODO: We need to look into how to generalize this logic. Requiring all child futures complete before aggregating
+#       is a good default. But there might be some cases where we want to aggregate after some time has elapsed.
 def aggregation_callback(
-    executor: Executor,
+    launcher: Launcher,
     children_futures: list[Future],
     strategy: Strategy,
     node: FlockNode,
@@ -169,10 +181,10 @@ def aggregation_callback(
     child_future_to_resolve: Future,
 ) -> None:
     """
-    Callback that is used to set up when the children futures are completed before aggregation.
+    Callback that requires all child futures to complete before the aggregation job is launched.
 
     Args:
-        executor (FloxExecutor):
+        launcher (Launcher):
         children_futures (list[Future]):
         strategy (Strategy):
         node (FlockNode):
@@ -181,7 +193,7 @@ def aggregation_callback(
     """
     if all([future.done() for future in children_futures]):
         children_results = [future.result() for future in children_futures]
-        future = executor.submit(
+        future = launcher.submit(
             aggregation_job, node, strategy=strategy, results=children_results
         )
         aggregation_done_callback = functools.partial(set_parent_future, parent_future)

@@ -10,7 +10,7 @@ from flox.flock import Flock
 from flox.run import federated_fit
 from flox.nn import FloxModule
 from flox.strategies import FedProx
-from flox.utils.data import federated_split
+from flox.data.utils import federated_split
 from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST

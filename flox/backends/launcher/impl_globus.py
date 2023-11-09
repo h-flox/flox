@@ -1,10 +1,10 @@
 from concurrent.futures import Future
 
 from flox.flock import FlockNode
-from flox.backends.launcher import FloxExecutor
+from flox.backends.launcher.impl_base import Launcher
 
 
-class GlobusComputeExecutor(FloxExecutor):
+class GlobusComputeLauncher(Launcher):
     """
     Class that executes tasks on Globus Compute.
     """

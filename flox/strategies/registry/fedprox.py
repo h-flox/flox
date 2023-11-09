@@ -37,7 +37,7 @@ class FedProx(FedAvg):
                 ``FedProx`` reduces to ``FedAvg``.
             participation (float): Participation rate for random worker selection.
             probabilistic (bool): Probabilistically chooses workers if True; otherwise will always
-                select `max(1, num_workers * participation)` workers.
+                select `max(1, max_workers * participation)` workers.
             always_include_child_aggregators (bool): If True, Will always include child nodes that are
                 aggregators; if False, then they are included at random.
             seed (int): Random seed.

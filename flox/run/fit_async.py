@@ -13,13 +13,13 @@ from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.run.jobs import local_training_job
 from flox.strategies import Strategy
-from flox.utils.data import FederatedDataset
+from flox.data import FloxDataset
 
 
 def async_federated_fit(
     flock: Flock,
     module_cls: type[FloxModule],
-    datasets: FederatedDataset,
+    datasets: FloxDataset,
     num_global_rounds: int,
     strategy: Strategy | str = "fedavg",
     executor: str = "thread",
@@ -31,7 +31,7 @@ def async_federated_fit(
     Args:
         flock (Flock):
         module_cls (type[FloxModule]):
-        datasets (FederatedDataset):
+        datasets (FloxDataset):
         num_global_rounds (int):
         strategy (Strategy | str):
         executor (str):
