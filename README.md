@@ -1,27 +1,8 @@
-# FLoX: FaaS-driven Federated Learning on Globus Compute
-...
-
-## Quickstart
-To get started with FLoX, ...
-
-## Installation
-
-```bash
-pip install pyflox
-````
-
-#### Running Tests
-Use the following to run the tests correctly:
-```bash
-python3 -m pytest
-```
-
-## Contributing to FLoX
-For now, we are wanting to keep the FLoX dev team small as we rapidly prototype implementation details. However, 
-if you have ideas or feature requests, please submit an issue so we can start a conversation.
+# FLoX
+FLoX is a modular, easy-to-use federated learning framework built on top of Globus Compute, a federated Function-as-a-Service platform.
 
 ## Documentation
-Documentation is available. We are actively writing more and more documentation as develop FLoX.  
+Documentation is currently being written and we hope to have them available online here soon.
 
 ## Citing FLoX
 If you use FLoX or any of this code in your work, please cite the following paper.
@@ -29,7 +10,7 @@ If you use FLoX or any of this code in your work, please cite the following pape
 
 ```bibtex
 @inproceedings{kotsehub2022flox,
-  title={Flox: Federated learning with FaaS at the edge},
+  title={Flox: Federated learning with faas at the edge},
   author={Kotsehub, Nikita and Baughman, Matt and Chard, Ryan and Hudson, Nathaniel and Patros, Panos and Rana, Omer and Foster, Ian and Chard, Kyle},
   booktitle={2022 IEEE 18th International Conference on e-Science (e-Science)},
   pages={11--20},
