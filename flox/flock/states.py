@@ -72,7 +72,7 @@ class FloxAggregatorState(NodeState):
 class FloxWorkerState(NodeState):
     """State of a Worker node in a ``Flock``."""
 
-    pre_local_train_model: torch.nn.Module
+    pre_local_train_model: Optional[torch.nn.Module] = None
     """Global model."""
 
     post_local_train_model: Optional[torch.nn.Module] = None
@@ -81,7 +81,7 @@ class FloxWorkerState(NodeState):
     def __init__(
         self,
         idx: FlockNodeID,
-        pre_local_train_model: torch.nn.Module,
+        pre_local_train_model: Optional[torch.nn.Module] = None,
         post_local_train_model: Optional[torch.nn.Module] = None,
     ):
         super().__init__(idx)

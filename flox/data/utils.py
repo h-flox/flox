@@ -119,7 +119,7 @@ def fed_barplot(
     Returns:
         The ``Axes`` object that was drawn onto.
     """
-    if not isinstance(fed_data, FederatedSubsets):
+    if not isinstance(fed_data, dict):  # TODO: Make `FederatedSubsets` compatible here.
         raise ValueError(
             f"This function (`fed_barplot`) does not support data of type "
             f"``{type(fed_data).__name__}``. `fed_data` argument MUST be of "

@@ -1,11 +1,11 @@
 from concurrent.futures import Future
 from flox.flock import FlockNode
-from flox.backends.launcher.base import Launcher
+from flox.backends.launcher.impl_base import Launcher
 
 
 class ParslLauncher(Launcher):
     """
-    Class that launched tasks via Parsl.
+    Class that launches tasks via Parsl.
     """
 
     def __init__(self):

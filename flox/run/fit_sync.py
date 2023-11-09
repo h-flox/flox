@@ -11,7 +11,7 @@ from typing import Optional
 
 from flox.flock import Flock, FlockNode, FlockNodeKind
 from flox.flock.states import FloxAggregatorState
-from flox.backends.launcher.base import Launcher
+from flox.backends.launcher.impl_base import Launcher
 from flox.backends.launcher import GlobusComputeLauncher
 from flox.backends.launcher import LocalLauncher
 from flox.nn import FloxModule
@@ -29,7 +29,7 @@ def sync_federated_fit(
     num_global_rounds: int,
     strategy: Strategy | str = "fedsgd",
     launcher: str = "thread",
-    num_workers: int = 1,
+    max_workers: int = 1,
 ) -> tuple[FloxModule, pd.DataFrame]:
     """Synchronous federated learning implementation.
 
@@ -49,13 +49,13 @@ def sync_federated_fit(
             (using the default parameters).
         launcher (str): Which launcher to launch tasks with, defaults to "thread" (i.e.,
             ``ThreadPoolExecutor``).
-        num_workers (int): Number of workers to execute tasks.
+        max_workers (int): Number of workers to execute tasks.
 
     Returns:
         Results from the FL process.
     """
     if launcher == "thread" or launcher == "process":
-        launcher = LocalLauncher(launcher, num_workers)
+        launcher = LocalLauncher(launcher, max_workers)
     elif launcher == "globus_compute":
         launcher = GlobusComputeLauncher()
 
@@ -97,7 +97,7 @@ def sync_flock_traverse(
     launcher: Launcher,
     flock: Flock,
     node: FlockNode,
-    module_cls: type[torch.nn.Module],
+    module_cls: type[FloxModule],
     module_state_dict: StateDict,
     datasets: FloxDataset,
     strategy: Strategy,
@@ -107,8 +107,17 @@ def sync_flock_traverse(
     Launches an aggregation task on the provided ``FlockNode`` and the appropriate tasks
     for its child nodes.
 
-    Returns:
+    Args:
+        launcher (Launcher): ...
+        node (FlockNode): ...
+        module_cls (type[FloxModule]): ...
+        module_state_dict (StateDict): ...
+        datasets (FloxDataset): ...
+        strategy (Strategy): ...
+        parent (Optional[FlockNode]): ...
 
+    Returns:
+        The ``Future[JobResult]`` of the current ``node`` (either a worker or an aggregator).
     """
     # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
@@ -125,7 +134,7 @@ def sync_flock_traverse(
         )
 
     # Otherwise, launch the recursive AGGREGATION job.
-    state = FloxAggregatorState()
+    state = FloxAggregatorState(node.idx)
     children_nodes = list(flock.children(node))
     strategy.agg_worker_selection(state, children_nodes)
     children_futures = []
@@ -161,6 +170,8 @@ def sync_flock_traverse(
     return future
 
 
+# TODO: We need to look into how to generalize this logic. Requiring all child futures complete before aggregating
+#       is a good default. But there might be some cases where we want to aggregate after some time has elapsed.
 def aggregation_callback(
     launcher: Launcher,
     children_futures: list[Future],
@@ -170,7 +181,7 @@ def aggregation_callback(
     child_future_to_resolve: Future,
 ) -> None:
     """
-    Callback that is used to set up when the children futures are completed before aggregation.
+    Callback that requires all child futures to complete before the aggregation job is launched.
 
     Args:
         launcher (Launcher):
