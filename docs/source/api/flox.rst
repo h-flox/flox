@@ -1,5 +1,5 @@
-flox package
-============
+API Reference
+=============
 
 Subpackages
 -----------
