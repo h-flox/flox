@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=64.0", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "flox"
 version = "0.1.0"
@@ -10,14 +14,12 @@ keywords = ["federated learning", "machine learning", "serverless"]
 
 authors = [
     { name = "Nathaniel Hudson", email = "hudsonn@uchicago.edu" },
-    { name = "Yadu Babuji", email = "yadunand@uchicago.edu" },
     { name = "Valerie Hayot-Sasson", email = "valeriehayot@gmail.com" }
 ]
 
 maintainers = [
     { name = "Nathaniel Hudson", email = "hudsonn@uchicago.edu" },
     { name = "Valerie Hayot-Sasson", email = "valeriehayot@gmail.com" },
-    { name = "Yadu Babuji", email = "yadunand@uchicago.edu" }
 ]
 
 requires-python = ">=3.8"
@@ -42,5 +44,7 @@ addopts = [
     "--import-mode=importlib",
 ]
 
-[tool.setuptools]
-packages = ["flox"]
+
+[tool.setuptools.packages.find]
+include = ["flox*"]
+namespaces = false
