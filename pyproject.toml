@@ -30,7 +30,7 @@ dependencies = [
     "mkdocstrings[python]",
     "torch",
     "pandas",
-    "pygraphviz",
+    #    "pygraphviz",
     "tqdm",
     "scipy",
 ]

@@ -21,6 +21,20 @@ REQUIRED_ATTRS: set[str] = {
     "children",
 }
 
+# Valid programs for drawing using `graphviz`
+PROGS = [
+    "dot",
+    "neato",
+    "fdp",
+    "sfdp",
+    "circo",
+    "twopi",
+    "nop",
+    "nop2",
+    "osage",
+    "patchwork",
+]
+
 
 class Flock:
     topo: nx.DiGraph
@@ -37,7 +51,7 @@ class Flock:
                 mode. This means you can iteratively add nodes and edges to the Flock using
                  ``Flock.add_node()`` and ``Flock.add_edge()``. This is *not* recommended.
                  Defaults to ``None``.
-            _src (Optional[Path | str]): This identifies the source file that was used to generate
+            _src (Optional[Path | str]): This identifies the source file that was used to
                 define the Flock network. This should only be used by the file constructor functions
                 (e.g., `from_yaml()`) and should not be used by the user. Defaults to ``None``.
         """
@@ -146,7 +160,14 @@ class Flock:
         if not show_axis_border:
             ax.axis("off")
 
-        pos = nx.nx_agraph.graphviz_layout(self.topo, prog=prog)
+        # TODO: We may want to remove this as a requirement. It produces nice "tree" positions
+        # of the nodes. But it introduces a pretty restrictive dependency.
+        if prog in PROGS:
+            import pygraphviz
+
+            pos = nx.nx_agraph.graphviz_layout(self.topo, prog=prog)
+        else:
+            pos = nx.spring_layout(self.topo)
 
         if not color_by_kind:
             nx.draw(self.topo, pos, with_labels=with_labels, ax=ax)
