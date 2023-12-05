@@ -1,4 +1,6 @@
 # FLoX
+[![Coverage Status](https://coveralls.io/repos/github/nathaniel-hudson/FLoX/badge.svg?branch=main)](https://coveralls.io/github/nathaniel-hudson/FLoX?branch=main)
+
 FLoX is a modular, easy-to-use federated learning framework built on top of Globus Compute, a federated Function-as-a-Service platform.
 
 ## Documentation

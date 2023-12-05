@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import functools
 import pandas as pd
-import torch
 
-from concurrent.futures import Executor, Future
+from concurrent.futures import Future
 
 from tqdm import tqdm
 from typing import Literal
@@ -19,7 +18,7 @@ from flox.backends.launcher import LocalLauncher
 from flox.nn import FloxModule
 from flox.backends.transfer.base import BaseTransfer
 from flox.backends.transfer.proxystore import ProxyStoreTransfer
-from flox.run.jobs import local_training_job, aggregation_job, JobResult
+from flox.run.jobs import local_training_job, aggregation_job
 from flox.run.utils import set_parent_future
 from flox.strategies import Strategy
 from flox.data import FloxDataset
@@ -27,6 +26,7 @@ from flox.typing import StateDict
 
 Where: TypeAlias = Literal["local", "globus_compute"]
 Transfer: TypeAlias = BaseTransfer | ProxyStoreTransfer
+
 
 def sync_federated_fit(
     flock: Flock,
@@ -36,7 +36,7 @@ def sync_federated_fit(
     strategy: Strategy | str = "fedsgd",
     launcher: str = "thread",
     max_workers: int = 1,
-    where: Where = "local"
+    where: Where = "local",
 ) -> tuple[FloxModule, pd.DataFrame]:
     """Synchronous federated learning implementation.
 
@@ -57,17 +57,18 @@ def sync_federated_fit(
         launcher (str): Which launcher to launch tasks with, defaults to "thread" (i.e.,
             ``ThreadPoolExecutor``).
         max_workers (int): Number of workers to execute tasks.
+        where (Where): Where to launch jobs, defaults to "local".
 
     Returns:
         Results from the FL process.
     """
     transfer: Transfer
-    
+
     if launcher == "thread" or launcher == "process":
         launcher = LocalLauncher(launcher, max_workers)
     elif launcher == "globus_compute":
         launcher = GlobusComputeLauncher()
-        
+
     if where == "local":
         transfer = BaseTransfer()
     else:
@@ -119,13 +120,15 @@ def sync_flock_traverse(
     datasets: FloxDataset,
     strategy: Strategy,
     parent: Optional[FlockNode] = None,
-) -> Future: #TODO: Fix
+) -> Future:  # TODO: Fix
     """
     Launches an aggregation task on the provided ``FlockNode`` and the appropriate tasks
     for its child nodes.
 
     Args:
         launcher (Launcher): ...
+        transfer (Transfer): ...
+        flock (Flock): ...
         node (FlockNode): ...
         module_cls (type[FloxModule]): ...
         module_state_dict (StateDict): ...
@@ -220,11 +223,16 @@ def aggregation_callback(
         node (FlockNode):
         parent_future (Future):
         child_future_to_resolve (Future):
+        transfer (Transfer): ...
     """
     if all([future.done() for future in children_futures]):
         children_results = [future.result() for future in children_futures]
         future = launcher.submit(
-            aggregation_job, node, transfer=transfer, strategy=strategy, results=children_results
+            aggregation_job,
+            node,
+            transfer=transfer,
+            strategy=strategy,
+            results=children_results,
         )
         aggregation_done_callback = functools.partial(set_parent_future, parent_future)
         future.add_done_callback(aggregation_done_callback)

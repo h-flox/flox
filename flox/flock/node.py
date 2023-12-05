@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import NewType, Optional, Sequence
+from typing import NewType, Optional, Union
 from uuid import UUID
 
 
-FlockNodeID = NewType("FlockNodeID", int)
+FlockNodeID = NewType("FlockNodeID", Union[int, str])
 
 
 class FlockNodeKind(Enum):

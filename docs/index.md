@@ -11,10 +11,11 @@ _funcX_), FLoX is designed to run on anything that can be started as a Globus Co
 
 FLoX is supports several state-of-the-art approaches for FL processes, including hierarchical and asynchronous FL. 
 
-|     | 2-tier         | Hierarhchical         |
-| --- |----------------|-----------------------|
-| **Synchronous**| :white_check_mark: | :white_check_mark:    |
-| **Asynchronous** | :white_check_mark:            | :x:                   |
+|     |      2-tier      |   Hierarhchical   |
+| --: |:----------------:|:-----------------:|
+| **Synchronous**| :material-check: | :material-check:  |
+| **Asynchronous** | :material-check: | :material-close:  |
+
 
 #### Installation
 

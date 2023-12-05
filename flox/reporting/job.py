@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pandas import DataFrame
-from proxystore.proxy import Proxy
-from typing import TypeAlias
 
-from flox.flock import FlockNodeID
-from flox.flock import FlockNodeKind
+from flox.flock import FlockNodeID, FlockNodeKind
 from flox.flock.states import NodeState
 from flox.typing import StateDict
 

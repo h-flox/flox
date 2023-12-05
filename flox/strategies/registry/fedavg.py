@@ -13,10 +13,9 @@ class FedAvg(FedSGD):
     average based on the number of data samples each (sibling) worker has. Worker
     selection is done randomly, same as ``FedSGD``.
 
-    > **Reference:**
-    >
-    > McMahan, Brendan, et al. "Communication-efficient learning of deep networks
-    > from decentralized data." Artificial intelligence and statistics. PMLR, 2017.
+    References:
+        McMahan, Brendan, et al. "Communication-efficient learning of deep networks
+        from decentralized data." Artificial intelligence and statistics. PMLR, 2017.
     """
 
     def __init__(
