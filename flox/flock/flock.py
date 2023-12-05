@@ -14,6 +14,13 @@ from uuid import UUID
 
 from flox.flock.node import FlockNode, FlockNodeID, FlockNodeKind
 
+REQUIRED_ATTRS: set[str] = {
+    "kind",
+    "globus_compute_endpoint",
+    "proxystore_endpoint",
+    "children",
+}
+
 
 class Flock:
     topo: nx.DiGraph
@@ -22,11 +29,24 @@ class Flock:
     def __init__(
         self, topo: Optional[nx.DiGraph] = None, _src: Optional[Path | str] = None
     ):
+        """
+
+        Args:
+            topo (Optional[nx.DiGraph]): The topology (defined as a NetworkX ``nx.DiGraph``) of the
+                Flock network. If none is provided, then the Flock is initialized in "interactive"
+                mode. This means you can iteratively add nodes and edges to the Flock using
+                 ``Flock.add_node()`` and ``Flock.add_edge()``. This is *not* recommended.
+                 Defaults to ``None``.
+            _src (Optional[Path | str]): This identifies the source file that was used to generate
+                define the Flock network. This should only be used by the file constructor functions
+                (e.g., `from_yaml()`) and should not be used by the user. Defaults to ``None``.
+        """
         self.node_counter: int = 0
         self._src = "interactive" if _src is None else _src
         self.leader = None
 
         if topo is None:
+            # By default (i.e., `topo is None`),
             self.topo = nx.DiGraph()
             self.node_counter += self.topo.number_of_nodes()
         else:
@@ -34,7 +54,7 @@ class Flock:
             if not self.validate_topo():
                 raise ValueError(
                     "Illegal topology!"
-                )  # Expand on this later, the validate function should throw errors.
+                )  # TODO: Expand on this later, the validate function should throw errors.
 
             found_leader = False
             for idx, data in self.topo.nodes(data=True):
@@ -101,19 +121,21 @@ class Flock:
         ax: Optional[Axes] = None,
     ) -> Axes:
         """
-        Draws the flock using Matplotlib. The nodes are organized as a tree with the proper hierarchy based on depth
-        from the Leader node (root).
+        Draws the flock using Matplotlib. The nodes are organized as a tree with the proper
+        hierarchy based on depth from the Leader node (root).
 
         Args:
             color_by_kind (bool): Color nodes by kind, if True.
             with_labels (bool): Display labels of nodes, if True.
             label_color (str): Color of labels.
-            prog (str): How the topology is organized. Leave alone for the default behavior of displaying it as a tree.
-                This is passed into the `prog` argument for ``networkx.nx_agraph.graphviz_layout()``.
-            node_kind_attrs (): Determines how node attributes should be plotted. By default, nodes will be colored
-                and marked by kind.
+            prog (str): How the topology is organized. Leave alone for the default behavior
+                of displaying it as a tree. This is passed into the `prog` argument for
+                ``networkx.nx_agraph.graphviz_layout()``.
+            node_kind_attrs (): Determines how node attributes should be plotted. By default,
+                nodes will be colored and marked by kind.
             show_axis_border (bool): Show the border along the axis if True; defaults to False.
-            ax (Optional[Axes]): Axes object to draw onto. If none is provided, then one will be created.
+            ax (Optional[Axes]): Axes object to draw onto. If none is provided, then one
+                will be created.
 
         Returns:
             Axes object that was drawn onto.
@@ -203,16 +225,6 @@ class Flock:
 
     # ================================================================================= #
 
-    @classmethod
-    @property
-    def required_attrs(cls) -> set[str]:
-        return {
-            "kind",
-            "globus_compute_endpoint",
-            "proxystore_endpoint",
-            "children",
-        }
-
     @staticmethod
     def from_dict(
         content: dict[str, Any], _src: Optional[Path | str] = None
@@ -255,16 +267,10 @@ class Flock:
             An instance of a Flock.
         """
         topo = nx.DiGraph()
-        required_attrs: set[str] = {
-            "kind",
-            "globus_compute_endpoint",
-            "proxystore_endpoint",
-            "children",
-        }
 
         # STEP 1: Add the nodes with their attributes --- ignore children for now.
         for node_idx, values in content.items():
-            for attr in required_attrs:
+            for attr in REQUIRED_ATTRS:
                 if attr not in values:
                     raise ValueError(
                         f"Node {node_idx} does not have required attribute: `{attr}`."
@@ -276,7 +282,7 @@ class Flock:
                 globus_compute_endpoint=values["globus_compute_endpoint"],
                 proxystore_endpoint=values["proxystore_endpoint"],
             )
-            for extra_attr in set(values) - required_attrs:
+            for extra_attr in set(values) - REQUIRED_ATTRS:
                 topo.nodes[node_idx][extra_attr] = values[extra_attr]
 
         # STEP 2: Add the edges from the children attribute.
@@ -341,11 +347,11 @@ class Flock:
     def proxystore_ready(self) -> bool:
         """
         This property informs users of whether their `Flock` has all the necessary information to support
-        data transmission over Proxystore (`True`) or not (`False`). Proxystore just requires that each node
-        in the Flock has its own `proxystore_endpoint`.
+        data transmission over Proxystore (`True`) or not (`False`). Proxystore just requires that each
+        node in the Flock has its own `proxystore_endpoint`.
 
-        It is worth noting that Proxystore is necessary to transmit mid-to-large size model (roughly > 5MB in size)
-        with Globus Compute.
+        It is worth noting that Proxystore is necessary to transmit mid-to-large size model (roughly > 5MB
+        in size) with Globus Compute.
         """
         key = "proxystore_endpoint"
         for idx, data in self.topo.nodes(data=True):

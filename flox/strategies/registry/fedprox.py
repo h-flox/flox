@@ -16,10 +16,9 @@ class FedProx(FedAvg):
     More information on the proximal term and its definition can be found in the docstring
     for ``FedProx.wrk_on_after_train_step()`` and in the reference below.
 
-    > **Reference:**
-    >
-    > Li, Tian, et al. "Federated optimization in heterogeneous networks." Proceedings of
-    > Machine learning and systems 2 (2020): 429-450.
+    References:
+        Li, Tian, et al. "Federated optimization in heterogeneous networks." Proceedings of
+        Machine learning and systems 2 (2020): 429-450.
     """
 
     def __init__(

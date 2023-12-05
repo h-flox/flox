@@ -32,10 +32,19 @@ nav:
 ########################################################################################################################
 ########################################################################################################################
 
+copyright:
+  Copyright &copy; 2022 - 2023 Globus Labs, University of Chicago.
+
+extra:
+  social:
+    - icon: fontawesome/brands/slack
+      link: https://join.slack.com/t/funcx/shared_invite/zt-gfeclqkz-RuKjkZkvj1t~eWvlnZV0KA
+      name: Join the funcX Slack!
 
 extra_css:
   - stylesheets/extra.css
   - stylesheets/mkdocstrings.css
+  - stylesheets/youtube.css
 
 theme:
   name: material
@@ -51,6 +60,7 @@ theme:
     - content.code.annotate
     - content.code.copy
     - content.code.select
+    - navigation.footer
     - navigation.path
     - navigation.tabs
     - navigation.tabs.sticky
@@ -66,14 +76,14 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      primary: indigo
+      primary: white # indigo
       accent: deep orange
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      primary: indigo
+      primary: black # indigo
       accent: amber
 
 

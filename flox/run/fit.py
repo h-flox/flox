@@ -70,7 +70,13 @@ def federated_fit(
         # executor = "thread" if where == "local" else "globus_compute"
         executor = "thread"
         return sync_federated_fit(
-            flock, module_cls, datasets, num_global_rounds, strategy, executor, where=where
+            flock,
+            module_cls,
+            datasets,
+            num_global_rounds,
+            strategy,
+            executor
+            # , where=where
         )
     elif kind == "async":
         raise NotImplementedError("Asynchronous FL is not yet implemented.")

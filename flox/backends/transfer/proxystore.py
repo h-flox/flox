@@ -1,11 +1,11 @@
-import proxystore
-
 from proxystore.connectors.endpoint import EndpointConnector
 from proxystore.store import Store
+from proxystore.proxy import Proxy
 
 from flox.backends.transfer.base import BaseTransfer
 from flox.flock import Flock
 from flox.reporting.job import JobResult
+
 
 class ProxyStoreTransfer(BaseTransfer):
     def __init__(self, flock: Flock, store: str = "endpoint", name: str = "default"):
@@ -22,15 +22,17 @@ class ProxyStoreTransfer(BaseTransfer):
         store = Store(name=name, connector=self.connector)
         self.config = store.config()
 
-    def report(self, node_state, node_idx, node_kind, state_dict, history) -> proxystore.proxy.Proxy[JobResult]:
+    def report(
+        self, node_state, node_idx, node_kind, state_dict, history
+    ) -> Proxy[JobResult]:
         jr = JobResult(
             node_state=node_state,
             node_idx=node_idx,
             node_kind=node_kind,
             state_dict=state_dict,
-            history=history
+            history=history,
         )
         return Store.from_config(self.config).proxy(jr)
-        
-    def proxy(self, data) -> proxystore.proxy.Proxy:
+
+    def proxy(self, data) -> Proxy:
         return Store.from_config(self.config).proxy(data)
