@@ -77,6 +77,7 @@ class Flock:
                         self.leader = FlockNode(
                             idx=idx,
                             kind=data["kind"],
+                            path=f"{data['kind']}-{idx}",
                             globus_compute_endpoint=data["globus_compute_endpoint"],
                             proxystore_endpoint=data["proxystore_endpoint"],
                             # children_idx: Optional[Sequence[FlockNodeID]]
@@ -233,9 +234,25 @@ class Flock:
             yield FlockNode(
                 idx=child_idx,
                 kind=self.topo.nodes[child_idx]["kind"],
+                path=self.topo.nodes[child_idx]["path"],
                 globus_compute_endpoint=self.topo.nodes[child_idx][gce],
                 proxystore_endpoint=self.topo.nodes[child_idx][pse],
             )
+
+    @staticmethod
+    def node_path(topo: nx.DiGraph, node: FlockNode | FlockNodeID | int) -> str:
+        if isinstance(node, FlockNode):
+            idx = node.idx
+        else:
+            idx = node
+        path = ""
+        while True:
+            path = f"{topo.nodes[idx]['kind']}-{idx}/" + path
+            try:
+                idx = next(topo.predecessors(idx))
+            except StopIteration:
+                break
+        return path[:-1]
 
     def get_kind(self, node: FlockNode | FlockNodeID | int) -> FlockNodeKind:
         if isinstance(node, FlockNode):
@@ -310,6 +327,10 @@ class Flock:
         for node_idx, values in content.items():
             for child in values["children"]:
                 topo.add_edge(node_idx, child)
+
+        # STEP 3: Add path information to each node
+        for node_idx in content:
+            topo.nodes[node_idx]["path"] = Flock.node_path(topo, node_idx)
 
         return Flock(topo=topo, _src=_src)
 
@@ -426,6 +447,7 @@ class Flock:
             yield FlockNode(
                 idx=idx,
                 kind=data["kind"],
+                path=data["path"],
                 globus_compute_endpoint=data["globus_compute_endpoint"],
                 proxystore_endpoint=data["proxystore_endpoint"],
                 # children_idx: Optional[Sequence[FlockNodeID]]

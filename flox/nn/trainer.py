@@ -9,8 +9,9 @@ import torch
 from pathlib import Path
 from torch.utils.data import DataLoader
 
+from flox.flock import FlockNode
 from flox.flock.states import FloxWorkerState
-from flox.nn.logger.csv import CSVLogger
+from flox.nn.logger import TensorboardLogger, CSVLogger
 from flox.nn import FloxModule
 from flox.strategies import Strategy
 
@@ -18,14 +19,19 @@ from flox.strategies import Strategy
 class Trainer:
     def __init__(
         self,
+        node: FlockNode,
         logger: str = "csv",
         device="cpu",
+        metadata: Optional[dict[str, Any]] = None,
         config: Optional[dict[str, Any]] = None,
     ):
         self.device = device
         self.config = config  # TODO: Not implemented to do anything at the moment.
         if logger == "csv":
-            self.logger = CSVLogger()
+            raise "not here"
+            self.logger = CSVLogger(node, metadata)
+        elif logger == "tensorboard":
+            self.logger = TensorboardLogger(node, metadata)
         else:
             raise ValueError("Illegal value for `logger`.")
 
@@ -38,6 +44,7 @@ class Trainer:
         node_state: Optional[FloxWorkerState] = None,
         valid_dataloader: Optional[DataLoader] = None,
         valid_ckpt_path: Optional[Path | str] = None,
+        round: Optional[int] = None,
     ) -> pd.DataFrame:
         model.train()
         optimizer = model.configure_optimizers()
@@ -60,14 +67,13 @@ class Trainer:
 
                     optimizer.step()
 
-                    # log data about training
-                    self.logger.log_dict(
-                        {
-                            "train/loss": loss.item(),
-                            "train/epoch": epoch,
-                            "train/batch_idx": batch_idx,
-                            "train/time": datetime.datetime.now(),
-                        }
+                    self.logger.log(
+                        "train/loss",
+                        loss.item(),
+                        timestamp=datetime.datetime.now(),
+                        round=round,
+                        epoch=epoch,
+                        batch_idx=batch_idx
                     )
 
                     # If a validation ``Dataset`` has been provided (i.e., the users
@@ -93,15 +99,16 @@ class Trainer:
         valid_dataloader: DataLoader,
         epoch: int,
         ckpt_path: Optional[Path | str] = None,
+        round: Optional[int] = None,
     ):
         with torch.no_grad():
             for batch_idx, batch in enumerate(valid_dataloader):
                 loss = model.validation_step(batch, batch_idx)
-                self.logger.log_dict(
-                    {
-                        "valid/loss": loss.item(),
-                        "valid/epoch": epoch,
-                        "valid/batch_idx": batch_idx,
-                        "valid/time": datetime.datetime.now(),
-                    }
+                self.logger.log(
+                    "valid/loss",
+                    loss.item(),
+                    timestamp=datetime.datetime.now(),
+                    round=round,
+                    epoch=epoch,
+                    batch_idx=batch_idx
                 )

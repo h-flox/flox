@@ -5,6 +5,7 @@ from __future__ import annotations
 from flox.flock import FlockNode, FlockNodeID, FlockNodeKind
 from flox.nn.model import FloxModule
 from flox.reporting import Result
+from flox.nn.logger import TensorboardLogger
 from flox.strategies import Strategy
 from flox.typing import StateDict
 from typing import Optional
@@ -20,7 +21,9 @@ def local_training_job(
     strategy: Strategy,
     module_cls: type[FloxModule],
     module_state_dict: StateDict,
+    round: int,
     dataset: Optional[Dataset | Subset] = None,
+    logger: str = "csv",
     **train_hyper_params,
 ) -> Result:
     """Perform local training on a worker node.
@@ -56,7 +59,14 @@ def local_training_job(
     )
 
     strategy.wrk_on_before_train_step(node_state, dataset=dataset)
-    trainer = Trainer()
+    trainer = Trainer(node, logger=logger, metadata={
+        "node/idx": node.idx,
+        "node/kind": node.kind.to_str(),
+        "parent/idx": parent.idx,
+        "parent/kind": parent.kind.to_str(),
+        "round": round,
+        "strategy": strategy.get_label()
+    })
     history = trainer.fit(
         local_model,
         train_loader,
@@ -64,12 +74,8 @@ def local_training_job(
         num_epochs=train_hyper_params.get("num_epochs", 1),
         node_state=node_state,
         strategy=strategy,
+        round=round,
     )
-
-    history["node/idx"] = node.idx
-    history["node/kind"] = node.kind.to_str()
-    history["parent/idx"] = parent.idx
-    history["parent/kind"] = parent.kind.to_str()
 
     return transfer.report(node_state, node.idx, node.kind, local_model.state_dict(), history)
 

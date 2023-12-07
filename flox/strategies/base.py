@@ -21,10 +21,10 @@ class Strategy:
     they are run in an FL process.
     """
 
-    registry = {}
+    registry: dict[str, "Strategy"] = {}
 
     @classmethod
-    def get_strategy(cls, name: str):
+    def get_strategy(cls, name: str) -> "Strategy":
         """
 
         Args:
@@ -38,6 +38,9 @@ class Strategy:
             return cls.registry[name]
         else:
             raise KeyError(f"Strategy name ({name=}) is not in the Strategy registry.")
+
+    def get_label(self) -> str:
+        return type(self).__name__.lower()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
