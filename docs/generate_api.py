@@ -31,7 +31,6 @@ for path in sorted(Path(project_dir).rglob("**/*.py")):
         nav_parts = tuple([parts[1]] + [p.split(".")[-1] for p in parts[2:]])
     nav[nav_parts] = doc_path.as_posix()
 
-    print(f"{parts=}")
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         ident = ".".join(parts)
         fd.write(f"# {parts[-1]}\n\n::: {ident}")

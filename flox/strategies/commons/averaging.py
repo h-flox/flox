@@ -1,21 +1,19 @@
 import numpy as np
 import torch
 
-from typing import Optional
-
 from flox.flock import FlockNodeID
 from flox.typing import StateDict
 
 
 def average_state_dicts(
     state_dicts: dict[FlockNodeID, StateDict],
-    weights: Optional[dict[FlockNodeID, float]] = None,
+    weights: dict[FlockNodeID, float] | None = None,
 ) -> StateDict:
-    """Averages the parameters given by ``module.state_dict()`` from a set of ``FlockNodes``.
+    """Averages the parameters given by ``global_module.state_dict()`` from a set of ``FlockNodes``.
 
     Args:
-        state_dicts (dict[FlockNodeID, StateDict]): The module state dicts of each FlockNode to average.
-        weights (Optional[dict[FlockNodeID, float]]): The weights for each ``FlockNode`` used do weighted averaging. If
+        state_dicts (dict[FlockNodeID, StateDict]): The global_module state dicts of each FlockNode to average.
+        weights (dict[FlockNodeID, float] | None): The weights for each ``FlockNode`` used do weighted averaging. If
             no weights are provided (i.e., `weights=None`), then standard averaging is done.
 
     Returns:

@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import NewType, Optional, Union
 from uuid import UUID
 
 
-FlockNodeID = NewType("FlockNodeID", Union[int, str])
+FlockNodeID = int | str  # NewType("FlockNodeID", int | str)
 
 
 class FlockNodeKind(Enum):
@@ -69,9 +68,9 @@ class FlockNode:
     Args:
         idx (FlockNodeID): The index of the node within the Flock as a whole (this is assigned by its `Flock`).
         kind (FlockNodeKind): The kind of node.
-        globus_compute_endpoint (Optional[UUID]): Required if you want to run fitting on Globus Compute;
+        globus_compute_endpoint (UUID | None): Required if you want to run fitting on Globus Compute;
             defaults to None.
-        proxystore_endpoint (Optional[UUID]): Required if you want to run fitting with Proxystore
+        proxystore_endpoint (UUID | None): Required if you want to run fitting with Proxystore
             (recommended if you are using Globus Compute); defaults to None.
     """
 
@@ -81,8 +80,8 @@ class FlockNode:
     kind: FlockNodeKind
     """Which kind of node."""
 
-    globus_compute_endpoint: Optional[UUID] = None
+    globus_compute_endpoint: UUID | None = None
     """The `globus-compute-endpoint` uuid for using Globus Compute"""
 
-    proxystore_endpoint: Optional[UUID] = None
+    proxystore_endpoint: UUID | None = None
     """The `transfer-endpoint` uuid for using Globus Compute"""

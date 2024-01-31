@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import functools
 import json
+from pathlib import Path
+from typing import Any, Generator
+from uuid import UUID
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import yaml
-
-
 from matplotlib.axes import Axes
-from pathlib import Path
-from typing import Any, Generator, Optional
-from uuid import UUID
 
 from flox.flock.node import FlockNode, FlockNodeID, FlockNodeKind
 
@@ -35,23 +34,25 @@ PROGS = [
     "patchwork",
 ]
 
+"""
+TODO: Make an `OmegaConf` standard.
+"""
+
 
 class Flock:
     topo: nx.DiGraph
     node_counter: int
 
-    def __init__(
-        self, topo: Optional[nx.DiGraph] = None, _src: Optional[Path | str] = None
-    ):
+    def __init__(self, topo: nx.DiGraph | None = None, _src: Path | str | None = None):
         """
 
         Args:
-            topo (Optional[nx.DiGraph]): The topology (defined as a NetworkX ``nx.DiGraph``) of the
+            topo (nx.DiGraph | None): The topology (defined as a NetworkX ``nx.DiGraph``) of the
                 Flock network. If none is provided, then the Flock is initialized in "interactive"
                 mode. This means you can iteratively add nodes and edges to the Flock using
                  ``Flock.add_node()`` and ``Flock.add_edge()``. This is *not* recommended.
                  Defaults to ``None``.
-            _src (Optional[Path | str]): This identifies the source file that was used to
+            _src (Path | str | None): This identifies the source file that was used to
                 define the Flock network. This should only be used by the file constructor functions
                 (e.g., `from_yaml()`) and should not be used by the user. Defaults to ``None``.
         """
@@ -79,7 +80,7 @@ class Flock:
                             kind=data["kind"],
                             globus_compute_endpoint=data["globus_compute_endpoint"],
                             proxystore_endpoint=data["proxystore_endpoint"],
-                            # children_idx: Optional[Sequence[FlockNodeID]]
+                            # children_idx: Sequence[FlockNodeID] | None
                         )
                         found_leader = True
                     else:
@@ -90,8 +91,8 @@ class Flock:
     def add_node(
         self,
         kind: FlockNodeKind,
-        globus_compute_endpoint_id: Optional[UUID] = None,
-        proxystore_endpoint_id: Optional[UUID] = None,
+        globus_compute_endpoint_id: UUID | None = None,
+        proxystore_endpoint_id: UUID | None = None,
     ) -> FlockNodeID:
         if kind is FlockNodeKind.LEADER and self.leader is not None:
             raise ValueError("A leader node has already been established.")
@@ -130,9 +131,9 @@ class Flock:
         with_labels: bool = True,
         label_color: str = "white",
         prog: str = "dot",
-        node_kind_attrs: Optional[dict[FlockNodeKind, dict[str, Any]]] = None,
+        node_kind_attrs: dict[FlockNodeKind, dict[str, Any]] | None = None,
         show_axis_border: bool = False,
-        ax: Optional[Axes] = None,
+        ax: Axes | None = None,
     ) -> Axes:
         """
         Draws the flock using Matplotlib. The nodes are organized as a tree with the proper
@@ -148,7 +149,7 @@ class Flock:
             node_kind_attrs (): Determines how node attributes should be plotted. By default,
                 nodes will be colored and marked by kind.
             show_axis_border (bool): Show the border along the axis if True; defaults to False.
-            ax (Optional[Axes]): Axes object to draw onto. If none is provided, then one
+            ax (Axes | None): Axes object to draw onto. If none is provided, then one
                 will be created.
 
         Returns:
@@ -163,8 +164,6 @@ class Flock:
         # TODO: We may want to remove this as a requirement. It produces nice "tree" positions
         # of the nodes. But it introduces a pretty restrictive dependency.
         if prog in PROGS:
-            import pygraphviz
-
             pos = nx.nx_agraph.graphviz_layout(self.topo, prog=prog)
         else:
             pos = nx.spring_layout(self.topo)
@@ -173,6 +172,11 @@ class Flock:
             nx.draw(self.topo, pos, with_labels=with_labels, ax=ax)
             return ax
 
+        if self.leader is None:
+            raise ValueError(
+                "There is no leader in the Flock. This is likely because no topology "
+                "has been created via interactive mode."
+            )
         leader = [self.leader.idx]
         aggregators = list(aggr.idx for aggr in self.aggregators)
         workers = list(worker.idx for worker in self.workers)
@@ -247,15 +251,13 @@ class Flock:
     # ================================================================================= #
 
     @staticmethod
-    def from_dict(
-        content: dict[str, Any], _src: Optional[Path | str] = None
-    ) -> "Flock":
+    def from_dict(content: dict[str, Any], _src: Path | str | None = None) -> "Flock":
         """
         Imports a ``dict`` object to create a Flock network.
 
         Args:
             content (dict[str, Any]): Dictionary that defines the Flock network.
-            _src (Optional[Path | str]): Identifies the source file used to define
+            _src (Path | str | None): Identifies the source file used to define
                 the Flock network. This should **not** be used by users. It is used by
                 ``Flock`` class methods that are built on top of this method
                 (e.g., ``Flock.from_yaml()``).
@@ -419,7 +421,14 @@ class Flock:
         """The number of worker nodes in the Flock."""
         return len(list(self.workers))
 
-    def nodes(self, by_kind: Optional[FlockNodeKind] = None) -> Generator[FlockNode]:
+    @functools.cached_property
+    def two_tier(self) -> bool:
+        for worker in self.workers:
+            if not self.topo.has_edge(self.leader.idx, worker.idx):
+                return False
+        return True
+
+    def nodes(self, by_kind: FlockNodeKind | None = None) -> Generator[FlockNode]:
         for idx, data in self.topo.nodes(data=True):
             if by_kind is not None and data["kind"] != by_kind:
                 continue
@@ -428,7 +437,7 @@ class Flock:
                 kind=data["kind"],
                 globus_compute_endpoint=data["globus_compute_endpoint"],
                 proxystore_endpoint=data["proxystore_endpoint"],
-                # children_idx: Optional[Sequence[FlockNodeID]]
+                # children_idx: Sequence[FlockNodeID] | None
             )
 
     # ================================================================================= #
@@ -436,5 +445,6 @@ class Flock:
     def __repr__(self):
         return f"Flock(`{self._src}`)"
 
-    def __getitem__(self, item: FlockNodeID):
-        return self.topo.nodes[item]
+    def __getitem__(self, idx: FlockNodeID) -> FlockNode:
+        # return self.topo.nodes[item]
+        return FlockNode(idx, **self.topo.nodes[idx])

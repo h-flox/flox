@@ -1,6 +1,6 @@
 from concurrent.futures import Future
 from flox.flock import FlockNode
-from flox.backends.launcher.impl_base import Launcher
+from flox.runtime.launcher.base import Launcher
 
 
 class ParslLauncher(Launcher):

@@ -1,10 +1,10 @@
-import torch
-
-from flox.flock import Flock, FlockNode, FlockNodeID
-from flox.typing import StateDict
 from typing import Iterable, Mapping, TypeAlias
 
+import torch
+
+from flox.flock import FlockNode, FlockNodeID
 from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
+from flox.typing import StateDict
 
 Loss: TypeAlias = torch.Tensor
 
@@ -24,7 +24,7 @@ class Strategy:
     registry = {}
 
     @classmethod
-    def get_strategy(cls, name: str):
+    def get_strategy(cls, name: str) -> type["Strategy"]:
         """
 
         Args:
@@ -107,7 +107,7 @@ class Strategy:
                 sharing with workers.
 
         Returns:
-            The global module StateDict.
+            The global global_module StateDict.
         """
         return state_dict
 

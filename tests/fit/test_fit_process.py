@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from torch import nn
-from torchvision.datasets import FashionMNIST
+from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 
 from flox.flock import Flock
@@ -42,7 +42,7 @@ class MyModule(FloxModule):
 
 @pytest.fixture
 def data():
-    return FashionMNIST(
+    return MNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
         train=False,
@@ -59,7 +59,7 @@ def test_2_tier_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
@@ -73,7 +73,7 @@ def test_3_tier_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
@@ -87,6 +87,6 @@ def test_complex_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
