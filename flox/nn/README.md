@@ -19,7 +19,7 @@ a_step1[_sync_traverse]
     w_step1[_sync_traverse]
 
 subgraph Aggregator
-    
+
     node2-->a_step1
     a_step1-->is_worker
     is_worker-->|no|a_step1

@@ -1,11 +1,9 @@
 import networkx as nx
 
-from typing import Optional
-
 from flox.flock import Flock
 
 
-def random_flock(num_nodes: int, seed: Optional[int] = None) -> Flock:
+def random_flock(num_nodes: int, seed: int | None = None) -> Flock:
     """Generates a random Flock network.
 
     Args:

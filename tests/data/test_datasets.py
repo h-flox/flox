@@ -1,17 +1,16 @@
-import numpy as np
 import os
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 import torch
-
-from pathlib import Path
 from sklearn.datasets import make_classification
 from torch.utils.data import Dataset
 
 from flox.data import federated_split
-from flox.data.core import MyFloxDataset, FederatedSubsets
+from flox.data.core import FederatedSubsets, MyFloxDataset
 from flox.flock import Flock
-from flox.flock.states import NodeState, FloxWorkerState
-
+from flox.flock.states import FloxWorkerState, NodeState
 
 ##################################################################################################################
 
@@ -42,7 +41,7 @@ def test_dir_datasets(tmpdir):
         client_dir = (data_dir / f"{worker.idx}").mkdir()
         client_path = client_dir / "data.csv"
         with open(client_path, "w") as file:
-            print(f"x1, x2, y", file=file)
+            print("x1, x2, y", file=file)
             num_samples = rand_state.randint(low=1, high=1000)
             for _ in range(num_samples):
                 a = rand_state.randint(low=-1000, high=1000)
@@ -66,7 +65,7 @@ def test_dir_datasets(tmpdir):
             worker_data = MyDataDir(state, tmpdir)
             assert isinstance(worker_data, Dataset)
         except FileNotFoundError:
-            assert False
+            raise
 
 
 ##################################################################################################################

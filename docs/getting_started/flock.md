@@ -6,7 +6,7 @@ The ``flox.flock`` module contains the code needed to define your own ``Flock`` 
   1. interactive mode
   2. file mode
 
-Interactive mode involves creating a ``NetworkX.DiGraph()`` object directly and then passing that into the ``Flock`` constructor. This is **not** recommended. 
+Interactive mode involves creating a ``NetworkX.DiGraph()`` object directly and then passing that into the ``Flock`` constructor. This is **not** recommended.
 
 The recommended approach is ***file mode***. In this mode, you define the Flock network using a supported file type (e.g., `*.yaml`) and simply use it to create the Flock instance.
 
@@ -14,5 +14,5 @@ The recommended approach is ***file mode***. In this mode, you define the Flock 
 from flox.flock import Flock
 
 f = "my_flock.yaml"
-flock = Flock.from_yaml(f) 
+flock = Flock.from_yaml(f)
 ```

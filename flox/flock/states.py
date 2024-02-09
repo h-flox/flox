@@ -1,7 +1,8 @@
-import torch
-
+from collections.abc import Iterable
 from dataclasses import field
-from typing import Any, Iterable, Optional
+from typing import Any
+
+import torch
 
 from flox.flock import FlockNodeID
 
@@ -72,17 +73,17 @@ class FloxAggregatorState(NodeState):
 class FloxWorkerState(NodeState):
     """State of a Worker node in a ``Flock``."""
 
-    pre_local_train_model: Optional[torch.nn.Module] = None
+    pre_local_train_model: torch.nn.Module | None = None
     """Global model."""
 
-    post_local_train_model: Optional[torch.nn.Module] = None
+    post_local_train_model: torch.nn.Module | None = None
     """Local model after local fitting/training."""
 
     def __init__(
         self,
         idx: FlockNodeID,
-        pre_local_train_model: Optional[torch.nn.Module] = None,
-        post_local_train_model: Optional[torch.nn.Module] = None,
+        pre_local_train_model: torch.nn.Module | None = None,
+        post_local_train_model: torch.nn.Module | None = None,
     ):
         super().__init__(idx)
         self.pre_local_train_model = pre_local_train_model

@@ -1,15 +1,13 @@
 import numpy as np
 import torch
 
-from typing import Optional
-
 from flox.flock import FlockNodeID
 from flox.typing import StateDict
 
 
 def average_state_dicts(
     state_dicts: dict[FlockNodeID, StateDict],
-    weights: Optional[dict[FlockNodeID, float]] = None,
+    weights: dict[FlockNodeID, float] | None = None,
 ) -> StateDict:
     """Averages the parameters given by ``module.state_dict()`` from a set of ``FlockNodes``.
 

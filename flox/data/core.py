@@ -1,5 +1,5 @@
-from enum import auto, IntEnum
-from typing import NewType, Union, TypeVar
+from enum import IntEnum, auto
+from typing import NewType, TypeVar, Union
 
 from torch.utils.data import Dataset, Subset
 

@@ -1,9 +1,11 @@
+from collections.abc import Callable
 from concurrent.futures import Future
-from typing import Any, Callable
+from typing import Any
 
-from flox.flock import FlockNode
-from flox.backends.launcher.impl_base import Launcher
 import globus_compute_sdk
+
+from flox.backends.launcher.impl_base import Launcher
+from flox.flock import FlockNode
 
 
 class GlobusComputeLauncher(Launcher):

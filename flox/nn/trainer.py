@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import datetime
-from typing import Optional, Any
+from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import torch
-
-from pathlib import Path
 from torch.utils.data import DataLoader
 
 from flox.flock.states import FloxWorkerState
-from flox.nn.logger.csv import CSVLogger
 from flox.nn import FloxModule
+from flox.nn.logger.csv import CSVLogger
 from flox.strategies import Strategy
 
 
@@ -20,7 +19,7 @@ class Trainer:
         self,
         logger: str = "csv",
         device="cpu",
-        config: Optional[dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ):
         self.device = device
         self.config = config  # TODO: Not implemented to do anything at the moment.
@@ -34,10 +33,10 @@ class Trainer:
         model: FloxModule,
         train_dataloader: DataLoader,
         num_epochs: int,
-        strategy: Optional[Strategy] = None,
-        node_state: Optional[FloxWorkerState] = None,
-        valid_dataloader: Optional[DataLoader] = None,
-        valid_ckpt_path: Optional[Path | str] = None,
+        strategy: Strategy | None = None,
+        node_state: FloxWorkerState | None = None,
+        valid_dataloader: DataLoader | None = None,
+        valid_ckpt_path: Path | str | None = None,
     ) -> pd.DataFrame:
         model.train()
         optimizer = model.configure_optimizers()
@@ -81,7 +80,7 @@ class Trainer:
         self,
         model: FloxModule,
         test_dataloader: DataLoader,
-        ckpt_path: Optional[Path | str] = None,
+        ckpt_path: Path | str | None = None,
     ):
         with torch.no_grad():
             for i, batch in enumerate(test_dataloader):
@@ -92,7 +91,7 @@ class Trainer:
         model: FloxModule,
         valid_dataloader: DataLoader,
         epoch: int,
-        ckpt_path: Optional[Path | str] = None,
+        ckpt_path: Path | str | None = None,
     ):
         with torch.no_grad():
             for batch_idx, batch in enumerate(valid_dataloader):

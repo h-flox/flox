@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import functools
 import json
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any
+from uuid import UUID
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import yaml
-
-
 from matplotlib.axes import Axes
-from pathlib import Path
-from typing import Any, Generator, Optional
-from uuid import UUID
 
 from flox.flock.node import FlockNode, FlockNodeID, FlockNodeKind
 
@@ -40,9 +40,7 @@ class Flock:
     topo: nx.DiGraph
     node_counter: int
 
-    def __init__(
-        self, topo: Optional[nx.DiGraph] = None, _src: Optional[Path | str] = None
-    ):
+    def __init__(self, topo: nx.DiGraph | None = None, _src: Path | str | None = None):
         """
 
         Args:
@@ -90,8 +88,8 @@ class Flock:
     def add_node(
         self,
         kind: FlockNodeKind,
-        globus_compute_endpoint_id: Optional[UUID] = None,
-        proxystore_endpoint_id: Optional[UUID] = None,
+        globus_compute_endpoint_id: UUID | None = None,
+        proxystore_endpoint_id: UUID | None = None,
     ) -> FlockNodeID:
         if kind is FlockNodeKind.LEADER and self.leader is not None:
             raise ValueError("A leader node has already been established.")
@@ -130,9 +128,9 @@ class Flock:
         with_labels: bool = True,
         label_color: str = "white",
         prog: str = "dot",
-        node_kind_attrs: Optional[dict[FlockNodeKind, dict[str, Any]]] = None,
+        node_kind_attrs: dict[FlockNodeKind, dict[str, Any]] | None = None,
         show_axis_border: bool = False,
-        ax: Optional[Axes] = None,
+        ax: Axes | None = None,
     ) -> Axes:
         """
         Draws the flock using Matplotlib. The nodes are organized as a tree with the proper
@@ -163,8 +161,6 @@ class Flock:
         # TODO: We may want to remove this as a requirement. It produces nice "tree" positions
         # of the nodes. But it introduces a pretty restrictive dependency.
         if prog in PROGS:
-            import pygraphviz
-
             pos = nx.nx_agraph.graphviz_layout(self.topo, prog=prog)
         else:
             pos = nx.spring_layout(self.topo)
@@ -247,9 +243,7 @@ class Flock:
     # ================================================================================= #
 
     @staticmethod
-    def from_dict(
-        content: dict[str, Any], _src: Optional[Path | str] = None
-    ) -> "Flock":
+    def from_dict(content: dict[str, Any], _src: Path | str | None = None) -> Flock:
         """
         Imports a ``dict`` object to create a Flock network.
 
@@ -314,7 +308,7 @@ class Flock:
         return Flock(topo=topo, _src=_src)
 
     @staticmethod
-    def from_json(path: Path | str) -> "Flock":
+    def from_json(path: Path | str) -> Flock:
         """Imports a .json file as a Flock.
 
         Examples:
@@ -327,12 +321,12 @@ class Flock:
             An instance of a Flock.
         """
         # TODO: Figure out how to address the issue of JSON requiring string keys for `from_json()`.
-        with open(path, "r") as f:
+        with open(path) as f:
             content = json.load(f)
         return Flock.from_dict(content, _src=path)
 
     @staticmethod
-    def from_yaml(path: Path | str) -> "Flock":
+    def from_yaml(path: Path | str) -> Flock:
         """Imports a `.yaml` file as a Flock.
 
         Examples:
@@ -344,7 +338,7 @@ class Flock:
         Returns:
             An instance of a Flock.
         """
-        with open(path, "r") as f:
+        with open(path) as f:
             content = yaml.safe_load(f)
         return Flock.from_dict(content, _src=path)
 
@@ -358,7 +352,7 @@ class Flock:
         """
         # TODO: The leader does NOT need a Globus Compute endpoint.
         key = "globus_compute_endpoint"
-        for idx, data in self.topo.nodes(data=True):
+        for _idx, data in self.topo.nodes(data=True):
             value = data[key]
             if any([value is None, isinstance(value, UUID) is False]):
                 return False
@@ -375,7 +369,7 @@ class Flock:
         in size) with Globus Compute.
         """
         key = "proxystore_endpoint"
-        for idx, data in self.topo.nodes(data=True):
+        for _idx, data in self.topo.nodes(data=True):
             value = data[key]
 
             try:
@@ -419,7 +413,7 @@ class Flock:
         """The number of worker nodes in the Flock."""
         return len(list(self.workers))
 
-    def nodes(self, by_kind: Optional[FlockNodeKind] = None) -> Generator[FlockNode]:
+    def nodes(self, by_kind: FlockNodeKind | None = None) -> Generator[FlockNode]:
         for idx, data in self.topo.nodes(data=True):
             if by_kind is not None and data["kind"] != by_kind:
                 continue

@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import NewType, Optional, Union
+from typing import NewType, Union
 from uuid import UUID
-
 
 FlockNodeID = NewType("FlockNodeID", Union[int, str])
 
@@ -81,8 +80,8 @@ class FlockNode:
     kind: FlockNodeKind
     """Which kind of node."""
 
-    globus_compute_endpoint: Optional[UUID] = None
+    globus_compute_endpoint: UUID | None = None
     """The `globus-compute-endpoint` uuid for using Globus Compute"""
 
-    proxystore_endpoint: Optional[UUID] = None
+    proxystore_endpoint: UUID | None = None
     """The `transfer-endpoint` uuid for using Globus Compute"""

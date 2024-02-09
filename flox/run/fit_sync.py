@@ -1,27 +1,23 @@
 from __future__ import annotations
 
 import functools
-import pandas as pd
-
 from concurrent.futures import Future
+from typing import Literal, TypeAlias
 
+import pandas as pd
 from tqdm import tqdm
-from typing import Literal
-from typing import Optional
-from typing import TypeAlias
 
-from flox.flock import Flock, FlockNode, FlockNodeKind
-from flox.flock.states import FloxAggregatorState
+from flox.backends.launcher import GlobusComputeLauncher, LocalLauncher
 from flox.backends.launcher.impl_base import Launcher
-from flox.backends.launcher import GlobusComputeLauncher
-from flox.backends.launcher import LocalLauncher
-from flox.nn import FloxModule
 from flox.backends.transfer.base import BaseTransfer
 from flox.backends.transfer.proxystore import ProxyStoreTransfer
-from flox.run.jobs import local_training_job, aggregation_job
+from flox.data import FloxDataset
+from flox.flock import Flock, FlockNode, FlockNodeKind
+from flox.flock.states import FloxAggregatorState
+from flox.nn import FloxModule
+from flox.run.jobs import aggregation_job, local_training_job
 from flox.run.utils import set_parent_future
 from flox.strategies import Strategy
-from flox.data import FloxDataset
 from flox.typing import StateDict
 
 Where: TypeAlias = Literal["local", "globus_compute"]
@@ -119,7 +115,7 @@ def sync_flock_traverse(
     module_state_dict: StateDict,
     datasets: FloxDataset,
     strategy: Strategy,
-    parent: Optional[FlockNode] = None,
+    parent: FlockNode | None = None,
 ) -> Future:  # TODO: Fix
     """
     Launches an aggregation task on the provided ``FlockNode`` and the appropriate tasks

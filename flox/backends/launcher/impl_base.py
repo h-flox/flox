@@ -9,6 +9,7 @@ class Launcher(ABC):
     Base class for launching functions in an FL process.
     """
 
+    @abstractmethod
     def __init__(self):
         pass
 

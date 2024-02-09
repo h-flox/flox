@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import torch
+from typing import Any
 
 from pandas import DataFrame
-from typing import Any, Optional
 
 from flox.backends.launcher import (
     GlobusComputeLauncher,
@@ -11,12 +10,12 @@ from flox.backends.launcher import (
     LocalLauncher,
     ParslLauncher,
 )
+from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
+from flox.nn.types import Kind
 from flox.run.fit_sync import sync_federated_fit
-from flox.nn.types import Kind, Where
 from flox.strategies import Strategy
-from flox.data import FloxDataset
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
@@ -41,10 +40,10 @@ def federated_fit(
     module_cls: type[FloxModule],
     datasets: FloxDataset,
     num_global_rounds: int,
-    strategy: Optional[Strategy | str] = None,
+    strategy: Strategy | str | None = None,
     kind: Kind = "sync",
     launcher: str = "local-thread",
-    launcher_cfg: Optional[dict[str, Any]] = None,
+    launcher_cfg: dict[str, Any] | None = None,
 ) -> tuple[FloxModule, DataFrame]:
     """
 

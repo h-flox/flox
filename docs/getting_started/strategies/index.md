@@ -8,7 +8,7 @@ Some prominent examples from the literature of what we consider "Strategies" inc
 * FedAvg with Proximal Term (`FedProx`)[^fedprox]
 
 ## What _exactly_ do Strategies do?
-In a nutshell, a lot. Federated Learning is a complex process with tasks being done on the worker nodes and the aggregator node(s). Thus, Strategies can touch a lot of different parts of the entire logic of an FL process. 
+In a nutshell, a lot. Federated Learning is a complex process with tasks being done on the worker nodes and the aggregator node(s). Thus, Strategies can touch a lot of different parts of the entire logic of an FL process.
 
 ### Model Parameter Aggregation
 ...

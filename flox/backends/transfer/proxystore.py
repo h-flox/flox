@@ -1,6 +1,6 @@
 from proxystore.connectors.endpoint import EndpointConnector
-from proxystore.store import Store
 from proxystore.proxy import Proxy
+from proxystore.store import Store
 
 from flox.backends.transfer.base import BaseTransfer
 from flox.flock import Flock

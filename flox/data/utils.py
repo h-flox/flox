@@ -1,15 +1,14 @@
+import warnings
+from collections import defaultdict
+
 import matplotlib.pyplot as plt
 import numpy as np
-import warnings
-
 from matplotlib.axes import Axes
-from collections import defaultdict
 from scipy import stats
-from torch.utils.data import Dataset, DataLoader, Subset
-from typing import Optional
+from torch.utils.data import DataLoader, Dataset, Subset
 
-from flox.flock import Flock
 from flox.data import FederatedSubsets
+from flox.flock import Flock
 
 
 # TODO: Implement something similar for regression-based data.
@@ -106,7 +105,7 @@ def fed_barplot(
     fed_data: FederatedSubsets,
     num_labels: int,
     width: float = 0.5,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
 ) -> Axes:
     """Plots the label/sample distributions across worker nodes of a ``FederatedSubsets`` as a stacked barplot.
 
@@ -130,7 +129,7 @@ def fed_barplot(
         label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
     }
 
-    for idx, (worker, subset) in enumerate(fed_data.items()):
+    for idx, (_worker, subset) in enumerate(fed_data.items()):
         loader = DataLoader(subset, batch_size=1)
         for batch in loader:
             _, y = batch

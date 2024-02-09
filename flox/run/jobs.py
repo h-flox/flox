@@ -2,25 +2,26 @@
 #       a PURE function with all their dependencies imported within them.
 from __future__ import annotations
 
-from flox.flock import FlockNode, FlockNodeID, FlockNodeKind
+from torch.utils.data import Dataset, Subset
+
+from flox.backends.transfer.base import BaseTransfer
+from flox.flock import FlockNode
 from flox.nn.model import FloxModule
 from flox.reporting import Result
 from flox.strategies import Strategy
 from flox.typing import StateDict
-from typing import Optional
-from torch.utils.data import Dataset, Subset
-from flox.backends.transfer.base import BaseTransfer
 
 Transfer: BaseTransfer
 
+
 def local_training_job(
     node: FlockNode,
-    transfer: Transfer, 
+    transfer: Transfer,
     parent: FlockNode,
     strategy: Strategy,
     module_cls: type[FloxModule],
     module_state_dict: StateDict,
-    dataset: Optional[Dataset | Subset] = None,
+    dataset: Dataset | Subset | None = None,
     **train_hyper_params,
 ) -> Result:
     """Perform local training on a worker node.
@@ -37,9 +38,10 @@ def local_training_job(
     Returns:
         Local fitting results.
     """
+    from torch.utils.data import DataLoader
+
     from flox.flock.states import FloxWorkerState
     from flox.nn.trainer import Trainer
-    from torch.utils.data import DataLoader
 
     global_model = module_cls()
     local_model = module_cls()
@@ -71,7 +73,9 @@ def local_training_job(
     history["parent/idx"] = parent.idx
     history["parent/kind"] = parent.kind.to_str()
 
-    return transfer.report(node_state, node.idx, node.kind, local_model.state_dict(), history)
+    return transfer.report(
+        node_state, node.idx, node.kind, local_model.state_dict(), history
+    )
 
 
 def aggregation_job(
@@ -88,6 +92,7 @@ def aggregation_job(
         Aggregation results.
     """
     import pandas as pd
+
     from flox.flock.states import FloxAggregatorState
 
     child_states, child_state_dicts = {}, {}

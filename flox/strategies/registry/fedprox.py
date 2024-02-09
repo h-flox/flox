@@ -1,7 +1,7 @@
 import torch
 
+from flox.flock.states import FloxWorkerState
 from flox.strategies import FedAvg
-from flox.flock.states import FloxWorkerState, FloxAggregatorState
 
 
 class FedProx(FedAvg):

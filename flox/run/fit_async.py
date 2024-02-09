@@ -1,19 +1,15 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+
 import pandas as pd
 
-from collections import defaultdict
-from concurrent.futures import (
-    ThreadPoolExecutor,
-    wait,
-    FIRST_COMPLETED,
-)
-
+from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.run.jobs import local_training_job
 from flox.strategies import Strategy
-from flox.data import FloxDataset
 
 
 def async_federated_fit(

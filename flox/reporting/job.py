@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 from pandas import DataFrame
 
 from flox.flock import FlockNodeID, FlockNodeKind
