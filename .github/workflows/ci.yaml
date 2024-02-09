@@ -20,13 +20,9 @@ jobs:
           python -m pip install pre-commit tox
       - name: run pre-commit
         run: pre-commit run -a
-      - name: mypy (sdk)
+      - name: mypy
         run: |
-          cd compute_sdk
-          tox -e mypy
-      - name: mypy (endpoint)
-        run: |
-          cd compute_endpoint
+          cd flox
           tox -e mypy
 
   safety-check:
