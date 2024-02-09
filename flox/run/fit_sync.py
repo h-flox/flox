@@ -37,6 +37,7 @@ def sync_federated_fit(
     launcher: str = "thread",
     max_workers: int = 1,
     where: Where = "local",
+    logger: str = "csv",
 ) -> tuple[FloxModule, pd.DataFrame]:
     """Synchronous federated learning implementation.
 
@@ -93,14 +94,15 @@ def sync_federated_fit(
             module_state_dict=global_module.state_dict(),
             datasets=datasets,
             strategy=strategy,
+            round=round_no,
             parent=None,
+            logger=logger,
         )
 
         # Collect results from the aggregated future.
         # TODO: FIX: removed type definition JobResult for a test
         round_update = rnd_future.result()
         round_df = round_update.history  # pd.DataFrame.from_dict(round_update.history)
-        round_df["round"] = round_no
         df_list.append(round_df)
 
         # Apply the aggregated weights to the leader's global module for the next round.
@@ -119,7 +121,9 @@ def sync_flock_traverse(
     module_state_dict: StateDict,
     datasets: FloxDataset,
     strategy: Strategy,
+    round: Optional[int] = None,
     parent: Optional[FlockNode] = None,
+    logger: str = "csv",
 ) -> Future:  # TODO: Fix
     """
     Launches an aggregation task on the provided ``FlockNode`` and the appropriate tasks
@@ -157,6 +161,8 @@ def sync_flock_traverse(
             module_cls=module_cls,
             module_state_dict=module_state_dict,
             dataset=dataset,
+            round=round,
+            logger=logger,
             **hyper_params,
         )
 
@@ -181,6 +187,8 @@ def sync_flock_traverse(
             strategy=strategy,
             node=child,
             parent=node,
+            logger=logger,
+            round=round,
         )
         children_futures.append(future)
 

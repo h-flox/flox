@@ -45,6 +45,7 @@ def federated_fit(
     kind: Kind = "sync",
     launcher: str = "local-thread",
     launcher_cfg: Optional[dict[str, Any]] = None,
+    logger: str = "csv",
 ) -> tuple[FloxModule, DataFrame]:
     """
 
@@ -75,7 +76,8 @@ def federated_fit(
             datasets,
             num_global_rounds,
             strategy,
-            executor
+            executor,
+            logger=logger,
             # , where=where
         )
     elif kind == "async":

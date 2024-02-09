@@ -60,6 +60,9 @@ class FlockNodeKind(Enum):
         }
         return matches[self]
 
+    def __str__(self) -> str:
+        return self.to_str()
+
 
 @dataclass(frozen=True)
 class FlockNode:
@@ -80,6 +83,9 @@ class FlockNode:
 
     kind: FlockNodeKind
     """Which kind of node."""
+
+    path: str
+    """The path of the node within the flock"""
 
     globus_compute_endpoint: Optional[UUID] = None
     """The `globus-compute-endpoint` uuid for using Globus Compute"""

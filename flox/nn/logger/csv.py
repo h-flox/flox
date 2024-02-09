@@ -1,15 +1,12 @@
-from typing import Any
+from pathlib import Path
 
 from flox.nn.logger.base import BaseLogger
 
 
 class CSVLogger(BaseLogger):
-    def __init__(self):
-        super().__init__()
-        self.records = []
-
-    def log(self, name: str, value: Any) -> None:
-        self.records.append({name: value})
-
-    def log_dict(self, record: dict[str, Any]):
-        self.records.append(record)
+    def to_csv(self, filename: str | Path | None = None) -> str | None:
+        """
+        Combines all existing records into a CSV-formatted string. If passed a filename,
+        writes to that file; otherwise, returns the string.
+        """
+        return self.to_pandas().to_csv(filename)
