@@ -1,31 +1,30 @@
-from __future__ import annotations
-
 from collections import defaultdict
 from typing import Any
 
 
 def extend_dicts(
-    *dicts: dict[Any, list[Any]], pure: bool = True
-) -> dict[Any, list[Any]]:
+    *dicts: dict[Any, list[Any]], pure_dict: bool = True
+) -> dict[Any, list[Any]] | defaultdict[Any, list[Any]]:
     """
     Takes some variable number of ``dict`` objects and will append them along each key.
 
     Args:
         *dicts (dict[Any, Any]): A variable number of `dict` objects.
-        pure (bool): Returns a standard ``dict`` if True; a ``defaultdict`` if False.
+        pure_dict (bool): If ``True``, then return a standard Python dict; otherwise return the ``defaultdict`` used
+            during execution.
 
     Examples:
         >>> d1: dict[str, list] = {"name": ["Alice", "Bob"], "age": [18, 19]}
         >>> d2: dict[str, list] = {"name": ["Carol"], "age": [20]}
         >>> print(extend_dicts(d1, d2))
-        defaultdict(<class 'list'>, {'name': ['Alice', 'Bob', 'Carol'], 'age': [18, 19, 20]})
+        {'name': ['Alice', 'Bob', 'Carol'], 'age': [18, 19, 20]}
 
     Error:
         A ``ValueError()`` is raised if there is a mismatch the keys among the passed in ``dict`` objects.
         A ``TypeError()`` is raised if values of dicts are not instances of a ``list``.
 
     Returns:
-        Extended ``dict`` (or ``defaultdict``) object.
+        Extended ``dict``.
     """
     key_set = None
     new_dict = defaultdict(list)
@@ -43,4 +42,7 @@ def extend_dicts(
                 raise ValueError("Inconsistent keys across passed in ``dicts``.")
             new_dict[key].extend(val)
 
-    return dict(new_dict) if pure else new_dict
+    if pure_dict:
+        return dict(new_dict)
+    else:
+        return new_dict

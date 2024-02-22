@@ -28,7 +28,8 @@ def federated_split(
 
     Notes:
         Currently, this function only works with data for classification tasks with a discrete number
-        of labels/classes. Do *not* use this function for regression-based data.
+        of labels/classes. Do *not* use this function for regression-based data. Also, this function assumes
+        ``data`` is naturally iid.
 
     Args:
         data (Dataset): The original centralized data object that needs to be split into subsets.
@@ -129,9 +130,6 @@ def fed_barplot(
         label: np.zeros(subsets.number_of_subsets, dtype=np.int32)
         for label in range(num_labels)
     }
-
-    # print(f"{list(subsets.indices)}")
-    # exit(0)
 
     for idx, (worker, worker_subset) in enumerate(subsets):
         loader = DataLoader(worker_subset, batch_size=1)

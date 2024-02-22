@@ -17,6 +17,13 @@ from flox.typing import StateDict
 
 
 class AsyncProcess(BaseProcess):
+    """
+    Asynchronous Federated Learning process.
+
+    Notes:
+        Currently, this process is only compatible with two-tier ``Flock`` topologies.
+    """
+
     def __init__(
         self,
         flock: Flock,
@@ -29,6 +36,11 @@ class AsyncProcess(BaseProcess):
         *args,
     ):
         # assert that the flock is 2-tier
+        if not flock.is_two_tier:
+            raise ValueError(
+                "Currently, FLoX only supports two-tier topologies for ``AsyncProcess`` execution."
+            )
+
         self.flock = flock
         self.launcher = launcher
         self.num_global_rounds = num_global_rounds
@@ -43,8 +55,6 @@ class AsyncProcess(BaseProcess):
         self.state_dict = None
         self.debug_mode = False
         self.state = FloxAggregatorState(self.flock.leader.idx)
-
-        # TODO: `assert self.flock is "2-tier"`
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:
         if not self.flock.two_tier:
@@ -62,7 +72,8 @@ class AsyncProcess(BaseProcess):
         futures = []
         progress_bar = tqdm(total=self.num_global_rounds * self.flock.number_of_workers)
         for worker in self.flock.workers:
-            data = self.dataset[worker.idx]
+            # data = self.dataset[worker.idx]
+            data = self.fetch_worker_data(worker)
             fut = self.launcher.submit(
                 local_training_job,
                 worker,
@@ -123,5 +134,5 @@ class AsyncProcess(BaseProcess):
         # TODO: Obviously fix this.
         return self.global_module, pd.concat(histories)
 
-    def traverse(self):
+    def step(self):
         ...

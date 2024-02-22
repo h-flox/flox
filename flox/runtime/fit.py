@@ -7,7 +7,6 @@ from pandas import DataFrame
 from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
-
 # from flox.run.fit_sync import sync_federated_fit
 from flox.nn.types import Kind
 from flox.runtime.launcher import (
@@ -18,6 +17,7 @@ from flox.runtime.launcher import (
 )
 from flox.runtime.process.proc_async import AsyncProcess
 from flox.runtime.process.proc_sync import SyncProcess
+from flox.runtime.runtime import Runtime
 from flox.runtime.transfer import BaseTransfer
 from flox.strategies import Strategy
 
@@ -79,20 +79,25 @@ def federated_fit(
     # runner = runner_factory.build(kind, ...)
     # runner.start()
 
+    common_kwargs = {
+        "flock": flock,
+        "num_global_rounds": num_global_rounds,
+        "runtime": Runtime(launcher, transfer),
+        "module": module,
+        "dataset": datasets,
+        "strategy": strategy,
+    }
+
     match kind:
         case "sync":
-            runner = SyncProcess(
-                flock, num_global_rounds, launcher, module, datasets, transfer, strategy
-            )
+            process = SyncProcess(**common_kwargs)
         case "async":
-            runner = AsyncProcess(
-                flock, num_global_rounds, launcher, module, datasets, transfer, strategy
-            )
+            process = AsyncProcess(**common_kwargs)
         case _:
             raise ValueError
 
     start_time = datetime.datetime.now()
-    module, history = runner.start(debug_mode)
+    module, history = process.start(debug_mode)
     history["train/rel_time"] = history["train/time"] - start_time
     history["train/rel_time"] /= np.timedelta64(1, "s")
     return module, history

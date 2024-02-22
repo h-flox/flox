@@ -6,6 +6,8 @@ from torch.utils.data import Dataset, Subset
 from flox.flock import FlockNodeID, FlockNode
 from flox.flock.states import NodeState
 
+T_co = TypeVar("T_co", covariant=True)
+
 
 class FloxDataset(abc.ABC):
     """
@@ -18,9 +20,6 @@ class FloxDataset(abc.ABC):
     @abc.abstractmethod
     def load(self, node: FlockNode | FlockNodeID):
         pass
-
-
-T_co = TypeVar("T_co", covariant=True)
 
 
 class FederatedSubsets(FloxDataset):
@@ -62,7 +61,7 @@ class LocalDataset(FloxDataset):
     def __init__(self, state: NodeState, /, *args, **kwargs):
         super().__init__()
 
-    def load(self, node: FlockNode | FlockNodeID) -> Dataset:
+    def load(self, node: FlockNode | FlockNodeID) -> Dataset[T_co]:
         """Loads local dataset into a PyTorch object.
 
         Args:
@@ -71,4 +70,4 @@ class LocalDataset(FloxDataset):
         Returns:
             Dataset object using local data.
         """
-        ...
+        raise NotImplementedError

@@ -412,6 +412,20 @@ class Flock:
         return self.nodes(by_kind=FlockNodeKind.WORKER)
 
     @functools.cached_property
+    def is_two_tier(self) -> bool:
+        """
+        Whether the topology is a two-tier topology or not.
+
+        Notes:
+            This must be ``True`` for asynchronous FL processes.
+
+        Returns:
+            ``True`` if the topology is two-tier, ``False`` otherwise.
+        """
+        tree = nx.bfs_tree(g, 1, depth_limit=1)
+        return tree.number_of_nodes() == self.topo.number_of_nodes()
+
+    @functools.cached_property
     def number_of_aggregators(self) -> int:
         """The number of aggregator nodes in the Flock."""
         return len(list(self.aggregators))

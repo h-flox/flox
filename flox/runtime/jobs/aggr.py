@@ -18,7 +18,7 @@ def aggregation_job(
     Returns:
         Aggregation results.
     """
-    import pandas as pd
+    import pandas
     from flox.flock.states import FloxAggregatorState
 
     child_states, child_state_dicts = {}, {}
@@ -34,20 +34,42 @@ def aggregation_job(
 
     # As a note, this list comprehension is done to allow for `debug_mode` which uses a job on
     # worker nodes that returns empty dictionaries for its history object.
-    histories = [
-        res.history
-        if isinstance(res.history, pd.DataFrame)
-        else pd.DataFrame.from_dict(res.history)
-        for res in results
-    ]
-    history = pd.concat(histories)
+    histories = []
+    for res in results:
+        match res.history:
+            case pandas.DataFrame():
+                histories.append(res.history)
+            case dict():
+                assert isinstance(res.history, dict)
+                h = pandas.DataFrame.from_dict(res.history)
+                histories.append(h)
+            case _:
+                raise ValueError
+
+    history = pandas.concat(histories)
     return transfer.report(node_state, node.idx, node.kind, avg_state_dict, history)
 
 
 def debug_aggregation_job(
     node: FlockNode, transfer: BaseTransfer, strategy: Strategy, results: list[Result]
 ) -> Result:
+    import datetime
+    import numpy
+    import pandas
+
     result = next(iter(results))
     module = result.module
     node_state = dict(idx=node.idx)
-    return transfer.report(node_state, node.idx, node.kind, module.state_dict(), {})
+    history = {
+        "node/idx": [node.idx],
+        "node/kind": [node.kind.to_str()],
+        "train/loss": [numpy.nan],
+        "train/epoch": [numpy.nan],
+        "train/batch_idx": [numpy.nan],
+        "train/time": [datetime.datetime.now()],
+        "mode": "debug",
+    }
+    history = pandas.DataFrame.from_dict(history)
+    return transfer.report(
+        node_state, node.idx, node.kind, module.state_dict(), history
+    )

@@ -4,6 +4,10 @@ from flox.nn import FloxModule
 
 
 class DebugModule(FloxModule):
+    """
+    A very lightweight ``FloxModule`` implementation that is used for lightweight debugging.
+    """
+
     def __init__(self):
         super().__init__()
         self.model = torch.nn.Sequential(torch.nn.Linear(1, 1))
@@ -12,7 +16,7 @@ class DebugModule(FloxModule):
         return self.model(x)
 
     def training_step(
-        self, batch: torch.Tensor | tuple[torch.Tensor, torch.Tensor], batch_idx: int
+        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         x, y = batch
         logits = self.model(x)

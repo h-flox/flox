@@ -1,30 +1,36 @@
 from concurrent.futures import Future
+from typing import Any, NewType
 from typing import Callable
 
+from flox.flock import FlockNode
 from flox.runtime.launcher import Launcher
 from flox.runtime.transfer import BaseTransfer
-from flox.flock import FlockNode
-
-from typing import Any, NewType
 
 Config = NewType("Config", dict[str, Any])
 
 
-class Runtime:
-    instance: "Runtime"
+class Borg:
+    _shared_state = {}
 
-    def __new__(cls, launcher, transfer):
-        if not hasattr(cls, "instance"):
-            cls.instance = super(Runtime, cls).__new__(cls, launcher, transfer)
-        return cls.instance
+    def __init__(self):
+        self.__dict__ = self._shared_state
+
+
+class Runtime(Borg):
+    launcher: Launcher | None = None
+    transfer: BaseTransfer | None = None
 
     def __init__(self, launcher: Launcher, transfer: BaseTransfer):
+        Borg.__init__(self)
         self.launcher = launcher
         self.transfer = transfer
 
     # TODO: Come up with typing for `Job = NewType("Job", Callable[[...], ...])`
     def submit(self, fn: Callable, node: FlockNode, /, *args, **kwargs) -> Future:
         return self.launcher.submit(fn, node, *args, **kwargs, transfer=self.transfer)
+
+    def proxy(self, data: Any):
+        return self.transfer.proxy(data)
 
     # @classmethod
     # def create(

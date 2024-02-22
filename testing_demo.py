@@ -4,9 +4,8 @@ from pathlib import Path
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
 
+from flox import Flock, federated_fit
 from flox.data.utils import federated_split
-from flox.flock import Flock
-from flox.run import federated_fit
 
 if __name__ == "__main__":
     flock = Flock.from_yaml("examples/flocks/tutorial-endpoint.yaml")
@@ -21,7 +20,7 @@ if __name__ == "__main__":
 
     _, history = federated_fit(
         flock,
-        None,  # NOTE: Only valid because of `test_mode=True`
+        None,  # NOTE: Only valid because of `debug_mode=True`
         fed_data,
         5,
         strategy="fedsgd",

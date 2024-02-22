@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, TypeAlias
+
 from pandas import DataFrame
 from proxystore.proxy import Proxy
-from typing import TypeAlias
 
 from flox.flock import FlockNodeID, FlockNodeKind
 from flox.flock.states import NodeState
@@ -31,6 +32,9 @@ class JobResult:
 
     history: DataFrame | None
     """The history of results."""
+
+    cache: dict[str, Any] | None = None
+    """Miscellaneous data to be returned as part of the ``JobResult``."""
 
 
 Result: TypeAlias = JobResult | Proxy[JobResult]

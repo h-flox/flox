@@ -27,6 +27,7 @@ nav:
   - API Reference: reference/
   - Publications:
       - publications/index.md
+  - FAQ: faq.md
 
 
 ########################################################################################################################
@@ -116,6 +117,7 @@ plugins:
           options:
             docstring_section_style: spacy # list
             docstring_style: google
+            group_by_category: true
             inherited_members: yes
             line_length: 60
             members_order: source # alphabetical

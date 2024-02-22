@@ -1,3 +1,4 @@
+import numpy as np
 from numpy.random import RandomState
 
 from flox.flock import FlockNode, FlockNodeKind
@@ -44,6 +45,7 @@ def fixed_random_worker_selection(
     Returns:
 
     """
+    children = np.array(children)
     rand_state = RandomState(seed)
     num_selected = min(1, int(participation) * len(list(children)))
     selected_children = rand_state.choice(children, size=num_selected, replace=False)
@@ -54,7 +56,7 @@ def prob_random_worker_selection(
     children: list[FlockNode],
     participation: float = 1.0,
     always_include_child_aggregators: bool = True,
-    seed: int = None,
+    seed: int | None = None,
 ) -> list[FlockNode]:
     """
 

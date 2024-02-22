@@ -39,12 +39,6 @@ def local_training_job(
     from flox.nn.trainer import Trainer
     from torch.utils.data import DataLoader
 
-    global_model = module
-    global_state_dict = module.state_dict()
-    local_model = deepcopy(module)
-    global_model.load_state_dict(module_state_dict)
-    local_model.load_state_dict(module_state_dict)
-
     # if isinstance(dataset, LocalDatasetV2):
     #     data = dataset.load()
     # elif isinstance(dataset, FederatedSubsets):
@@ -58,16 +52,25 @@ def local_training_job(
     #     case _:
     #         raise ValueError("...")
 
+    global_model = module
+    global_state_dict = module.state_dict()
+    local_model = deepcopy(module)
+    global_model.load_state_dict(module_state_dict)
+    local_model.load_state_dict(module_state_dict)
+
     node_state = FloxWorkerState(
         node.idx, pre_local_train_model=global_model, post_local_train_model=local_model
     )
+
+    strategy.wrk_on_recv_params(node_state, global_state_dict)
+
     train_loader = DataLoader(
         dataset,
         batch_size=train_hyper_params.get("batch_size", 32),
         shuffle=train_hyper_params.get("shuffle", True),
     )
 
-    strategy.wrk_on_before_train_step(node_state, dataset=dataset)
+    strategy.wrk_before_train_step(node_state, dataset=dataset)
     trainer = Trainer()
     history = trainer.fit(
         local_model,
@@ -78,14 +81,13 @@ def local_training_job(
         strategy=strategy,
     )
 
+    local_params = strategy.wrk_before_submit_params(node_state)
     history["node/idx"] = node.idx
     history["node/kind"] = node.kind.to_str()
     history["parent/idx"] = parent.idx
     history["parent/kind"] = parent.kind.to_str()
 
-    return transfer.report(
-        node_state, node.idx, node.kind, local_model.state_dict(), history
-    )
+    return transfer.report(node_state, node.idx, node.kind, local_params, history)
 
 
 def debug_training_job(
@@ -107,10 +109,29 @@ def debug_training_job(
     Returns:
 
     """
+    import datetime
+    import numpy as np
+    import pandas
+    from flox.flock.states import FloxWorkerState
+
     local_module = module
-    node_state = dict(
-        idx=node.idx,
+    node_state = FloxWorkerState(
+        node.idx,
         pre_local_train_model=local_module,
-        post_local_train_module=local_module,
+        post_local_train_model=local_module,
     )
-    return transfer.report(node_state, node.idx, node.kind, module.state_dict(), {})
+    history = {
+        "node/idx": [node.idx],
+        "node/kind": [node.kind.to_str()],
+        "parent/idx": [parent.idx],
+        "parent/kind": [parent.kind.to_str()],
+        "train/loss": [np.nan],
+        "train/epoch": [np.nan],
+        "train/batch_idx": [np.nan],
+        "train/time": [datetime.datetime.now()],
+        "mode": "debug",
+    }
+    history = pandas.DataFrame.from_dict(history)
+    return transfer.report(
+        node_state, node.idx, node.kind, module.state_dict(), history
+    )

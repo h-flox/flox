@@ -6,7 +6,7 @@ from flox.runtime.launcher.base import Launcher
 
 class LocalLauncher(Launcher):
     """
-    Class that launches tasks locally.
+    Launcher implementation that processes jobs locally.
     """
 
     def __init__(self, pool: str, n_workers: int = 1):
