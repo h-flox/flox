@@ -4,6 +4,12 @@ from concurrent.futures import Future
 from flox.flock import FlockNode
 
 
+# @dataclass
+# class LauncherConfig:
+#     kind: LauncherKind
+#     args: LauncherArgs
+
+
 class Launcher(ABC):
     """
     Base class for launching functions in an FL process.

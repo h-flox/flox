@@ -1,10 +1,15 @@
-from proxystore.connectors.endpoint import EndpointConnector
-from proxystore.store import Store
-from proxystore.proxy import Proxy
+from typing import Any
 
-from flox.backends.transfer.base import BaseTransfer
-from flox.flock import Flock
-from flox.reporting.job import JobResult
+from pandas import DataFrame
+from proxystore.connectors.endpoint import EndpointConnector
+from proxystore.proxy import Proxy
+from proxystore.store import Store
+
+from flox.flock import Flock, FlockNodeID, FlockNodeKind
+from flox.flock.states import NodeState
+from flox.runtime.result import JobResult
+from flox.runtime.transfer.base import BaseTransfer
+from flox.typing import StateDict
 
 
 class ProxyStoreTransfer(BaseTransfer):
@@ -23,16 +28,21 @@ class ProxyStoreTransfer(BaseTransfer):
         self.config = store.config()
 
     def report(
-        self, node_state, node_idx, node_kind, state_dict, history
+        self,
+        node_state: NodeState | dict[str, Any] | None,
+        node_idx: FlockNodeID | None,
+        node_kind: FlockNodeKind | None,
+        state_dict: StateDict | None,
+        history: DataFrame | None,
     ) -> Proxy[JobResult]:
-        jr = JobResult(
+        result = JobResult(
             node_state=node_state,
             node_idx=node_idx,
             node_kind=node_kind,
             state_dict=state_dict,
             history=history,
         )
-        return Store.from_config(self.config).proxy(jr)
+        return Store.from_config(self.config).proxy(result)
 
-    def proxy(self, data) -> Proxy:
+    def proxy(self, data: Any) -> Proxy[Any]:
         return Store.from_config(self.config).proxy(data)

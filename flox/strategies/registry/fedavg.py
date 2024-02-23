@@ -1,9 +1,9 @@
 from flox.flock import FlockNodeID
+from flox.flock.states import FloxWorkerState
 from flox.flock.states import NodeState, FloxAggregatorState
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.registry.fedsgd import FedSGD
 from flox.typing import StateDict
-from flox.flock.states import FloxWorkerState
 
 
 class FedAvg(FedSGD):
@@ -23,7 +23,7 @@ class FedAvg(FedSGD):
         participation: float = 1.0,
         probabilistic: bool = True,
         always_include_child_aggregators: bool = True,
-        seed: int = None,
+        seed: int | None = None,
     ):
         """
 
@@ -39,7 +39,7 @@ class FedAvg(FedSGD):
             participation, probabilistic, always_include_child_aggregators, seed
         )
 
-    def wrk_on_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
+    def wrk_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
         if "dataset" not in kwargs:
             raise ValueError("`dataset` must be provided")
         state["num_data_samples"] = len(kwargs["dataset"])

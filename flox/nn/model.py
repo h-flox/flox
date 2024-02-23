@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import torch
 
 
@@ -35,7 +33,7 @@ class FloxModule(torch.nn.Module):
 
     def validation_step(
         self, batch: torch.Tensor | tuple[torch.Tensor, ...], batch_idx: int
-    ):
+    ) -> torch.Tensor:
         """
 
         Args:

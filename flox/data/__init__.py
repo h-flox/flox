@@ -1,7 +1,7 @@
 """
-This module implements several functions that can be used to create `FloxDataset` objects. These are used
+This global_module implements several functions that can be used to create `FloxDataset` objects. These are used
 to do local simulations (or remote simulations) with benchmark Machine Learning data (e.g., `MNIST`, `CIFAR-10`).
-More specifically, this module aims to make it easy to launch FL experiments with different statistical data
+More specifically, this global_module aims to make it easy to launch FL experiments with different statistical data
 distributions.
 
 ## Kinds of Datasets in FLoX
@@ -44,7 +44,7 @@ flowchart LR
 Real-world data refer to the data that are already located on decentralized devices. In this case, the data are
 naturally already decentralized. This means the only tasks necessary are to load them into memory and preprocess the
 data before using them to train the model. The standard PyTorch ``Dataset`` object included in the ``torch.utils.data``
-module already does this well. So these types of use cases for FLoX users will only require a standard PyTorch
+global_module already does this well. So these types of use cases for FLoX users will only require a standard PyTorch
 ``Dataset``.
 
 Standard PyTorch data can be written using an iter-style or a map-style implementation (read more on this
@@ -61,7 +61,15 @@ ImageNet) and split across a ``Flock`` network.
 FLoX includes utility functions to simplify the conversion from a standard, centralized PyTorch dataset to a
 simulated, decentralized dataset.
 """
-from flox.data.core import FloxDataset, FederatedSubsets
+
+from flox.data.core import FederatedSubsets, FloxDataset, LocalDataset
 from flox.data.utils import fed_barplot, federated_split
 
-__all__ = ["FloxDataset", "fed_barplot", "federated_split"]
+
+__all__ = [
+    "FloxDataset",
+    "LocalDataset",
+    "FederatedSubsets",
+    "fed_barplot",
+    "federated_split",
+]

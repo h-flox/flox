@@ -16,3 +16,22 @@ from flox.flock import Flock
 f = "my_flock.yaml"
 flock = Flock.from_yaml(f) 
 ```
+
+*** 
+
+# Endpoint YAML Configuration
+
+```yaml
+rpi-0:
+  globus-compute-endpoint: ... # required
+  proxystore-endpoint: ...     # required
+  children: [rpi-1]            # required
+  resources:
+    num_cpus: 2
+    num_gpus: 0.5
+
+rpi-1: 
+  ...
+
+...
+```

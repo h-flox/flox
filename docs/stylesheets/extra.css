@@ -1,4 +1,17 @@
 /**
+ * Import the 'Material Symbols Outlined' font for the folder icon for API (sub)modules.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined");
+
+/*ul.md-nav__list li.md-nav__item .md-nav__container a.md-nav__link span::before {*/
+li.md-nav__item--nested:not(.md-nav__item--section) .md-nav__container a.md-nav__link span.md-ellipsis::before {
+    /*font-family: "Material Design Icons";*/
+    /*content: "\e2c7";*/
+    font-family: 'Material Symbols Outlined';
+    content: "\e2c7";
+}
+
+/**
  * Styling for code snippets.
  */
 .md-typeset code,

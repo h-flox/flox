@@ -13,10 +13,10 @@ class MyStrategy(Strategy):
         super().__init__(*args, **kwargs)
         ...
 
-    def wrk_on_before_train_step(self):
+    def wrk_before_train_step(self):
         pass
 
-    def wrk_on_after_train_step(self, loss) -> 'loss':
+    def wrk_after_train_step(self, loss) -> 'loss':
         pass
 
     def agg_worker_selection(self):
@@ -31,7 +31,7 @@ class MyStrategy(Strategy):
     def agg_after_collect_params(self) -> 'state_dict':
         pass
 
-    def wrk_on_before_submit_params(self) -> 'state_dict':
+    def wrk_before_submit_params(self) -> 'state_dict':
         pass
 
     def wrk_on_recv_params(self):
