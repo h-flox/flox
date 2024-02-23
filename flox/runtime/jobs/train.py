@@ -75,7 +75,8 @@ def local_training_job(
     history = trainer.fit(
         local_model,
         train_loader,
-        # TODO: Include `trainer_params` as an argument to this so users can easily customize Trainer.
+        # TODO: Include `trainer_params` as an argument to
+        #       this so users can easily customize Trainer.
         num_epochs=train_hyper_params.get("num_epochs", 2),
         node_state=node_state,
         strategy=strategy,

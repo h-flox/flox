@@ -33,7 +33,7 @@ class Trainer:
         model: FloxModule,
         train_dataloader: DataLoader,
         num_epochs: int,
-        strategy: Strategy | None = None,
+        strategy: Strategy,
         node_state: FloxWorkerState | None = None,
         valid_dataloader: DataLoader | None = None,
         valid_ckpt_path: Path | str | None = None,

@@ -7,6 +7,7 @@ from pandas import DataFrame
 from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
+
 # from flox.run.fit_sync import sync_federated_fit
 from flox.nn.types import Kind
 from flox.runtime.launcher import (
