@@ -39,6 +39,7 @@ dependencies = [
 dev = ["black", "coverage", "jupyterlab", "matplotlib", "numpy", "pytest", "seaborn", "tensorboard", "torchvision", "matplotlib-stubs", "pandas-stubs", "networkx-stubs"]
 monitoring = ["tensorboard"]
 proxystore = ["proxystore"]
+all = ["flox[dev,monitoring,proxystore]"]
 
 [tool.pytest.ini_options]
 addopts = [
