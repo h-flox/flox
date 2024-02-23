@@ -40,10 +40,24 @@ class MyModule(FloxModule):
 
 
 @pytest.fixture
+<<<<<<< HEAD
 def data():
     return MNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
+=======
+def data(tmp_path):
+    if os.environ.get("TORCH_DATASETS"):
+        download_path = os.environ.get("TORCH_DATASETS")
+        download = False
+    else:
+        download_path = tmp_path
+        download = True
+
+    return FashionMNIST(
+        root=download_path,
+        download=download,
+>>>>>>> main
         train=False,
         transform=ToTensor(),
     )
