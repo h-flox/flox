@@ -61,7 +61,7 @@ ImageNet) and split across a ``Flock`` network.
 FLoX includes utility functions to simplify the conversion from a standard, centralized PyTorch dataset to a
 simulated, decentralized dataset.
 """
-from flox.data.core import FloxDataset
+from flox.data.core import FederatedSubsets, FloxDataset
 from flox.data.utils import fed_barplot, federated_split
 
-__all__ = ["FloxDataset", "fed_barplot", "federated_split"]
+__all__ = ["FloxDataset", "FederatedSubsets", "fed_barplot", "federated_split"]

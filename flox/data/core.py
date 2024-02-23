@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from enum import IntEnum, auto
-from typing import NewType, TypeVar, Union
+from typing import NewType, Union, get_args
 
 from torch.utils.data import Dataset, Subset
 
@@ -16,10 +17,20 @@ class FloxDatasetKind(IntEnum):
     def from_obj(obj) -> "FloxDatasetKind":
         if isinstance(obj, Dataset):
             return FloxDatasetKind.STANDARD
-        elif isinstance(obj, FederatedSubsets):
+        elif FloxDatasetKind.is_federated_dataset(obj):
             return FloxDatasetKind.FEDERATED
         else:
             return FloxDatasetKind.INVALID
+
+    @staticmethod
+    def is_federated_dataset(obj) -> bool:
+        if not isinstance(obj, Mapping):
+            return False
+
+        return all(
+            isinstance(k, get_args(FlockNodeID)) and isinstance(v, (Dataset, Subset))
+            for k, v in obj.items()
+        )
 
 
 def flox_compatible_data(obj) -> bool:
@@ -29,9 +40,8 @@ def flox_compatible_data(obj) -> bool:
     return True
 
 
-T_co = TypeVar("T_co", covariant=True)
 FederatedSubsets = NewType(
-    "FederatedSubsets", dict[FlockNodeID, Union[Dataset[T_co], Subset[T_co]]]
+    "FederatedSubsets", Mapping[FlockNodeID, Union[Dataset, Subset]]
 )
 
 
@@ -41,4 +51,4 @@ class MyFloxDataset(Dataset):
         self.state = state
 
 
-FloxDataset = NewType("FloxDataset", Union[MyFloxDataset, FederatedSubsets])
+FloxDataset = Union[MyFloxDataset, FederatedSubsets]

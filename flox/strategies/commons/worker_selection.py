@@ -1,14 +1,18 @@
+from collections.abc import Iterable
+from typing import cast
+
 from numpy.random import RandomState
+from numpy.typing import NDArray
 
 from flox.flock import FlockNode, FlockNodeKind
 
 
 def random_worker_selection(
-    children: list[FlockNode],
+    children: Iterable[FlockNode],
     participation: float = 1.0,
     probabilistic: bool = False,
     always_include_child_aggregators: bool = True,
-    seed: int = None,
+    seed: int | None = None,
 ) -> list[FlockNode]:
     """
 
@@ -30,9 +34,9 @@ def random_worker_selection(
 
 
 def fixed_random_worker_selection(
-    children: list[FlockNode],
+    children: Iterable[FlockNode],
     participation: float = 1.0,
-    seed: int = None,
+    seed: int | None = None,
 ) -> list[FlockNode]:
     """
 
@@ -46,15 +50,17 @@ def fixed_random_worker_selection(
     """
     rand_state = RandomState(seed)
     num_selected = min(1, int(participation) * len(list(children)))
-    selected_children = rand_state.choice(children, size=num_selected, replace=False)
+    # numpy annotates RandomState.choice too narrowly; need this to satisfy mypy
+    achildren = cast(NDArray, children)
+    selected_children = rand_state.choice(achildren, size=num_selected, replace=False)
     return list(selected_children)
 
 
 def prob_random_worker_selection(
-    children: list[FlockNode],
+    children: Iterable[FlockNode],
     participation: float = 1.0,
     always_include_child_aggregators: bool = True,
-    seed: int = None,
+    seed: int | None = None,
 ) -> list[FlockNode]:
     """
 
@@ -76,7 +82,9 @@ def prob_random_worker_selection(
             selected_children.append(child)
 
     if len(selected_children) == 0:
-        random_child = rand_state.choice(children)
+        # numpy annotates RandomState.choice too narrowly; need this to satisfy mypy
+        achildren = cast(NDArray, children)
+        random_child = rand_state.choice(achildren)
         selected_children.append(random_child)
 
     return selected_children

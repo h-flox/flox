@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
 import pandas as pd
 
+from flox.backends.transfer.base import BaseTransfer
 from flox.data import FloxDataset
 from flox.flock import Flock
+from flox.flock.node import FlockNodeID
 from flox.nn import FloxModule
 from flox.run.jobs import local_training_job
 from flox.strategies import Strategy
@@ -18,7 +20,6 @@ def async_federated_fit(
     datasets: FloxDataset,
     num_global_rounds: int,
     strategy: Strategy | str = "fedavg",
-    executor: str = "thread",
     max_workers: int = 1,
 ) -> pd.DataFrame:
     """
@@ -39,22 +40,24 @@ def async_federated_fit(
     # assert that the flock is a 2-tier system with no intermediary aggregators.
     executor = ThreadPoolExecutor(max_workers=max_workers)
     global_module = module_cls()
-    hyper_params = {}
 
-    futures = [
+    if isinstance(strategy, str):
+        strategy = Strategy.get_strategy(strategy)()
+
+    futures = {
         executor.submit(
             local_training_job,
             node,
+            BaseTransfer(),
             parent=flock.leader,
             strategy=strategy,
             module_cls=module_cls,
             module_state_dict=global_module.state_dict(),
             dataset=datasets[node.idx],
-            **hyper_params,
         )
         for node in flock.workers
-    ]
-    num_local_fitins = defaultdict(int)
+    }
+    num_local_fitins: Counter[FlockNodeID] = Counter()
 
     while futures:
         done, futures = wait(futures, return_when=FIRST_COMPLETED)
@@ -67,21 +70,20 @@ def async_federated_fit(
             results = [d.result() for d in done]
 
         for res in results:
-            futures = list(futures)
-            num_local_fitins[res.idx] += 1
-            node = flock[res.idx]
+            num_local_fitins[res.node_idx] += 1
+            node = flock[res.node_idx]
 
-            if num_local_fitins[res.idx] < num_global_rounds:
+            if num_local_fitins[res.node_idx] < num_global_rounds:
                 fut = executor.submit(
                     local_training_job,
                     node,
+                    BaseTransfer(),
                     parent=flock.leader,
                     strategy=strategy,
                     module_cls=module_cls,
                     module_state_dict=global_module.state_dict(),
                     dataset=datasets[node.idx],
-                    **hyper_params,
                 )
-                futures.append(fut)
+                futures.add(fut)
 
     return pd.DataFrame.from_dict({})

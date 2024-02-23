@@ -11,17 +11,15 @@ from flox.reporting import Result
 from flox.strategies import Strategy
 from flox.typing import StateDict
 
-Transfer: BaseTransfer
-
 
 def local_training_job(
     node: FlockNode,
-    transfer: Transfer,
+    transfer: BaseTransfer,
     parent: FlockNode,
     strategy: Strategy,
     module_cls: type[FloxModule],
     module_state_dict: StateDict,
-    dataset: Dataset | Subset | None = None,
+    dataset: Dataset | Subset,
     **train_hyper_params,
 ) -> Result:
     """Perform local training on a worker node.
@@ -79,7 +77,7 @@ def local_training_job(
 
 
 def aggregation_job(
-    node: FlockNode, transfer: Transfer, strategy: Strategy, results: list[Result]
+    node: FlockNode, transfer: BaseTransfer, strategy: Strategy, results: list[Result]
 ) -> Result:
     """Aggregate the state dicts from each of the results.
 

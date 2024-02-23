@@ -27,7 +27,7 @@ class FedProx(FedAvg):
         participation: float = 1.0,
         probabilistic: bool = False,
         always_include_child_aggregators: bool = True,
-        seed: int = None,
+        seed: int | None = None,
     ):
         """
 
@@ -74,6 +74,8 @@ class FedProx(FedAvg):
         """
         global_model = state.pre_local_train_model
         local_model = state.post_local_train_model
+        assert global_model is not None
+        assert local_model is not None
 
         params = list(local_model.state_dict().values())
         params0 = list(global_model.state_dict().values())

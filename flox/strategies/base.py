@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping
 from typing import TypeAlias
 
@@ -10,7 +11,7 @@ from flox.typing import StateDict
 Loss: TypeAlias = torch.Tensor
 
 
-class Strategy:
+class Strategy(ABC):
     """Base class for the logical blocks of a FL process.
 
     A ``Strategy`` in FLoX is used to implement the logic of an FL process. A ``Strategy`` provides
@@ -22,10 +23,10 @@ class Strategy:
     they are run in an FL process.
     """
 
-    registry = {}
+    registry: dict[str, type["Strategy"]] = {}
 
     @classmethod
-    def get_strategy(cls, name: str):
+    def get_strategy(cls, name: str) -> type["Strategy"]:
         """
 
         Args:
@@ -38,7 +39,7 @@ class Strategy:
         if name in cls.registry:
             return cls.registry[name]
         else:
-            raise KeyError(f"Strategy name ({name=}) is not in the Strategy registry.")
+            raise KeyError(f"Strategy name ({name}) is not in the Strategy registry.")
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -55,8 +56,9 @@ class Strategy:
         Args:
             state (FloxAggregatorState): The current state of the Aggregator FloxNode.
         """
+        raise NotImplementedError()
 
-    # @required
+    @abstractmethod
     def agg_param_aggregation(
         self,
         state: FloxAggregatorState,
@@ -78,7 +80,7 @@ class Strategy:
             StateDict
         """
 
-    # @required
+    @abstractmethod
     def agg_worker_selection(
         self, state: FloxAggregatorState, children: Iterable[FlockNode], *args, **kwargs
     ) -> Iterable[FlockNode]:
@@ -133,6 +135,7 @@ class Strategy:
         Returns:
 
         """
+        raise NotImplementedError()
 
     ####################################################################################
     #                                WORKER CALLBACKS.                                 #
@@ -148,7 +151,7 @@ class Strategy:
         Returns:
 
         """
-        pass
+        raise NotImplementedError()
 
     def wrk_on_after_train_step(
         self, state: FloxWorkerState, loss: Loss, *args, **kwargs
@@ -179,7 +182,7 @@ class Strategy:
         Returns:
 
         """
-        pass
+        raise NotImplementedError()
 
     def wrk_on_recv_params(
         self, state: FloxWorkerState, params: StateDict, *args, **kwargs

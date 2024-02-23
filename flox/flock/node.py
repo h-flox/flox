@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import NewType, Union
+from typing import Union
 from uuid import UUID
 
-FlockNodeID = NewType("FlockNodeID", Union[int, str])
+FlockNodeID = Union[int, str]
 
 
 class FlockNodeKind(Enum):
