@@ -1,9 +1,9 @@
-from __future__ import annotations
+from abc import ABC, abstractmethod
 
 import torch
 
 
-class FloxModule(torch.nn.Module):
+class FloxModule(torch.nn.Module, ABC):
     """
     The ``FloxModule`` is a wrapper for the standard ``torch.nn.Module`` class from PyTorch, with
     a lot of inspiration from the ``lightning.LightningModule`` class from PyTorch Lightning.
@@ -12,6 +12,7 @@ class FloxModule(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @abstractmethod
     def training_step(
         self, batch: torch.Tensor | tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
@@ -26,6 +27,7 @@ class FloxModule(torch.nn.Module):
             Loss from the training step.
         """
 
+    @abstractmethod
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configures, initializes, and returns the optimizer used to train the model.
 

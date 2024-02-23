@@ -1,3 +1,6 @@
+from typing import cast
+from uuid import UUID
+
 from proxystore.connectors.endpoint import EndpointConnector
 from proxystore.proxy import Proxy
 from proxystore.store import Store
@@ -17,10 +20,10 @@ class ProxyStoreTransfer(BaseTransfer):
             )
 
         self.connector = EndpointConnector(
-            endpoints=[node.proxystore_endpoint for node in flock.nodes()]
+            endpoints=[cast(UUID, node.proxystore_endpoint) for node in flock.nodes()]
         )
-        store = Store(name=name, connector=self.connector)
-        self.config = store.config()
+        store_instance = Store(name=name, connector=self.connector)
+        self.config = store_instance.config()
 
     def report(
         self, node_state, node_idx, node_kind, state_dict, history

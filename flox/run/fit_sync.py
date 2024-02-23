@@ -5,6 +5,7 @@ from concurrent.futures import Future
 from typing import Literal, TypeAlias
 
 import pandas as pd
+from torch.utils.data import Dataset, Subset
 from tqdm import tqdm
 
 from flox.backends.launcher import GlobusComputeLauncher, LocalLauncher
@@ -59,11 +60,12 @@ def sync_federated_fit(
         Results from the FL process.
     """
     transfer: Transfer
+    launcher_instance: Launcher
 
     if launcher == "thread" or launcher == "process":
-        launcher = LocalLauncher(launcher, max_workers)
+        launcher_instance = LocalLauncher(launcher, max_workers)
     elif launcher == "globus_compute":
-        launcher = GlobusComputeLauncher()
+        launcher_instance = GlobusComputeLauncher()
 
     if where == "local":
         transfer = BaseTransfer()
@@ -81,7 +83,7 @@ def sync_federated_fit(
         # Launch the tasks recursively starting with the aggregation task on the
         # leader of the Flock.
         rnd_future = sync_flock_traverse(
-            launcher,
+            launcher_instance,
             transfer=transfer,
             flock=flock,
             node=flock.leader,
@@ -138,12 +140,12 @@ def sync_flock_traverse(
 
     # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
+        dataset: Dataset | Subset
         if isinstance(transfer, ProxyStoreTransfer):
             dataset = transfer.proxy(datasets[node.idx])
         else:
             dataset = datasets[node.idx]
 
-        hyper_params = {}
         return launcher.submit(
             local_training_job,
             node,
@@ -153,7 +155,6 @@ def sync_flock_traverse(
             module_cls=module_cls,
             module_state_dict=module_state_dict,
             dataset=dataset,
-            **hyper_params,
         )
 
     if isinstance(transfer, ProxyStoreTransfer):

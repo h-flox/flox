@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import json
-from collections.abc import Generator
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -55,7 +55,6 @@ class Flock:
         """
         self.node_counter: int = 0
         self._src = "interactive" if _src is None else _src
-        self.leader = None
 
         if topo is None:
             # By default (i.e., `topo is None`),
@@ -84,6 +83,8 @@ class Flock:
                         raise ValueError(
                             "A legal Flock cannot have more than one leader."
                         )
+            if not found_leader:
+                raise ValueError("A legal Flock must have a leader.")
 
     def add_node(
         self,
@@ -102,7 +103,7 @@ class Flock:
             proxystore_endpoint_id=proxystore_endpoint_id,
         )
         self.node_counter += 1
-        return FlockNodeID(idx)
+        return idx
 
     def add_edge(self, u: FlockNodeID, v: FlockNodeID, **attrs) -> None:
         """
@@ -218,7 +219,7 @@ class Flock:
 
         return True
 
-    def children(self, node: FlockNode | FlockNodeID | int) -> Generator[FlockNode]:
+    def children(self, node: FlockNode | FlockNodeID | int) -> Iterator[FlockNode]:
         if isinstance(node, FlockNode):
             idx = node.idx
         else:
@@ -384,7 +385,7 @@ class Flock:
     #     return self.nodes(by_kind=FlockNodeKind.LEADER)
 
     @property
-    def aggregators(self) -> Generator[FlockNode]:
+    def aggregators(self) -> Iterator[FlockNode]:
         """
         The aggregator nodes of the Flock.
 
@@ -394,7 +395,7 @@ class Flock:
         return self.nodes(by_kind=FlockNodeKind.AGGREGATOR)
 
     @property
-    def workers(self) -> Generator[FlockNode]:
+    def workers(self) -> Iterator[FlockNode]:
         """
         The worker nodes of the Flock.
 
@@ -413,7 +414,7 @@ class Flock:
         """The number of worker nodes in the Flock."""
         return len(list(self.workers))
 
-    def nodes(self, by_kind: FlockNodeKind | None = None) -> Generator[FlockNode]:
+    def nodes(self, by_kind: FlockNodeKind | None = None) -> Iterator[FlockNode]:
         for idx, data in self.topo.nodes(data=True):
             if by_kind is not None and data["kind"] != by_kind:
                 continue

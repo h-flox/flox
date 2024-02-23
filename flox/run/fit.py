@@ -61,7 +61,7 @@ def federated_fit(
 
     """
     launcher_cfg = dict() if launcher_cfg is None else launcher_cfg
-    launcher = create_launcher(launcher, **launcher_cfg)
+    # launcher = create_launcher(launcher, **launcher_cfg)  # not used
 
     strategy = "fedsgd" if strategy is None else strategy
 

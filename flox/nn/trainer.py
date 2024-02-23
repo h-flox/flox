@@ -50,10 +50,13 @@ class Trainer:
                     loss.backward()
 
                     try:
+                        assert strategy is not None
+                        assert node_state is not None
                         strategy.wrk_on_after_train_step(node_state, loss)
-                    except NotImplementedError:
+                    except (AttributeError, AssertionError):
                         """
-                        The current strategy does not override the `wrk_on_after_train_step()` callback.
+                        node_state is None, strategy is None, or the strategy doesn't
+                        implement `wrk_on_after_train_step()`.
                         """
                         pass
 

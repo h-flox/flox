@@ -1,6 +1,6 @@
 from concurrent.futures import Future
 
-from flox.backends.launcher.impl_base import Launcher
+from flox.backends.launcher.impl_base import Launcher, LauncherFunction
 from flox.flock import FlockNode
 
 
@@ -13,8 +13,10 @@ class ParslLauncher(Launcher):
         super().__init__()
         raise NotImplementedError(f"{self.__name__} yet implemented")
 
-    def submit(self, fn, node: FlockNode, /, *args, **kwargs) -> Future:
-        pass
+    def submit(
+        self, fn: LauncherFunction, node: FlockNode, /, *args, **kwargs
+    ) -> Future:
+        raise NotImplementedError()
 
     def collect(self):
-        pass
+        raise NotImplementedError()

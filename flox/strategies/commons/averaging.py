@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 import numpy as np
 import torch
 
@@ -6,8 +8,8 @@ from flox.typing import StateDict
 
 
 def average_state_dicts(
-    state_dicts: dict[FlockNodeID, StateDict],
-    weights: dict[FlockNodeID, float] | None = None,
+    state_dicts: Mapping[FlockNodeID, StateDict],
+    weights: Mapping[FlockNodeID, float] | None = None,
 ) -> StateDict:
     """Averages the parameters given by ``module.state_dict()`` from a set of ``FlockNodes``.
 
@@ -25,7 +27,7 @@ def average_state_dicts(
     with torch.no_grad():
         avg_weights = {}
         for node, state_dict in state_dicts.items():
-            w = 1 / num_nodes if weights is None else weights[node] / weight_sum
+            w = 1 / num_nodes if weights is None else weights[node] / weight_sum  # type: ignore
             for name, value in state_dict.items():
                 value = w * torch.clone(value)
                 if name not in avg_weights:

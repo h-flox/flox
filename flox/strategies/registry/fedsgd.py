@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
+
 from flox.flock import FlockNode, FlockNodeID
 from flox.flock.states import FloxAggregatorState, NodeState
 from flox.strategies.base import Strategy
@@ -26,7 +28,7 @@ class FedSGD(Strategy):
         participation: float = 1.0,
         probabilistic: bool = True,
         always_include_child_aggregators: bool = True,
-        seed: int = None,
+        seed: int | None = None,
     ):
         """Initializes the FedSGD strategy with the desired parameters.
 
@@ -49,7 +51,11 @@ class FedSGD(Strategy):
         self.seed = seed
 
     def agg_worker_selection(
-        self, state: FloxAggregatorState, children: list[FlockNode], **kwargs
+        self,
+        state: FloxAggregatorState,
+        children: Iterable[FlockNode],
+        *_args,
+        **_kwargs,
     ) -> list[FlockNode]:
         """Performs a simple average of the model weights returned by the child nodes.
 
@@ -82,10 +88,10 @@ class FedSGD(Strategy):
     def agg_param_aggregation(
         self,
         state: FloxAggregatorState,
-        children_states: dict[FlockNodeID, NodeState],
-        children_state_dicts: dict[FlockNodeID, StateDict],
-        *args,
-        **kwargs,
+        children_states: Mapping[FlockNodeID, NodeState],
+        children_state_dicts: Mapping[FlockNodeID, StateDict],
+        *_args,
+        **_kwargs,
     ) -> StateDict:
         """Runs simple, unweighted averaging of ``StateDict`` objects from each child node.
 

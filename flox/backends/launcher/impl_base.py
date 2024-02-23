@@ -1,7 +1,13 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import Future
+from typing import Any, Protocol
 
 from flox.flock import FlockNode
+
+
+class LauncherFunction(Protocol):
+    def __call__(self, node: FlockNode, *args: Any, **kwargs: Any) -> Any:
+        ...
 
 
 class Launcher(ABC):
@@ -14,7 +20,9 @@ class Launcher(ABC):
         pass
 
     @abstractmethod
-    def submit(self, fn, node: FlockNode, /, *args, **kwargs) -> Future:
+    def submit(
+        self, fn: LauncherFunction, node: FlockNode, /, *args, **kwargs
+    ) -> Future:
         raise NotImplementedError()
 
     @abstractmethod

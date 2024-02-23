@@ -1,14 +1,15 @@
 import warnings
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from scipy import stats
+from scipy import stats  # type: ignore
 from torch.utils.data import DataLoader, Dataset, Subset
 
 from flox.data import FederatedSubsets
 from flox.flock import Flock
+from flox.flock.node import FlockNodeID
 
 
 # TODO: Implement something similar for regression-based data.
@@ -59,16 +60,20 @@ def federated_split(
     sample_distr = stats.dirichlet(np.full(num_workers, samples_alpha))
     label_distr = stats.dirichlet(np.full(num_classes, labels_alpha))
 
-    num_samples_for_workers = (sample_distr.rvs()[0] * len(data)).astype(int)
+    # pytorch intentionally doesn't define an empty __len__ for DataSet, even though
+    # most subclasses implement it
+    data_count = len(data)  # type: ignore
+
+    num_samples_for_workers = (sample_distr.rvs()[0] * data_count).astype(int)
     num_samples_for_workers = {
         worker.idx: num_samples
         for worker, num_samples in zip(flock.workers, num_samples_for_workers)
     }
     label_probs = {w.idx: label_distr.rvs()[0] for w in flock.workers}
 
-    indices: dict[int, list[int]] = defaultdict(list)
+    indices: dict[FlockNodeID, list[int]] = defaultdict(list)
     loader = DataLoader(data, batch_size=1)
-    worker_samples = defaultdict(int)
+    worker_samples: Counter[FlockNodeID] = Counter()
     for idx, batch in enumerate(loader):
         _, y = batch
         label = y.item()
@@ -89,11 +94,11 @@ def federated_split(
                         )
                     raise err
 
-        probs = np.array(probs)
-        probs = probs / probs.sum()
+        probs_norm = np.array(probs)
+        probs_norm = probs_norm / probs_norm.sum()
 
         if len(temp_workers) > 0:
-            chosen_worker = np.random.choice(temp_workers, p=probs)
+            chosen_worker = np.random.choice(temp_workers, p=probs_norm)
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
