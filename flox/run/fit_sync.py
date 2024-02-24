@@ -5,6 +5,7 @@ from concurrent.futures import Future
 from typing import Literal, TypeAlias
 
 import pandas as pd
+from torch.utils.data import Dataset, Subset
 from tqdm import tqdm
 
 from flox.backends.launcher import GlobusComputeLauncher, LocalLauncher
@@ -139,6 +140,7 @@ def sync_flock_traverse(
 
     # If the current node is a worker node, then Launch the LOCAL FITTING job.
     if flock.get_kind(node) is FlockNodeKind.WORKER:
+        dataset: Dataset | Subset
         if isinstance(transfer, ProxyStoreTransfer):
             dataset = transfer.proxy(datasets[node.idx])
         else:

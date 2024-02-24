@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from scipy import stats
+from scipy import stats  # type: ignore
 from torch.utils.data import DataLoader, Dataset, Subset
 
 from flox.data import FederatedSubsets
