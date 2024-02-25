@@ -48,6 +48,7 @@ def fixed_random_worker_selection(
     Returns:
 
     """
+    children = np.array(children)
     rand_state = RandomState(seed)
     num_selected = min(1, int(participation) * len(list(children)))
     # numpy annotates RandomState.choice too narrowly; need this to satisfy mypy

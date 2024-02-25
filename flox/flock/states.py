@@ -1,6 +1,5 @@
-from collections.abc import Iterable
 from dataclasses import field
-from typing import Any
+from typing import Any, Iterable
 
 import torch
 

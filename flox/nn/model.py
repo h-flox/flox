@@ -1,5 +1,3 @@
-from abc import ABC, abstractmethod
-
 import torch
 
 
@@ -37,7 +35,7 @@ class FloxModule(torch.nn.Module, ABC):
 
     def validation_step(
         self, batch: torch.Tensor | tuple[torch.Tensor, ...], batch_idx: int
-    ):
+    ) -> torch.Tensor:
         """
 
         Args:

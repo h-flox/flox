@@ -1,12 +1,11 @@
-from abc import ABC, abstractmethod
-from collections.abc import Iterable, Mapping
-from typing import TypeAlias
+from typing import Iterable, Mapping, TypeAlias
 
 import torch
 
 from flox.flock import FlockNode, FlockNodeID
-from flox.flock.states import FloxAggregatorState, FloxWorkerState, NodeState
+from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
 from flox.typing import StateDict
+from abc import abstractmethod
 
 Loss: TypeAlias = torch.Tensor
 
@@ -28,12 +27,17 @@ class Strategy(ABC):
     @classmethod
     def get_strategy(cls, name: str) -> type["Strategy"]:
         """
+        Pulls a strategy class implementation from the registry by its name.
+
+        Notes:
+            All names are lower-cased (e.g., the name for `FedAvg` is "fedavg"). Thus, any
+            provided argument for `name` is lower-cased via `name = name.lower()`.
 
         Args:
-            name ():
+            name (str): The name of the strategy implementation to pull from the registry.
 
         Returns:
-
+            Strategy class.
         """
         name = name.lower()
         if name in cls.registry:
@@ -46,7 +50,47 @@ class Strategy(ABC):
         cls.registry[cls.__name__.lower()] = cls
 
     ####################################################################################
-    #                              AGGREGATOR CALLBACKS.                               #
+    #                                CLIENT CALLBACKS.                                 #
+    ####################################################################################
+
+    def cli_get_node_statuses(self):
+        pass
+
+    def agg_worker_selection(
+        self, state: FloxAggregatorState, children: Iterable[FlockNode], *args, **kwargs
+    ) -> Iterable[FlockNode]:
+        """
+
+        Args:
+            state ():
+            children ():
+            *args ():
+            **kwargs ():
+
+        Returns:
+            List of selected nodes that are children of the aggregator.
+        """
+
+    def agg_before_share_params(
+        self, state: FloxAggregatorState, state_dict: StateDict, *args, **kwargs
+    ) -> StateDict:
+        """Callback before sharing parameters to child nodes.
+
+        This is mostly done is modify the global model's StateDict. This can be done to encrypt the
+        model parameters, apply noise, personalize, etc.
+
+        Args:
+            state (FloxAggregatorState): The current state of the aggregator.
+            state_dict (StateDict): The global model's current StateDict (i.e., parameters) before
+                sharing with workers.
+
+        Returns:
+            The global global_module StateDict.
+        """
+        return state_dict
+
+    ####################################################################################
+    #                                CLIENT CALLBACKS.                                 #
     ####################################################################################
 
     def agg_before_round(self, state: FloxAggregatorState) -> None:
@@ -80,7 +124,6 @@ class Strategy(ABC):
             StateDict
         """
 
-    @abstractmethod
     def agg_worker_selection(
         self, state: FloxAggregatorState, children: Iterable[FlockNode], *args, **kwargs
     ) -> Iterable[FlockNode]:
@@ -110,11 +153,24 @@ class Strategy(ABC):
                 sharing with workers.
 
         Returns:
-            The global module StateDict.
+            The global global_module StateDict.
         """
         return state_dict
 
-    def agg_after_collect_params(
+    ####################################################################################
+    #                              AGGREGATOR CALLBACKS.                               #
+    ####################################################################################
+
+    def agg_before_round(self, state: FloxAggregatorState) -> None:
+        """
+        Some process to run at the start of a round.
+
+        Args:
+            state (FloxAggregatorState): The current state of the Aggregator FloxNode.
+        """
+        raise NotImplementedError()
+
+    def agg_param_aggregation(
         self,
         state: FloxAggregatorState,
         children_states: Mapping[FlockNodeID, NodeState],
@@ -123,24 +179,35 @@ class Strategy(ABC):
         **kwargs,
     ) -> StateDict:
         """
-        ...
 
         Args:
             state (FloxAggregatorState):
-            children_states (Mapping[FlockNodeID, NodeState]): ...
-            children_state_dicts (Mapping[FlockNodeID, StateDict]): ...
+            children_states (Mapping[FlockNodeID, NodeState]):
+            children_state_dicts (Mapping[FlockNodeID, NodeState]):
+            *args ():
+            **kwargs ():
+
+        Returns:
+            StateDict
+        """
+
+    def agg_worker_selection(
+        self, state: FloxAggregatorState, children: Iterable[FlockNode], *args, **kwargs
+    ) -> Iterable[FlockNode]:
+        """
+
+        Args:
+            state ():
+            params ():
             *args ():
             **kwargs ():
 
         Returns:
 
         """
-        raise NotImplementedError()
+        return children
 
-    ####################################################################################
-    #                                WORKER CALLBACKS.                                 #
-    ####################################################################################
-    def wrk_on_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
+    def wrk_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
         """
 
         Args:
@@ -153,7 +220,7 @@ class Strategy(ABC):
         """
         raise NotImplementedError()
 
-    def wrk_on_after_train_step(
+    def wrk_after_train_step(
         self, state: FloxWorkerState, loss: Loss, *args, **kwargs
     ) -> Loss:
         """
@@ -169,7 +236,7 @@ class Strategy(ABC):
         """
         return loss
 
-    def wrk_on_before_submit_params(
+    def wrk_before_submit_params(
         self, state: FloxWorkerState, *args, **kwargs
     ) -> StateDict:
         """

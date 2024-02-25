@@ -6,6 +6,7 @@ repo_url: https://github.com/nathaniel-hudson/FLoX
 
 ########################################################################################################################
 ########################################################################################################################
+# NAVIGATION
 ########################################################################################################################
 
 
@@ -26,6 +27,7 @@ nav:
   - API Reference: reference/
   - Publications:
       - publications/index.md
+  - FAQ: faq.md
 
 
 ########################################################################################################################
@@ -33,7 +35,7 @@ nav:
 ########################################################################################################################
 
 copyright:
-  Copyright &copy; 2022 - 2023 Globus Labs, University of Chicago.
+  Copyright &copy; 2022 - 2024 Globus Labs, University of Chicago.
 
 extra:
   social:
@@ -45,6 +47,7 @@ extra_css:
   - stylesheets/extra.css
   - stylesheets/mkdocstrings.css
   - stylesheets/youtube.css
+  - stylesheets/api.css
 
 theme:
   name: material
@@ -55,7 +58,7 @@ theme:
   #  favicon: ...
   font:
     text: Open Sans
-    code: Source Code Pro # Roboto Mono
+    code: JetBrains Mono
   features:
     - content.code.annotate
     - content.code.copy
@@ -76,7 +79,7 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      primary: white # indigo
+      primary: indigo
       accent: deep orange
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
@@ -114,6 +117,7 @@ plugins:
           options:
             docstring_section_style: spacy # list
             docstring_style: google
+            group_by_category: true
             inherited_members: yes
             line_length: 60
             members_order: source # alphabetical
@@ -133,7 +137,7 @@ plugins:
 
 markdown_extensions:
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
       # Math typesetting
@@ -158,7 +162,7 @@ markdown_extensions:
   - footnotes
   - attr_list
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
       # Javascript for math typesetting

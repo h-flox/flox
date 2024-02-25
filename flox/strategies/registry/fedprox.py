@@ -14,7 +14,7 @@ class FedProx(FedAvg):
     less sensitive to harshly heterogeneous (i.e., non-iid) data distributions across workers.
 
     More information on the proximal term and its definition can be found in the docstring
-    for ``FedProx.wrk_on_after_train_step()`` and in the reference below.
+    for ``FedProx.wrk_after_train_step()`` and in the reference below.
 
     References:
         Li, Tian, et al. "Federated optimization in heterogeneous networks." Proceedings of
@@ -49,7 +49,7 @@ class FedProx(FedAvg):
         )
         self.mu = mu
 
-    def wrk_on_after_train_step(
+    def wrk_after_train_step(
         self,
         state: FloxWorkerState,
         loss: torch.Tensor,

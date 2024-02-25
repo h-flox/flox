@@ -1,22 +1,16 @@
 import os
-import sys
 from pathlib import Path
 
-import pandas as pd
 import torch
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
 
-try:
-    sys.path.append("..")
-    from flox.data.utils import federated_split
-    from flox.flock import Flock
-    from flox.nn import FloxModule
-    from flox.run import federated_fit
-    from flox.strategies import FedProx
-except Exception as e:
-    raise ImportError("unable to import FloX libraries") from e
+from flox.data.utils import federated_split
+from flox.flock import Flock
+from flox.nn import FloxModule
+from flox.runtime import federated_fit
+from flox.strategies import FedSGD
 
 
 class MyModule(FloxModule):
@@ -47,38 +41,29 @@ class MyModule(FloxModule):
 
 
 def main():
-    flock = Flock.from_yaml("../examples/flocks/complex.yaml")
+    flock = Flock.from_yaml("examples/flocks/2-tier.yaml")
     # flock = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
-        train=True,
+        train=False,
         transform=ToTensor(),
     )
-    fed_data = federated_split(mnist, flock, 10, 1.0, 1.0)
+    fed_data = federated_split(mnist, flock, 10, 100.0, 1.0)
     assert len(fed_data) == len(list(flock.workers))
 
-    df_list = []
-    strategies = {
-        "fed-prox": FedProx,
-        # "fed-avg": FedAvg,
-        # "fed-sgd": FedSGD,
-    }
-    for strategy_label, strategy_cls in strategies.items():
-        print(f">>> Running FLoX with strategy={strategy_label}.")
+    for kind in ["async", "sync"]:
+        print(f">>> Running {kind.upper()} FLoX.")
         _, df = federated_fit(
             flock,
             MyModule(),
             fed_data,
             5,
-            strategy=strategy_cls(),
+            strategy=FedSGD(),
+            kind=kind,
             # where="local",  # "globus_compute",
         )
-        df["strategy"] = strategy_label
-        df_list.append(df)
-
-    train_history = pd.concat(df_list).reset_index(drop=True)
-    train_history.to_feather(Path("out/demo_history.feather"))
+        df.to_feather(Path(f"out/{kind}_comparison.feather"))
     print(">>> Finished!")
 
 

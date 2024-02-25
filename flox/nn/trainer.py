@@ -33,7 +33,7 @@ class Trainer:
         model: FloxModule,
         train_dataloader: DataLoader,
         num_epochs: int,
-        strategy: Strategy | None = None,
+        strategy: Strategy,
         node_state: FloxWorkerState | None = None,
         valid_dataloader: DataLoader | None = None,
         valid_ckpt_path: Path | str | None = None,
@@ -45,6 +45,14 @@ class Trainer:
         with torch.set_grad_enabled(True):
             for epoch in range(num_epochs):
                 for batch_idx, batch in enumerate(train_dataloader):
+                    try:
+                        strategy.wrk_before_train_step(node_state)
+                    except NotImplementedError:
+                        """
+                        The current strategy does not override the `wrk_before_train_step()` callback.
+                        """
+                        pass
+
                     loss = model.training_step(batch, batch_idx)
                     optimizer.zero_grad()
                     loss.backward()
@@ -52,25 +60,24 @@ class Trainer:
                     try:
                         assert strategy is not None
                         assert node_state is not None
-                        strategy.wrk_on_after_train_step(node_state, loss)
+                        strategy.wrk_after_train_step(node_state, loss)
                     except (AttributeError, AssertionError):
                         """
-                        node_state is None, strategy is None, or the strategy doesn't
-                        implement `wrk_on_after_train_step()`.
+                        ``node_state`` is None, ``strategy`` is None, or ``strategy`` doesn't
+                        implement ``wrk_after_train_step()``.
                         """
                         pass
 
                     optimizer.step()
 
                     # log data about training
-                    self.logger.log_dict(
-                        {
-                            "train/loss": loss.item(),
-                            "train/epoch": epoch,
-                            "train/batch_idx": batch_idx,
-                            "train/time": datetime.datetime.now(),
-                        }
-                    )
+                    rec = {
+                        "train/loss": loss.item(),
+                        "train/epoch": epoch,
+                        "train/batch_idx": batch_idx,
+                        "train/time": datetime.datetime.now(),
+                    }
+                    self.logger.log_dict(rec)
 
                     # If a validation ``Dataset`` has been provided (i.e., the users
                     # have specified an object instance for it), then run validation.

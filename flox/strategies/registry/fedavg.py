@@ -40,7 +40,7 @@ class FedAvg(FedSGD):
             participation, probabilistic, always_include_child_aggregators, seed
         )
 
-    def wrk_on_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
+    def wrk_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
         if "dataset" not in kwargs:
             raise ValueError("`dataset` must be provided")
         state["num_data_samples"] = len(kwargs["dataset"])

@@ -1,15 +1,14 @@
 import warnings
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from scipy import stats  # type: ignore
-from torch.utils.data import DataLoader, Dataset, Subset
+from scipy import stats
+from torch.utils.data import Dataset, DataLoader
 
 from flox.data import FederatedSubsets
 from flox.flock import Flock
-from flox.flock.node import FlockNodeID
 
 
 # TODO: Implement something similar for regression-based data.
@@ -29,7 +28,8 @@ def federated_split(
 
     Notes:
         Currently, this function only works with data for classification tasks with a discrete number
-        of labels/classes. Do *not* use this function for regression-based data.
+        of labels/classes. Do *not* use this function for regression-based data. Also, this function assumes
+        ``data`` is naturally iid.
 
     Args:
         data (Dataset): The original centralized data object that needs to be split into subsets.
@@ -46,8 +46,8 @@ def federated_split(
         >>> from torchvision.datasets import MNIST
         >>> flock = Flock.from_yaml("my_flock.yml")
         >>> data = MNIST()
-        >>> fed_data = federated_split(data, flock, num_classes=10, samples_alpha=1., labels_alpha=1.)
-        >>> next(iter(fed_data.items()))
+        >>> subsets = federated_split(data, flock, num_classes=10, samples_alpha=1., labels_alpha=1.)
+        >>> next(iter(subsets.items()))
         >>> # (FlockNodeID(1), Subset(...)) # TODO: Run a real example and paste it here.
 
     Returns:
@@ -102,12 +102,12 @@ def federated_split(
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
-    mapping = {w.idx: Subset(data, indices[w.idx]) for w in flock.workers}
-    return FederatedSubsets(mapping)
+    # mapping = {w.idx: Subset(data, indices[w.idx]) for w in flock.workers}
+    return FederatedSubsets(data, indices)
 
 
 def fed_barplot(
-    fed_data: FederatedSubsets,
+    subsets: FederatedSubsets,
     num_labels: int,
     width: float = 0.5,
     ax: Axes | None = None,
@@ -115,7 +115,7 @@ def fed_barplot(
     """Plots the label/sample distributions across worker nodes of a ``FederatedSubsets`` as a stacked barplot.
 
     Args:
-        fed_data (FederatedSubsets): The federated data cross a ``Flock``.
+        subsets (FederatedSubsets): The federated data subsets cross a ``Flock``.
         num_labels (int): The total number of unique labels in ``fed_data``.
         width (float): The width of the bars.
         ax (Axes): The ``axes`` to draw onto, if provided. If one is not provided, a new one is created.
@@ -123,19 +123,20 @@ def fed_barplot(
     Returns:
         The ``Axes`` object that was drawn onto.
     """
-    if not isinstance(fed_data, dict):  # TODO: Make `FederatedSubsets` compatible here.
+    if not isinstance(subsets, FederatedSubsets):
         raise ValueError(
             f"This function (`fed_barplot`) does not support data of type "
-            f"``{type(fed_data).__name__}``. `fed_data` argument MUST be of "
+            f"``{type(subsets).__name__}``. `subsets` argument MUST be of "
             f"type ``FederatedSubsets``."
         )
 
     label_counts_per_worker = {
-        label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
+        label: np.zeros(subsets.number_of_subsets, dtype=np.int32)
+        for label in range(num_labels)
     }
 
-    for idx, (_worker, subset) in enumerate(fed_data.items()):
-        loader = DataLoader(subset, batch_size=1)
+    for idx, (worker, worker_subset) in enumerate(subsets):
+        loader = DataLoader(worker_subset, batch_size=1)
         for batch in loader:
             _, y = batch
             label = y.item()
@@ -144,8 +145,8 @@ def fed_barplot(
     if ax is None:
         fig, ax = plt.subplots()
 
-    bottom = np.zeros(len(fed_data))
-    workers = list(range(len(fed_data)))
+    bottom = np.zeros(len(subsets))
+    workers = list(range(len(subsets)))
     for label, worker_count in label_counts_per_worker.items():
         ax.bar(workers, worker_count, width, label=label, bottom=bottom)
         bottom += worker_count

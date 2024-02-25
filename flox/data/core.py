@@ -1,54 +1,73 @@
-from collections.abc import Mapping
-from enum import IntEnum, auto
-from typing import NewType, Union, get_args
+import abc
+from typing import TypeVar, Iterable
 
 from torch.utils.data import Dataset, Subset
 
-from flox.flock import FlockNodeID
+from flox.flock import FlockNodeID, FlockNode
 from flox.flock.states import NodeState
 
-
-class FloxDatasetKind(IntEnum):
-    STANDARD = auto()
-    FEDERATED = auto()
-    INVALID = auto()
-
-    @staticmethod
-    def from_obj(obj) -> "FloxDatasetKind":
-        if isinstance(obj, Dataset):
-            return FloxDatasetKind.STANDARD
-        elif FloxDatasetKind.is_federated_dataset(obj):
-            return FloxDatasetKind.FEDERATED
-        else:
-            return FloxDatasetKind.INVALID
-
-    @staticmethod
-    def is_federated_dataset(obj) -> bool:
-        if not isinstance(obj, Mapping):
-            return False
-
-        return all(
-            isinstance(k, get_args(FlockNodeID)) and isinstance(v, (Dataset, Subset))
-            for k, v in obj.items()
-        )
+T_co = TypeVar("T_co", covariant=True)
 
 
-def flox_compatible_data(obj) -> bool:
-    kind = FloxDatasetKind.from_obj(obj)
-    if kind is FloxDatasetKind.INVALID:
-        return False
-    return True
+class FloxDataset(abc.ABC):
+    """
+    Abstract...
+    """
+
+    def __init__(self):
+        pass
+
+    @abc.abstractmethod
+    def load(self, node: FlockNode | FlockNodeID):
+        pass
 
 
-FederatedSubsets = NewType(
-    "FederatedSubsets", Mapping[FlockNodeID, Union[Dataset, Subset]]
-)
+class FederatedSubsets(FloxDataset):
+    """
+    A subset...
+    """
+
+    def __init__(self, dataset: Dataset[T_co], indices: dict[FlockNodeID, list[int]]):
+        super().__init__()
+        self.dataset = dataset
+        self.indices = indices
+        self._num_subsets = len(list(self.indices))
+
+    def load(self, node: FlockNode | FlockNodeID) -> Subset[T_co]:
+        if isinstance(node, FlockNode):
+            node = node.idx
+        return Subset(self.dataset, self.indices[node])
+
+    @property
+    def number_of_subsets(self):
+        return self._num_subsets
+
+    def __getitem__(self, node: FlockNode | FlockNodeID) -> Subset[T_co]:
+        return self.load(node)
+
+    def __len__(self):
+        return self._num_subsets
+
+    def __iter__(self) -> Iterable[tuple[FlockNodeID, Subset[T_co]]]:
+        for idx in self.indices:
+            yield idx, self.load(idx)
 
 
-class MyFloxDataset(Dataset):
+class LocalDataset(FloxDataset):
+    """
+    Local dataset...
+    """
+
     def __init__(self, state: NodeState, /, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.state = state
+        super().__init__()
 
+    def load(self, node: FlockNode | FlockNodeID) -> Dataset[T_co]:
+        """Loads local dataset into a PyTorch object.
 
-FloxDataset = Union[MyFloxDataset, FederatedSubsets]
+        Args:
+            node (FlockNode | FlockNodeID): ...
+
+        Returns:
+            Dataset object using local data.
+        """
+        raise NotImplementedError

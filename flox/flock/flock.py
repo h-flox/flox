@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import functools
 import json
-from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 from uuid import UUID
 
 import matplotlib.pyplot as plt
@@ -35,6 +34,10 @@ PROGS = [
     "patchwork",
 ]
 
+"""
+TODO: Make an `OmegaConf` standard.
+"""
+
 
 class Flock:
     topo: nx.DiGraph
@@ -44,12 +47,12 @@ class Flock:
         """
 
         Args:
-            topo (Optional[nx.DiGraph]): The topology (defined as a NetworkX ``nx.DiGraph``) of the
+            topo (nx.DiGraph | None): The topology (defined as a NetworkX ``nx.DiGraph``) of the
                 Flock network. If none is provided, then the Flock is initialized in "interactive"
                 mode. This means you can iteratively add nodes and edges to the Flock using
                  ``Flock.add_node()`` and ``Flock.add_edge()``. This is *not* recommended.
                  Defaults to ``None``.
-            _src (Optional[Path | str]): This identifies the source file that was used to
+            _src (Path | str | None): This identifies the source file that was used to
                 define the Flock network. This should only be used by the file constructor functions
                 (e.g., `from_yaml()`) and should not be used by the user. Defaults to ``None``.
         """
@@ -76,7 +79,7 @@ class Flock:
                             kind=data["kind"],
                             globus_compute_endpoint=data["globus_compute_endpoint"],
                             proxystore_endpoint=data["proxystore_endpoint"],
-                            # children_idx: Optional[Sequence[FlockNodeID]]
+                            # children_idx: Sequence[FlockNodeID] | None
                         )
                         found_leader = True
                     else:
@@ -147,7 +150,7 @@ class Flock:
             node_kind_attrs (): Determines how node attributes should be plotted. By default,
                 nodes will be colored and marked by kind.
             show_axis_border (bool): Show the border along the axis if True; defaults to False.
-            ax (Optional[Axes]): Axes object to draw onto. If none is provided, then one
+            ax (Axes | None): Axes object to draw onto. If none is provided, then one
                 will be created.
 
         Returns:
@@ -170,6 +173,11 @@ class Flock:
             nx.draw(self.topo, pos, with_labels=with_labels, ax=ax)
             return ax
 
+        if self.leader is None:
+            raise ValueError(
+                "There is no leader in the Flock. This is likely because no topology "
+                "has been created via interactive mode."
+            )
         leader = [self.leader.idx]
         aggregators = list(aggr.idx for aggr in self.aggregators)
         workers = list(worker.idx for worker in self.workers)
@@ -244,13 +252,13 @@ class Flock:
     # ================================================================================= #
 
     @staticmethod
-    def from_dict(content: dict[str, Any], _src: Path | str | None = None) -> Flock:
+    def from_dict(content: dict[str, Any], _src: Path | str | None = None) -> "Flock":
         """
         Imports a ``dict`` object to create a Flock network.
 
         Args:
             content (dict[str, Any]): Dictionary that defines the Flock network.
-            _src (Optional[Path | str]): Identifies the source file used to define
+            _src (Path | str | None): Identifies the source file used to define
                 the Flock network. This should **not** be used by users. It is used by
                 ``Flock`` class methods that are built on top of this method
                 (e.g., ``Flock.from_yaml()``).
@@ -405,6 +413,20 @@ class Flock:
         return self.nodes(by_kind=FlockNodeKind.WORKER)
 
     @functools.cached_property
+    def is_two_tier(self) -> bool:
+        """
+        Whether the topology is a two-tier topology or not.
+
+        Notes:
+            This must be ``True`` for asynchronous FL processes.
+
+        Returns:
+            ``True`` if the topology is two-tier, ``False`` otherwise.
+        """
+        tree = nx.bfs_tree(g, 1, depth_limit=1)
+        return tree.number_of_nodes() == self.topo.number_of_nodes()
+
+    @functools.cached_property
     def number_of_aggregators(self) -> int:
         """The number of aggregator nodes in the Flock."""
         return len(list(self.aggregators))
@@ -414,7 +436,14 @@ class Flock:
         """The number of worker nodes in the Flock."""
         return len(list(self.workers))
 
-    def nodes(self, by_kind: FlockNodeKind | None = None) -> Iterator[FlockNode]:
+    @functools.cached_property
+    def two_tier(self) -> bool:
+        for worker in self.workers:
+            if not self.topo.has_edge(self.leader.idx, worker.idx):
+                return False
+        return True
+
+    def nodes(self, by_kind: FlockNodeKind | None = None) -> Generator[FlockNode]:
         for idx, data in self.topo.nodes(data=True):
             if by_kind is not None and data["kind"] != by_kind:
                 continue
@@ -423,7 +452,7 @@ class Flock:
                 kind=data["kind"],
                 globus_compute_endpoint=data["globus_compute_endpoint"],
                 proxystore_endpoint=data["proxystore_endpoint"],
-                # children_idx: Optional[Sequence[FlockNodeID]]
+                # children_idx: Sequence[FlockNodeID] | None
             )
 
     # ================================================================================= #
@@ -431,5 +460,6 @@ class Flock:
     def __repr__(self):
         return f"Flock(`{self._src}`)"
 
-    def __getitem__(self, item: FlockNodeID):
-        return self.topo.nodes[item]
+    def __getitem__(self, idx: FlockNodeID) -> FlockNode:
+        # return self.topo.nodes[item]
+        return FlockNode(idx, **self.topo.nodes[idx])

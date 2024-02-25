@@ -1,9 +1,9 @@
-from concurrent.futures import Future
-
 import globus_compute_sdk
+from concurrent.futures import Future
+from typing import Any, Callable
 
-from flox.backends.launcher.impl_base import Launcher, LauncherFunction
 from flox.flock import FlockNode
+from flox.runtime.launcher.base import Launcher
 
 
 class GlobusComputeLauncher(Launcher):
@@ -11,13 +11,15 @@ class GlobusComputeLauncher(Launcher):
     Class that executes tasks on Globus Compute.
     """
 
+    _globus_compute_executor: globus_compute_sdk.Executor | None = None
+
     def __init__(self):
         super().__init__()
         if self._globus_compute_executor is None:
             self._globus_compute_executor = globus_compute_sdk.Executor()
 
     def submit(
-        self, fn: LauncherFunction, node: FlockNode, /, *args, **kwargs
+        self, fn: Callable[[FlockNode, ...], Any], node: FlockNode, /, *args, **kwargs
     ) -> Future:
         endpoint_id = node.globus_compute_endpoint
         self._globus_compute_executor.endpoint_id = endpoint_id

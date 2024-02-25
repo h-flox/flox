@@ -3,14 +3,15 @@ import os
 import pandas as pd
 import pytest
 import torch
+
 from torch import nn
-from torchvision.datasets import FashionMNIST
+from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 
-from flox.data.utils import federated_split
 from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.run import federated_fit
+from flox.data.utils import federated_split
 
 
 class MyModule(FloxModule):
@@ -41,17 +42,10 @@ class MyModule(FloxModule):
 
 
 @pytest.fixture
-def data(tmp_path):
-    if os.environ.get("TORCH_DATASETS"):
-        download_path = os.environ.get("TORCH_DATASETS")
-        download = False
-    else:
-        download_path = tmp_path
-        download = True
-
-    return FashionMNIST(
-        root=download_path,
-        download=download,
+def data():
+    return MNIST(
+        root=os.environ["TORCH_DATASETS"],
+        download=False,
         train=False,
         transform=ToTensor(),
     )
@@ -66,7 +60,7 @@ def test_2_tier_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
@@ -80,7 +74,7 @@ def test_3_tier_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
@@ -94,6 +88,6 @@ def test_complex_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule, fed_data, 2)
+    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)

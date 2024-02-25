@@ -1,22 +1,16 @@
 import os
-import sys
-from pathlib import Path
-
 import pandas as pd
 import torch
+
+from flox.flock import Flock
+from flox.runtime import federated_fit
+from flox.nn import FloxModule
+from flox.strategies import FedProx
+from flox.data.utils import federated_split
+from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
-
-try:
-    sys.path.append("..")
-    from flox.data.utils import federated_split
-    from flox.flock import Flock
-    from flox.nn import FloxModule
-    from flox.run import federated_fit
-    from flox.strategies import FedProx
-except Exception as e:
-    raise ImportError("unable to import FloX libraries") from e
 
 
 class MyModule(FloxModule):
@@ -47,12 +41,12 @@ class MyModule(FloxModule):
 
 
 def main():
-    flock = Flock.from_yaml("../examples/flocks/complex.yaml")
+    flock = Flock.from_yaml("examples/flocks/complex.yaml")
     # flock = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
-        train=True,
+        train=False,
         transform=ToTensor(),
     )
     fed_data = federated_split(mnist, flock, 10, 1.0, 1.0)
@@ -60,7 +54,7 @@ def main():
 
     df_list = []
     strategies = {
-        "fed-prox": FedProx,
+        "fedprox": FedProx,
         # "fed-avg": FedAvg,
         # "fed-sgd": FedSGD,
     }

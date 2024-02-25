@@ -31,7 +31,7 @@ class FedProx(FedAvg):
         )
         self.mu = mu
 
-    def wrk_on_after_train_step(
+    def wrk_after_train_step(
         self,
         state: FloxWorkerState,
         loss: torch.Tensor,
