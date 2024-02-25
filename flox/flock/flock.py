@@ -58,7 +58,6 @@ class Flock:
         """
         self.node_counter: int = 0
         self._src = "interactive" if _src is None else _src
-        self.leader = None
 
         if topo is None:
             # By default (i.e., `topo is None`),
@@ -87,6 +86,8 @@ class Flock:
                         raise ValueError(
                             "A legal Flock cannot have more than one leader."
                         )
+            if not found_leader:
+                raise ValueError("A legal Flock must have a leader.")
 
     def add_node(
         self,
@@ -105,7 +106,7 @@ class Flock:
             proxystore_endpoint_id=proxystore_endpoint_id,
         )
         self.node_counter += 1
-        return FlockNodeID(idx)
+        return idx
 
     def add_edge(self, u: FlockNodeID, v: FlockNodeID, **attrs) -> None:
         """
@@ -226,7 +227,7 @@ class Flock:
 
         return True
 
-    def children(self, node: FlockNode | FlockNodeID | int) -> Generator[FlockNode]:
+    def children(self, node: FlockNode | FlockNodeID | int) -> Iterator[FlockNode]:
         if isinstance(node, FlockNode):
             idx = node.idx
         else:
@@ -316,7 +317,7 @@ class Flock:
         return Flock(topo=topo, _src=_src)
 
     @staticmethod
-    def from_json(path: Path | str) -> "Flock":
+    def from_json(path: Path | str) -> Flock:
         """Imports a .json file as a Flock.
 
         Examples:
@@ -329,12 +330,12 @@ class Flock:
             An instance of a Flock.
         """
         # TODO: Figure out how to address the issue of JSON requiring string keys for `from_json()`.
-        with open(path, "r") as f:
+        with open(path) as f:
             content = json.load(f)
         return Flock.from_dict(content, _src=path)
 
     @staticmethod
-    def from_yaml(path: Path | str) -> "Flock":
+    def from_yaml(path: Path | str) -> Flock:
         """Imports a `.yaml` file as a Flock.
 
         Examples:
@@ -346,7 +347,7 @@ class Flock:
         Returns:
             An instance of a Flock.
         """
-        with open(path, "r") as f:
+        with open(path) as f:
             content = yaml.safe_load(f)
         return Flock.from_dict(content, _src=path)
 
@@ -360,7 +361,7 @@ class Flock:
         """
         # TODO: The leader does NOT need a Globus Compute endpoint.
         key = "globus_compute_endpoint"
-        for idx, data in self.topo.nodes(data=True):
+        for _idx, data in self.topo.nodes(data=True):
             value = data[key]
             if any([value is None, isinstance(value, UUID) is False]):
                 return False
@@ -377,7 +378,7 @@ class Flock:
         in size) with Globus Compute.
         """
         key = "proxystore_endpoint"
-        for idx, data in self.topo.nodes(data=True):
+        for _idx, data in self.topo.nodes(data=True):
             value = data[key]
 
             try:
@@ -392,7 +393,7 @@ class Flock:
     #     return self.nodes(by_kind=FlockNodeKind.LEADER)
 
     @property
-    def aggregators(self) -> Generator[FlockNode]:
+    def aggregators(self) -> Iterator[FlockNode]:
         """
         The aggregator nodes of the Flock.
 
@@ -402,7 +403,7 @@ class Flock:
         return self.nodes(by_kind=FlockNodeKind.AGGREGATOR)
 
     @property
-    def workers(self) -> Generator[FlockNode]:
+    def workers(self) -> Iterator[FlockNode]:
         """
         The worker nodes of the Flock.
 

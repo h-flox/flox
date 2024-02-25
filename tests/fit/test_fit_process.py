@@ -3,13 +3,15 @@ import os
 import pandas as pd
 import pytest
 import torch
+
 from torch import nn
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 
-from flox import Flock, federated_fit
-from flox.data.utils import federated_split
+from flox.flock import Flock
 from flox.nn import FloxModule
+from flox.run import federated_fit
+from flox.data.utils import federated_split
 
 
 class MyModule(FloxModule):

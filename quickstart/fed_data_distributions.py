@@ -1,14 +1,16 @@
+import os
 import sys
 
-sys.path.append("..")
-
 import matplotlib.pyplot as plt
-import os
-
-from flox.flock import Flock
-from flox.data.utils import federated_split, fed_barplot
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
+
+try:
+    sys.path.append("..")
+    from flox.data.utils import fed_barplot, federated_split
+    from flox.flock import Flock
+except Exception as e:
+    raise ImportError("unable to import FloX libraries") from e
 
 plt.style.use("ggplot")
 

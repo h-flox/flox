@@ -1,15 +1,15 @@
 # Welcome to FLoX
 
 ### Getting Started
-FLoX is a simple, highly customizable, and easy-to-deploy framework for launching Federated Learning processes across a 
-decentralized network. It is designed to simulate FL workflows while also making it trivially easy to deploy them on 
-real-world devices (e.g., Internet-of-Things and edge devices). Built on top of _Globus Compute_ (formerly known as 
-_funcX_), FLoX is designed to run on anything that can be started as a Globus Compute Endpoint.  
+FLoX is a simple, highly customizable, and easy-to-deploy framework for launching Federated Learning processes across a
+decentralized network. It is designed to simulate FL workflows while also making it trivially easy to deploy them on
+real-world devices (e.g., Internet-of-Things and edge devices). Built on top of _Globus Compute_ (formerly known as
+_funcX_), FLoX is designed to run on anything that can be started as a Globus Compute Endpoint.
 
 
 ### What can FLoX do?
 
-FLoX is supports several state-of-the-art approaches for FL processes, including hierarchical and asynchronous FL. 
+FLoX is supports several state-of-the-art approaches for FL processes, including hierarchical and asynchronous FL.
 
 |     |      2-tier      |   Hierarhchical   |
 | --: |:----------------:|:-----------------:|

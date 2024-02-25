@@ -20,13 +20,9 @@ jobs:
           python -m pip install pre-commit tox
       - name: run pre-commit
         run: pre-commit run -a
-      - name: mypy (sdk)
+      - name: mypy
         run: |
-          cd compute_sdk
-          tox -e mypy
-      - name: mypy (endpoint)
-        run: |
-          cd compute_endpoint
+          cd flox
           tox -e mypy
 
   safety-check:
@@ -39,7 +35,7 @@ jobs:
       - name: install requirements
         run: |
           python -m pip install --upgrade pip setuptools
-          python -m pip install './flox'
+          python -m pip install '.[all]'
           python -m pip install safety
       - name: run safety check
         run: safety check

@@ -1,12 +1,12 @@
 # Defining Your Own Custom Strategies
 
-FLoX was designed with customizability in mind. FL is a new research area that invites countless questions about how to 
-best perform FL. Additionally, the best FL approach will vary depending on the data, network connectivity, other 
+FLoX was designed with customizability in mind. FL is a new research area that invites countless questions about how to
+best perform FL. Additionally, the best FL approach will vary depending on the data, network connectivity, other
 requirements, etc. As such, we aimed to make defining original Strategies to be as pain-free as possible.
 
-Implementing a custom ``Strategy`` simply requires defining a new class that extends/subclasses the ``Strategy`` protocol 
+Implementing a custom ``Strategy`` simply requires defining a new class that extends/subclasses the ``Strategy`` protocol
 (as seen above). The ``Strategy`` protocol provides a handful of callbacks for you to inject custom logic to adjust how the
-FL process runs. 
+FL process runs.
 
 As an example, let's use our source code for the implementation of ``FedProx`` as an example.
 

@@ -19,7 +19,7 @@ class BaseLogger:
 
     def to_pandas(self) -> pd.DataFrame:
         df = pd.DataFrame.from_records(self.records)
-        for col in df:
+        for col in df.columns:
             if "time" in col:
                 df[col] = pd.to_datetime(df[col])
         return df

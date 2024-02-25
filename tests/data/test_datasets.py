@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import torch
 from sklearn.datasets import make_classification
+
 # TODO: Get rid of `sklearn` as a dependency.
 from torch.utils.data import Dataset
 
@@ -42,7 +43,7 @@ def test_dir_datasets(tmpdir):
         client_dir = (data_dir / f"{worker.idx}").mkdir()
         client_path = client_dir / "data.csv"
         with open(client_path, "w") as file:
-            print(f"x1, x2, y", file=file)
+            print("x1, x2, y", file=file)
             num_samples = rand_state.randint(low=1, high=1000)
             for _ in range(num_samples):
                 a = rand_state.randint(low=-1000, high=1000)

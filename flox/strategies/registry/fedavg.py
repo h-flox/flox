@@ -1,6 +1,7 @@
+from collections.abc import Mapping
+
 from flox.flock import FlockNodeID
-from flox.flock.states import FloxWorkerState
-from flox.flock.states import NodeState, FloxAggregatorState
+from flox.flock.states import FloxAggregatorState, FloxWorkerState, NodeState
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.registry.fedsgd import FedSGD
 from flox.typing import StateDict
@@ -47,10 +48,10 @@ class FedAvg(FedSGD):
     def agg_param_aggregation(
         self,
         state: FloxAggregatorState,
-        children_states: dict[FlockNodeID, NodeState],
-        children_state_dicts: dict[FlockNodeID, StateDict],
-        *args,
-        **kwargs,
+        children_states: Mapping[FlockNodeID, NodeState],
+        children_state_dicts: Mapping[FlockNodeID, StateDict],
+        *_args,
+        **_kwargs,
     ):
         weights = {}
         for node, child_state in children_states.items():

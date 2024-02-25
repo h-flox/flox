@@ -1,20 +1,22 @@
-import sys
-
-sys.path.append("..")
-
 import os
+import sys
+from pathlib import Path
+
 import pandas as pd
 import torch
-
-from flox.flock import Flock
-from flox.run import federated_fit
-from flox.nn import FloxModule
-from flox.strategies import FedProx
-from flox.data.utils import federated_split
-from pathlib import Path
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
+
+try:
+    sys.path.append("..")
+    from flox.data.utils import federated_split
+    from flox.flock import Flock
+    from flox.nn import FloxModule
+    from flox.run import federated_fit
+    from flox.strategies import FedProx
+except Exception as e:
+    raise ImportError("unable to import FloX libraries") from e
 
 
 class MyModule(FloxModule):
