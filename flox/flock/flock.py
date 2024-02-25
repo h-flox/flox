@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import json
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Generator, Iterator
 from uuid import UUID
 
 import matplotlib.pyplot as plt
@@ -423,7 +423,7 @@ class Flock:
         Returns:
             ``True`` if the topology is two-tier, ``False`` otherwise.
         """
-        tree = nx.bfs_tree(g, 1, depth_limit=1)
+        tree = nx.bfs_tree(self.topo, self.leader, depth_limit=1)
         return tree.number_of_nodes() == self.topo.number_of_nodes()
 
     @functools.cached_property
