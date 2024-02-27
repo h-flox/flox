@@ -1,4 +1,4 @@
-from flox.flock import FlockNode
+from flox.flock import FlockNode, FlockNodeID
 from flox.runtime.result import Result
 from flox.runtime.transfer import BaseTransfer
 from flox.strategies import Strategy
@@ -19,12 +19,13 @@ def aggregation_job(
         Aggregation results.
     """
     import pandas
-    from flox.flock.states import FloxAggregatorState
+    from flox.flock.states import FloxAggregatorState, NodeState
     from flox.runtime import JobResult
 
-    child_states, child_state_dicts = {}, {}
+    child_states: dict[FlockNodeID, NodeState] = {}
+    child_state_dicts = {}
     for result in results:
-        idx = result.node_idx
+        idx: FlockNodeID = result.node_idx
         child_states[idx] = result.node_state
         child_state_dicts[idx] = result.state_dict
 

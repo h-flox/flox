@@ -74,10 +74,10 @@ def federated_split(
             "Provided ``Dataset`` does not override ``__len__``, which is required for ``federated_split()``."
         )
 
-    num_samples_for_workers = (sample_distr * data_count).astype(int)
+    _num_samples = (sample_distr * data_count).astype(int)
     num_samples_for_workers = {
         worker.idx: num_samples
-        for worker, num_samples in zip(flock.workers, num_samples_for_workers)
+        for worker, num_samples in zip(flock.workers, _num_samples)
     }
     label_probs = {w.idx: label_distr[i] for i, w in enumerate(flock.workers)}
 

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import typing
 from abc import abstractmethod, ABC
-from typing import Iterable, Mapping, TypeAlias
 
 if typing.TYPE_CHECKING:
     import torch
 
+    from typing import Iterable, MutableMapping, TypeAlias
     from flox.flock import FlockNode, FlockNodeID
     from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
     from flox.nn.typing import StateDict
@@ -26,7 +26,7 @@ class Strategy(ABC):
     they are run in an FL process.
     """
 
-    registry: dict[str, type["Strategy"]] = {}
+    registry: MutableMapping[str, type["Strategy"]] = {}
 
     @classmethod
     def get_strategy(cls, name: str) -> type["Strategy"]:
@@ -114,8 +114,8 @@ class Strategy(ABC):
     def agg_param_aggregation(
         self,
         state: FloxAggregatorState,
-        children_states: Mapping[FlockNodeID, NodeState],
-        children_state_dicts: Mapping[FlockNodeID, StateDict],
+        children_states: MutableMapping[FlockNodeID, NodeState],
+        children_state_dicts: MutableMapping[FlockNodeID, StateDict],
         *args,
         **kwargs,
     ) -> StateDict:

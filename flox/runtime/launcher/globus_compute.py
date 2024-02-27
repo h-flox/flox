@@ -12,11 +12,13 @@ if typing.TYPE_CHECKING:
 
     from flox.flock import FlockNode
 
+    """
     NodeCallable: TypeAlias = Union[
         Callable[[FlockNode], Any],
         Callable[[FlockNode, Any], Any],
         Callable[[FlockNode, Any, ...], Any],
     ]
+    """
 
 
 class GlobusComputeLauncher(Launcher):
@@ -33,7 +35,7 @@ class GlobusComputeLauncher(Launcher):
 
     def submit(
         self,
-        fn: NodeCallable,  # Callable[[FlockNode, Any, ...], Any],
+        fn: Callable, # NodeCallable,  # Callable[[FlockNode, Any, ...], Any], # FIXME
         node: FlockNode,
         /,
         *args,

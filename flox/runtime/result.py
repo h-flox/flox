@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from proxystore.proxy import Proxy
 
@@ -20,22 +20,22 @@ class JobResult:
     Aggregators and Worker nodes have to return the same type of object to support hierarchical execution.
     """
 
-    node_state: NodeState | None
+    node_state: NodeState
     """The state of the ``Flock`` node based on its kind."""
 
-    node_idx: FlockNodeID | None
+    node_idx: FlockNodeID
     """The ID of the ``Flock`` node."""
 
-    node_kind: FlockNodeKind | None
+    node_kind: FlockNodeKind
     """The kind of the ``Flock`` node."""
 
-    state_dict: StateDict | None
+    state_dict: StateDict
     """The ``StateDict`` of the PyTorch global_module (either aggregated or trained locally)."""
 
-    history: DataFrame | None
+    history: DataFrame
     """The history of results."""
 
-    cache: dict[str, typing.Any] | None = None
+    cache: dict[str, typing.Any] = field(default_factory=dict)
     """Miscellaneous data to be returned as part of the ``JobResult``."""
 
 

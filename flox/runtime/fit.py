@@ -1,13 +1,11 @@
 import datetime
 import typing
 
-import numpy as np
 from pandas import DataFrame
 
 from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
-# from flox.run.fit_sync import sync_federated_fit
 from flox.nn.typing import Kind
 from flox.runtime.launcher import (
     GlobusComputeLauncher,
@@ -24,20 +22,21 @@ from flox.strategies import Strategy
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
-    if kind == "thread":
-        return LocalLauncher(
-            pool="thread", n_workers=launcher_cfg.get("max_workers", 3)
-        )
-    elif kind == "process":
-        return LocalLauncher(
-            pool="process", n_workers=launcher_cfg.get("max_workers", 3)
-        )
-    elif kind == "globus-compute":
-        return GlobusComputeLauncher()
-    elif kind == "parsl":
-        return ParslLauncher()
-    else:
-        raise ValueError("Illegal value for argument `kind`.")
+    match kind:
+        case "thread":
+            return LocalLauncher(
+                pool="thread", n_workers=launcher_cfg.get("max_workers", 3)
+            )
+        case "process":
+            return LocalLauncher(
+                pool="process", n_workers=launcher_cfg.get("max_workers", 3)
+            )
+        case "globus-compute":
+            return GlobusComputeLauncher()
+        case "parsl":
+            return ParslLauncher()
+        case _:
+            raise ValueError("Illegal value for argument `kind`.")
 
 
 def federated_fit(
@@ -106,5 +105,5 @@ def federated_fit(
     start_time = datetime.datetime.now()
     module, history = process.start(debug_mode)
     history["train/rel_time"] = history["train/time"] - start_time
-    history["train/rel_time"] /= np.timedelta64(1, "s")
+    history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
     return module, history

@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from flox.data import FloxDataset
 from flox.flock import Flock, FlockNodeID
-from flox.flock.states import FloxAggregatorState, FloxWorkerState
+from flox.flock.states import FloxAggregatorState, FloxWorkerState, NodeState
 from flox.nn import FloxModule
 from flox.runtime.jobs import local_training_job
 from flox.runtime.process.proc import BaseProcess
@@ -64,7 +64,7 @@ class AsyncProcess(BaseProcess):
 
         histories: list[DataFrame] = []
         worker_rounds: dict[FlockNodeID, int] = {}
-        worker_states: dict[FlockNodeID, FloxWorkerState] = {}
+        worker_states: dict[FlockNodeID, NodeState] = {}
         worker_state_dicts: dict[FlockNodeID, StateDict] = {}
         for worker in self.flock.workers:
             worker_rounds[worker.idx] = 0
