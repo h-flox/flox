@@ -1,10 +1,16 @@
-from collections.abc import Mapping
+from __future__ import annotations
 
-from flox.flock import FlockNodeID
-from flox.flock.states import FloxAggregatorState, FloxWorkerState, NodeState
+import typing
+
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.registry.fedsgd import FedSGD
-from flox.typing import StateDict
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from flox.flock import FlockNodeID
+    from flox.flock.states import FloxAggregatorState, FloxWorkerState, NodeState
+    from flox.nn.typing import StateDict
 
 
 class FedAvg(FedSGD):

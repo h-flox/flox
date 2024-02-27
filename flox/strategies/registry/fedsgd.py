@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+import typing
 
 from flox.flock import FlockNode, FlockNodeID
 from flox.flock.states import FloxAggregatorState, NodeState
 from flox.strategies.base import Strategy
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.commons.worker_selection import random_worker_selection
-from flox.typing import StateDict
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+    from flox.nn.typing import StateDict
 
 
 class FedSGD(Strategy):

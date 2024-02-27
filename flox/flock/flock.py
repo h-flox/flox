@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 import functools
 import json
 from pathlib import Path
-from typing import Any, Generator, Iterator
+from typing import Any, Iterator
 from uuid import UUID
 
 import matplotlib.pyplot as plt
@@ -317,7 +315,7 @@ class Flock:
         return Flock(topo=topo, _src=_src)
 
     @staticmethod
-    def from_json(path: Path | str) -> Flock:
+    def from_json(path: Path | str) -> "Flock":
         """Imports a .json file as a Flock.
 
         Examples:
@@ -335,7 +333,7 @@ class Flock:
         return Flock.from_dict(content, _src=path)
 
     @staticmethod
-    def from_yaml(path: Path | str) -> Flock:
+    def from_yaml(path: Path | str) -> "Flock":
         """Imports a `.yaml` file as a Flock.
 
         Examples:
@@ -443,7 +441,7 @@ class Flock:
                 return False
         return True
 
-    def nodes(self, by_kind: FlockNodeKind | None = None) -> Generator[FlockNode]:
+    def nodes(self, by_kind: FlockNodeKind | None = None) -> Iterator[FlockNode]:
         for idx, data in self.topo.nodes(data=True):
             if by_kind is not None and data["kind"] != by_kind:
                 continue

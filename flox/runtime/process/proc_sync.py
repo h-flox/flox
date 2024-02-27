@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import functools
+import typing
 from concurrent.futures import Future
 
 import pandas as pd
@@ -16,22 +19,33 @@ from flox.runtime.result import Result
 from flox.runtime.runtime import Runtime
 from flox.strategies import Strategy
 
+if typing.TYPE_CHECKING:
+    from flox.nn.typing import StateDict
+
 
 class SyncProcess(BaseProcess):
     """
     Synchronous Federated Learning process.
     """
 
+    flock: Flock
+    runtime: Runtime
+    global_module: FloxModule
+    strategy: Strategy
+    dataset: FloxDataset
+    aggr_callback: typing.Any  # TODO: Fix
+    state_dict: StateDict | None
+    debug_mode: bool
+    pbar_desc: str
+
     def __init__(
         self,
+        runtime: Runtime,
         flock: Flock,
         num_global_rounds: int,
         module: FloxModule,
         dataset: FloxDataset,
-        runtime: Runtime,
-        # launcher: Launcher,
-        # transfer: BaseTransfer,
-        strategy: Strategy | str,
+        strategy: Strategy,
     ):
         self.flock = flock
         self.runtime = runtime
@@ -78,21 +92,31 @@ class SyncProcess(BaseProcess):
         parent: FlockNode | None = None,
     ) -> Future:
         flock = self.flock
-        node = flock.leader if node is None else node
         value_err_template = "Illegal kind ({}) of `FlockNode` (ID=`{}`)."
+
+        if node is None:
+            node = flock.leader
+        elif isinstance(node, FlockNode):
+            node = node
+        else:
+            raise ValueError
 
         match flock.get_kind(node):
             case FlockNodeKind.LEADER | FlockNodeKind.AGGREGATOR:
                 if self.debug_mode:
-                    # return self._debug_aggr_job(node)
+                    # return self._debug_aggr_job(node) # FIXME
                     return self._aggr_job(node)
                 else:
                     return self._aggr_job(node)
+
             case FlockNodeKind.WORKER:
+                assert parent is not None
+                # (^^^) avoids mypy issue which won't naturally occur with valid Flock topo
                 if self.debug_mode:
                     return self._debug_worker_job(node, parent)
                 else:
                     return self._worker_job(node, parent)
+
             case _:
                 kind = flock.get_kind(node)
                 idx = node.idx
@@ -100,7 +124,8 @@ class SyncProcess(BaseProcess):
 
     def _aggr_job(self, node: FlockNode) -> Future[Result]:
         aggr_state = FloxAggregatorState(node.idx)
-        self.strategy.agg_worker_selection(aggr_state, list(self.flock.children(node)))
+        self.strategy.cli_worker_selection(aggr_state, list(self.flock.children(node)))
+        # FIXME: This (^^^) shouldn't be run on the aggregator
         children_futures = [
             self.step(node=child, parent=node) for child in self.flock.children(node)
         ]
@@ -125,8 +150,7 @@ class SyncProcess(BaseProcess):
         return future
 
     def _debug_aggr_job(self, node: FlockNode) -> Future[Result]:
-        # TODO: Implement this.
-        pass
+        raise NotImplementedError
 
     def _worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
         data = self.fetch_worker_data(node)

@@ -1,19 +1,22 @@
-from typing import Any
+from __future__ import annotations
 
-from pandas import DataFrame
+import typing
+
 from proxystore.connectors.endpoint import EndpointConnector
-from proxystore.proxy import Proxy
 from proxystore.store import Store
 
-from flox.flock import Flock, FlockNodeID, FlockNodeKind
-from flox.flock.states import NodeState
-from flox.runtime.result import JobResult
 from flox.runtime.transfer.base import BaseTransfer
-from flox.typing import StateDict
+
+if typing.TYPE_CHECKING:
+    from uuid import UUID
+    from proxystore.proxy import Proxy
+    from flox.flock import Flock
 
 
 class ProxyStoreTransfer(BaseTransfer):
-    def __init__(self, flock: Flock, store: str = "endpoint", name: str = "default"):
+    def __init__(
+        self, flock: Flock, name: str = "default"
+    ) -> None:  # , store: str = "endpoint",):
         if not flock.proxystore_ready:
             raise ValueError(
                 "Flock is not ready to use ProxyStore (i.e., `flock.proxystore_ready` "
@@ -21,28 +24,18 @@ class ProxyStoreTransfer(BaseTransfer):
                 "Endpoint UUID."
             )
 
-        self.connector = EndpointConnector(
-            endpoints=[node.proxystore_endpoint for node in flock.nodes()]
-        )
+        endpoints: list[str | UUID] = []
+        for node in flock.nodes():
+            assert node.proxystore_endpoint is not None
+            endpoints.append(node.proxystore_endpoint)
+
+        self.connector = EndpointConnector(endpoints=endpoints)
         store = Store(name=name, connector=self.connector)
         self.config = store.config()
 
-    def report(
-        self,
-        node_state: NodeState | dict[str, Any] | None,
-        node_idx: FlockNodeID | None,
-        node_kind: FlockNodeKind | None,
-        state_dict: StateDict | None,
-        history: DataFrame | None,
-    ) -> Proxy[JobResult]:
-        result = JobResult(
-            node_state=node_state,
-            node_idx=node_idx,
-            node_kind=node_kind,
-            state_dict=state_dict,
-            history=history,
-        )
-        return Store.from_config(self.config).proxy(result)
+    # TODO: Revisit this design to see if we need separate methods for `report` and `proxy`.
+    def report(self, data: typing.Any) -> Proxy[typing.Any]:
+        return Store.from_config(self.config).proxy(data)
 
-    def proxy(self, data: Any) -> Proxy[Any]:
+    def proxy(self, data: typing.Any) -> Proxy[typing.Any]:
         return Store.from_config(self.config).proxy(data)

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import typing
+
 from torch.utils.data import Dataset, Subset
 
 from flox.flock import FlockNode
@@ -5,7 +9,10 @@ from flox.nn import FloxModule
 from flox.runtime.result import Result
 from flox.runtime.transfer import BaseTransfer
 from flox.strategies import Strategy
-from flox.typing import StateDict
+
+if typing.TYPE_CHECKING:
+    from flox.data import FloxDataset
+    from flox.nn.typing import StateDict
 
 
 # TODO: Debug training job should have the same signature.
@@ -16,7 +23,7 @@ def local_training_job(
     strategy: Strategy,
     module: FloxModule,
     module_state_dict: StateDict,
-    dataset: Dataset | Subset | None = None,  # TODO: Cannot be `None`.
+    dataset: FloxDataset,  # TODO: Cannot be `None`.
     **train_hyper_params,
 ) -> Result:
     """Perform local training on a worker node.
@@ -38,6 +45,7 @@ def local_training_job(
     from flox.flock.states import FloxWorkerState
     from flox.nn.trainer import Trainer
     from torch.utils.data import DataLoader
+    from flox.runtime import JobResult
 
     # if isinstance(dataset, LocalDatasetV2):
     #     data = dataset.load()
@@ -65,7 +73,7 @@ def local_training_job(
     strategy.wrk_on_recv_params(node_state, global_state_dict)
 
     train_loader = DataLoader(
-        dataset,
+        dataset.load(node),
         batch_size=train_hyper_params.get("batch_size", 32),
         shuffle=train_hyper_params.get("shuffle", True),
     )
@@ -88,7 +96,8 @@ def local_training_job(
     history["parent/idx"] = parent.idx
     history["parent/kind"] = parent.kind.to_str()
 
-    return transfer.report(node_state, node.idx, node.kind, local_params, history)
+    result = JobResult(node_state, node.idx, node.kind, module.state_dict(), history)
+    return transfer.report(result)
 
 
 def debug_training_job(
@@ -114,6 +123,7 @@ def debug_training_job(
     import numpy as np
     import pandas
     from flox.flock.states import FloxWorkerState
+    from flox.runtime import JobResult
 
     local_module = module
     node_state = FloxWorkerState(
@@ -132,7 +142,6 @@ def debug_training_job(
         "train/time": [datetime.datetime.now()],
         "mode": "debug",
     }
-    history = pandas.DataFrame.from_dict(history)
-    return transfer.report(
-        node_state, node.idx, node.kind, module.state_dict(), history
-    )
+    history_df = pandas.DataFrame.from_dict(history)
+    result = JobResult(node_state, node.idx, node.kind, module.state_dict(), history_df)
+    return transfer.report(result)

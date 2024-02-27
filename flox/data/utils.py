@@ -1,14 +1,13 @@
 import warnings
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from scipy import stats
 from torch.utils.data import Dataset, DataLoader
 
 from flox.data import FederatedSubsets
-from flox.flock import Flock
+from flox.flock import Flock, FlockNodeID
 
 
 # TODO: Implement something similar for regression-based data.
@@ -57,19 +56,30 @@ def federated_split(
     assert labels_alpha > 0
 
     num_workers = len(list(flock.workers))
-    sample_distr = stats.dirichlet(np.full(num_workers, samples_alpha))
-    label_distr = stats.dirichlet(np.full(num_classes, labels_alpha))
+    # sample_distr = stats.dirichlet(np.full(num_workers, samples_alpha))
+    # label_distr = stats.dirichlet(np.full(num_classes, labels_alpha))
 
-    # pytorch intentionally doesn't define an empty __len__ for DataSet, even though
-    # most subclasses implement it
-    data_count = len(data)  # type: ignore
+    s_alpha = np.full(num_workers, samples_alpha)
+    sample_distr = np.random.dirichlet(s_alpha)
 
-    num_samples_for_workers = (sample_distr.rvs()[0] * data_count).astype(int)
+    l_alpha = np.full(num_classes, labels_alpha)
+    label_distr = np.random.dirichlet(l_alpha, size=flock.number_of_workers)
+
+    # PyTorch intentionally doesn't define an empty __len__ for ``Dataset``, even though
+    # most subclasses implement it.
+    try:
+        data_count = len(data)  # type: ignore
+    except NotImplementedError:
+        raise NotImplementedError(
+            "Provided ``Dataset`` does not override ``__len__``, which is required for ``federated_split()``."
+        )
+
+    num_samples_for_workers = (sample_distr * data_count).astype(int)
     num_samples_for_workers = {
         worker.idx: num_samples
         for worker, num_samples in zip(flock.workers, num_samples_for_workers)
     }
-    label_probs = {w.idx: label_distr.rvs()[0] for w in flock.workers}
+    label_probs = {w.idx: label_distr[i] for i, w in enumerate(flock.workers)}
 
     indices: dict[FlockNodeID, list[int]] = defaultdict(list)
     loader = DataLoader(data, batch_size=1)

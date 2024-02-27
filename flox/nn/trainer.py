@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 from pathlib import Path
 from typing import Any
@@ -34,7 +32,7 @@ class Trainer:
         train_dataloader: DataLoader,
         num_epochs: int,
         strategy: Strategy,
-        node_state: FloxWorkerState | None = None,
+        node_state: FloxWorkerState,
         valid_dataloader: DataLoader | None = None,
         valid_ckpt_path: Path | str | None = None,
     ) -> pd.DataFrame:

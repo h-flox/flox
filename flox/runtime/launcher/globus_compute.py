@@ -1,9 +1,22 @@
-import globus_compute_sdk
-from concurrent.futures import Future
-from typing import Any, Callable
+from __future__ import annotations
 
-from flox.flock import FlockNode
+import typing
+
+import globus_compute_sdk
+
 from flox.runtime.launcher.base import Launcher
+
+if typing.TYPE_CHECKING:
+    from concurrent.futures import Future
+    from typing import Any, Callable, TypeAlias, Union
+
+    from flox.flock import FlockNode
+
+    NodeCallable: TypeAlias = Union[
+        Callable[[FlockNode], Any],
+        Callable[[FlockNode, Any], Any],
+        Callable[[FlockNode, Any, ...], Any],
+    ]
 
 
 class GlobusComputeLauncher(Launcher):
@@ -19,10 +32,16 @@ class GlobusComputeLauncher(Launcher):
             self._globus_compute_executor = globus_compute_sdk.Executor()
 
     def submit(
-        self, fn: Callable[[FlockNode, ...], Any], node: FlockNode, /, *args, **kwargs
+        self,
+        fn: NodeCallable,  # Callable[[FlockNode, Any, ...], Any],
+        node: FlockNode,
+        /,
+        *args,
+        **kwargs,
     ) -> Future:
-        endpoint_id = node.globus_compute_endpoint
-        self._globus_compute_executor.endpoint_id = endpoint_id
+        assert isinstance(self._globus_compute_executor, globus_compute_sdk.Executor)
+        assert node.globus_compute_endpoint is not None
+        self._globus_compute_executor.endpoint_id = node.globus_compute_endpoint
         future = self._globus_compute_executor.submit(fn, node, *args, **kwargs)
         return future
 

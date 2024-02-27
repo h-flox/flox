@@ -1,4 +1,5 @@
 import functools
+import typing
 from concurrent.futures import Future
 
 from flox.flock import FlockNode
@@ -10,7 +11,7 @@ from flox.strategies import Strategy
 
 def all_child_futures_finished_cbk(
     parent_future: Future,
-    children_futures: list[Future],
+    children_futures: typing.Iterable[Future],
     node: FlockNode,
     runtime: Runtime,
     strategy: Strategy,

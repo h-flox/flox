@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import typing
 from dataclasses import dataclass
-from typing import Any, TypeAlias
 
-from pandas import DataFrame
 from proxystore.proxy import Proxy
 
-from flox.flock import FlockNodeID, FlockNodeKind
-from flox.flock.states import NodeState
-from flox.typing import StateDict
+if typing.TYPE_CHECKING:
+    from pandas import DataFrame
+
+    from flox.flock import FlockNodeID, FlockNodeKind
+    from flox.flock.states import NodeState
+    from flox.nn.typing import StateDict
 
 
 @dataclass
@@ -33,8 +35,8 @@ class JobResult:
     history: DataFrame | None
     """The history of results."""
 
-    cache: dict[str, Any] | None = None
+    cache: dict[str, typing.Any] | None = None
     """Miscellaneous data to be returned as part of the ``JobResult``."""
 
 
-Result: TypeAlias = JobResult | Proxy[JobResult]
+Result: typing.TypeAlias = JobResult | Proxy[JobResult]

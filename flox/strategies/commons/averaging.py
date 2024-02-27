@@ -1,10 +1,14 @@
-from collections.abc import Mapping
+from __future__ import annotations
 
-import numpy as np
+import typing
+
+import numpy
 import torch
 
-from flox.flock import FlockNodeID
-from flox.typing import StateDict
+if typing.TYPE_CHECKING:
+    from collections.abc import Mapping
+    from flox.flock import FlockNodeID
+    from flox.nn.typing import StateDict
 
 
 def average_state_dicts(
@@ -22,7 +26,7 @@ def average_state_dicts(
         Averaged weights as a ``StateDict``.
     """
     num_nodes = len(state_dicts)
-    weight_sum = None if weights is None else np.sum(list(weights.values()))
+    weight_sum = None if weights is None else numpy.sum(list(weights.values()))
 
     with torch.no_grad():
         avg_weights = {}

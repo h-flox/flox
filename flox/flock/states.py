@@ -1,11 +1,16 @@
-from dataclasses import field
-from typing import Any, Iterable
+from __future__ import annotations
 
-import torch
+import typing
+from dataclasses import dataclass, field
 
-from flox.flock import FlockNodeID
+if typing.TYPE_CHECKING:
+    from typing import Any, Iterable
+
+    from flox.flock import FlockNodeID
+    from flox.nn import FloxModule
 
 
+@dataclass
 class NodeState:
     idx: FlockNodeID
     """The ID of the ``FlockNode`` that the ``NodeState`` corresponds with."""
@@ -14,14 +19,12 @@ class NodeState:
     """A dictionary containing extra data. This can be used as a temporary "store" to pass data between
     callbacks for custom ``Strategy`` objects."""
 
-    def __init__(self, idx: FlockNodeID):
+    def __post_init__(self):
         if type(self) is NodeState:
             raise NotImplementedError(
                 "Cannot instantiate instance of ``NodeState`` (must instantiate instance of "
                 "subclasses: ``FloxAggregatorState`` or ``FloxWorkerState``)."
             )
-        self.idx = idx
-        self.cache = {}
 
     def __iter__(self) -> Iterable[str]:
         """Returns an iterator through the state's cache."""
@@ -72,17 +75,17 @@ class FloxAggregatorState(NodeState):
 class FloxWorkerState(NodeState):
     """State of a Worker node in a ``Flock``."""
 
-    pre_local_train_model: torch.nn.Module | None = None
+    pre_local_train_model: FloxModule | None = None
     """Global model."""
 
-    post_local_train_model: torch.nn.Module | None = None
+    post_local_train_model: FloxModule | None = None
     """Local model after local fitting/training."""
 
     def __init__(
         self,
         idx: FlockNodeID,
-        pre_local_train_model: torch.nn.Module | None = None,
-        post_local_train_model: torch.nn.Module | None = None,
+        pre_local_train_model: FloxModule | None = None,
+        post_local_train_model: FloxModule | None = None,
     ):
         super().__init__(idx)
         self.pre_local_train_model = pre_local_train_model

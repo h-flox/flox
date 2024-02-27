@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from typing import cast
 
+from numpy import array
 from numpy.random import RandomState
 from numpy.typing import NDArray
 
@@ -48,7 +49,7 @@ def fixed_random_worker_selection(
     Returns:
 
     """
-    children = np.array(children)
+    children = array(children)
     rand_state = RandomState(seed)
     num_selected = min(1, int(participation) * len(list(children)))
     # numpy annotates RandomState.choice too narrowly; need this to satisfy mypy

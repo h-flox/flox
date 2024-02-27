@@ -1,6 +1,5 @@
 from concurrent.futures import Future
-from typing import Any, NewType
-from typing import Callable
+from typing import Any, Callable, NewType
 
 from flox.flock import FlockNode
 from flox.runtime.launcher import Launcher
@@ -10,15 +9,15 @@ Config = NewType("Config", dict[str, Any])
 
 
 class Borg:
-    _shared_state = {}
+    _shared_state: dict[str, Any] = {}
 
     def __init__(self):
         self.__dict__ = self._shared_state
 
 
 class Runtime(Borg):
-    launcher: Launcher | None = None
-    transfer: BaseTransfer | None = None
+    launcher: Launcher
+    transfer: BaseTransfer
 
     def __init__(self, launcher: Launcher, transfer: BaseTransfer):
         Borg.__init__(self)

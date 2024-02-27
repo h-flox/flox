@@ -1,13 +1,17 @@
+from __future__ import annotations
+
+import typing
 from abc import abstractmethod, ABC
 from typing import Iterable, Mapping, TypeAlias
 
-import torch
+if typing.TYPE_CHECKING:
+    import torch
 
-from flox.flock import FlockNode, FlockNodeID
-from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
-from flox.typing import StateDict
+    from flox.flock import FlockNode, FlockNodeID
+    from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
+    from flox.nn.typing import StateDict
 
-Loss: TypeAlias = torch.Tensor
+    Loss: TypeAlias = torch.Tensor
 
 
 class Strategy(ABC):
@@ -133,6 +137,22 @@ class Strategy(ABC):
     #                                WORKER CALLBACKS.                                 #
     ####################################################################################
 
+    def wrk_on_recv_params(
+        self, state: FloxWorkerState, params: StateDict, *args, **kwargs
+    ):
+        """
+
+        Args:
+            state ():
+            params ():
+            *args ():
+            **kwargs ():
+
+        Returns:
+
+        """
+        return params
+
     def wrk_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
         """
 
@@ -176,19 +196,3 @@ class Strategy(ABC):
 
         """
         raise NotImplementedError()
-
-    def wrk_on_recv_params(
-        self, state: FloxWorkerState, params: StateDict, *args, **kwargs
-    ):
-        """
-
-        Args:
-            state ():
-            params ():
-            *args ():
-            **kwargs ():
-
-        Returns:
-
-        """
-        return params

@@ -16,7 +16,7 @@ class DebugModule(FloxModule):
         return self.model(x)
 
     def training_step(
-        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
+        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int  # type: ignore[override]
     ) -> torch.Tensor:
         x, y = batch
         logits = self.model(x)

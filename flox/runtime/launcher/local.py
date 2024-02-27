@@ -1,4 +1,4 @@
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, Future
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, Future, Executor
 
 from flox.flock import FlockNode
 from flox.runtime.launcher.base import Launcher
@@ -8,6 +8,8 @@ class LocalLauncher(Launcher):
     """
     Launcher implementation that processes jobs locally.
     """
+
+    pool: Executor
 
     def __init__(self, pool: str, n_workers: int = 1):
         super().__init__()

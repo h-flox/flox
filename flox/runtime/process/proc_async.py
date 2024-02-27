@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import typing
 from concurrent.futures import FIRST_COMPLETED, wait
 
 import pandas as pd
@@ -9,11 +12,12 @@ from flox.flock import Flock, FlockNodeID
 from flox.flock.states import FloxAggregatorState, FloxWorkerState
 from flox.nn import FloxModule
 from flox.runtime.jobs import local_training_job
-from flox.runtime.launcher import Launcher
 from flox.runtime.process.proc import BaseProcess
-from flox.runtime.transfer import BaseTransfer
+from flox.runtime.runtime import Runtime
 from flox.strategies import Strategy
-from flox.typing import StateDict
+
+if typing.TYPE_CHECKING:
+    from flox.nn.typing import StateDict
 
 
 class AsyncProcess(BaseProcess):
@@ -26,13 +30,12 @@ class AsyncProcess(BaseProcess):
 
     def __init__(
         self,
+        runtime: Runtime,
         flock: Flock,
         num_global_rounds: int,
-        launcher: Launcher,
         module: FloxModule,
         dataset: FloxDataset,
-        transfer: BaseTransfer,
-        strategy: Strategy | str,
+        strategy: Strategy,
         *args,
     ):
         # assert that the flock is 2-tier
@@ -41,11 +44,10 @@ class AsyncProcess(BaseProcess):
                 "Currently, FLoX only supports two-tier topologies for ``AsyncProcess`` execution."
             )
 
+        self.runtime = runtime
         self.flock = flock
-        self.launcher = launcher
         self.num_global_rounds = num_global_rounds
         self.global_module = module
-        self.transfer = transfer
         self.dataset = dataset
         if isinstance(strategy, str):
             self.strategy = Strategy.get_strategy(strategy)()
@@ -69,22 +71,21 @@ class AsyncProcess(BaseProcess):
             worker_states[worker.idx] = FloxWorkerState(worker.idx)
             worker_state_dicts[worker.idx] = self.global_module.state_dict()
 
-        futures = []
+        futures = set()
         progress_bar = tqdm(total=self.num_global_rounds * self.flock.number_of_workers)
         for worker in self.flock.workers:
             # data = self.dataset[worker.idx]
             data = self.fetch_worker_data(worker)
-            fut = self.launcher.submit(
+            fut = self.runtime.submit(
                 local_training_job,
                 worker,
                 parent=self.flock.leader,
-                dataset=self.transfer.proxy(data),
+                dataset=self.runtime.proxy(data),
                 module=self.global_module,
-                module_state_dict=self.transfer.proxy(self.global_module.state_dict()),
-                transfer=self.transfer,
+                module_state_dict=self.runtime.proxy(self.global_module.state_dict()),
                 strategy=self.strategy,
             )
-            futures.append(fut)
+            futures.add(fut)
 
         while futures:
             dones, futures = wait(futures, return_when=FIRST_COMPLETED)
@@ -92,8 +93,6 @@ class AsyncProcess(BaseProcess):
                 raise ValueError(
                     "Overlap between 'done' futures and 'to-be-done' futures."
                 )
-
-            dones, futures = list(dones), list(futures)
 
             if len(dones) == 1:
                 results = [dones.pop().result()]
@@ -115,19 +114,19 @@ class AsyncProcess(BaseProcess):
                 self.global_module.load_state_dict(avg_state_dict)
                 # data = self.dataset[worker.idx]
                 data = self.dataset.load(worker)
-                fut = self.launcher.submit(
+                fut = self.runtime.submit(
                     local_training_job,
                     worker,
                     parent=self.flock.leader,
-                    dataset=self.transfer.proxy(data),
+                    dataset=self.runtime.proxy(data),
                     module=self.global_module,
-                    module_state_dict=self.transfer.proxy(
+                    module_state_dict=self.runtime.proxy(
                         self.global_module.state_dict()
                     ),
-                    transfer=self.transfer,
                     strategy=self.strategy,
                 )
-                futures.append(fut)
+                # futures.append(fut)
+                futures.add(fut)
                 worker_rounds[result.node_idx] += 1
                 progress_bar.update()
 

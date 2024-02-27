@@ -1,5 +1,5 @@
 import datetime
-from typing import Any
+import typing
 
 import numpy as np
 from pandas import DataFrame
@@ -7,15 +7,15 @@ from pandas import DataFrame
 from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
-
 # from flox.run.fit_sync import sync_federated_fit
-from flox.nn.types import Kind
+from flox.nn.typing import Kind
 from flox.runtime.launcher import (
     GlobusComputeLauncher,
     Launcher,
     LocalLauncher,
     ParslLauncher,
 )
+from flox.runtime.process.proc import BaseProcess
 from flox.runtime.process.proc_async import AsyncProcess
 from flox.runtime.process.proc_sync import SyncProcess
 from flox.runtime.runtime import Runtime
@@ -47,8 +47,8 @@ def federated_fit(
     num_global_rounds: int,
     strategy: Strategy | str | None = None,
     kind: Kind = "sync",
-    launcher: str = "process",
-    launcher_cfg: dict[str, Any] | None = None,
+    launcher_kind: str = "process",
+    launcher_cfg: dict[str, typing.Any] | None = None,
     debug_mode: bool = False,
 ) -> tuple[FloxModule, DataFrame]:
     """
@@ -60,8 +60,8 @@ def federated_fit(
         num_global_rounds (int):
         strategy (Strategy | str | None):
         kind (Kind):
-        launcher (Where):
-        launcher_cfg (dict[str, Any] | None):
+        launcher_kind (str):
+        launcher_cfg (dict[str, typing.Any] | None):
         debug_mode (bool): ...
 
     Returns:
@@ -69,8 +69,9 @@ def federated_fit(
         The history metrics from training.
     """
     launcher_cfg = dict() if launcher_cfg is None else launcher_cfg
-    launcher = create_launcher(launcher, **launcher_cfg)
+    launcher = create_launcher(launcher_kind, **launcher_cfg)
     transfer = BaseTransfer()
+    runtime = Runtime(launcher, transfer)
 
     if strategy is None:
         strategy = "fedsgd"
@@ -79,21 +80,26 @@ def federated_fit(
 
     # runner = runner_factory.build(kind, ...)
     # runner.start()
-
-    common_kwargs = {
-        "flock": flock,
-        "num_global_rounds": num_global_rounds,
-        "runtime": Runtime(launcher, transfer),
-        "module": module,
-        "dataset": datasets,
-        "strategy": strategy,
-    }
-
+    process: BaseProcess
     match kind:
         case "sync":
-            process = SyncProcess(**common_kwargs)
+            process = SyncProcess(
+                runtime=runtime,
+                flock=flock,
+                num_global_rounds=num_global_rounds,
+                module=module,
+                dataset=datasets,
+                strategy=strategy,
+            )
         case "async":
-            process = AsyncProcess(**common_kwargs)
+            process = AsyncProcess(
+                runtime=runtime,
+                flock=flock,
+                num_global_rounds=num_global_rounds,
+                module=module,
+                dataset=datasets,
+                strategy=strategy,
+            )
         case _:
             raise ValueError
 

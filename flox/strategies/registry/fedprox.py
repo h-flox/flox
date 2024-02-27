@@ -53,6 +53,7 @@ class FedProx(FedAvg):
         self,
         state: FloxWorkerState,
         loss: torch.Tensor,
+        *args,
         **kwargs,
     ) -> torch.Tensor:
         """

@@ -47,6 +47,7 @@ class FloxModule(torch.nn.Module, ABC):
         Returns:
 
         """
+        raise NotImplementedError
 
     def test_step(self, batch: torch.Tensor | tuple[torch.Tensor, ...], batch_idx: int):
         """
@@ -58,6 +59,7 @@ class FloxModule(torch.nn.Module, ABC):
         Returns:
 
         """
+        raise NotImplementedError
 
     def predict_step(
         self,
@@ -75,3 +77,4 @@ class FloxModule(torch.nn.Module, ABC):
         Returns:
 
         """
+        raise NotImplementedError

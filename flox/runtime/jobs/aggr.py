@@ -20,6 +20,7 @@ def aggregation_job(
     """
     import pandas
     from flox.flock.states import FloxAggregatorState
+    from flox.runtime import JobResult
 
     child_states, child_state_dicts = {}, {}
     for result in results:
@@ -47,7 +48,8 @@ def aggregation_job(
                 raise ValueError
 
     history = pandas.concat(histories)
-    return transfer.report(node_state, node.idx, node.kind, avg_state_dict, history)
+    result = JobResult(node_state, node.idx, node.kind, avg_state_dict, history)
+    return transfer.report(result)
 
 
 def debug_aggregation_job(
@@ -56,10 +58,13 @@ def debug_aggregation_job(
     import datetime
     import numpy
     import pandas
+    from flox.flock.states import FloxAggregatorState
+    from flox.runtime import JobResult
 
     result = next(iter(results))
-    module = result.module
-    node_state = dict(idx=node.idx)
+    state_dict = result.state_dict
+    state_dict = {} if state_dict is None else state_dict
+    node_state = FloxAggregatorState(node.idx)
     history = {
         "node/idx": [node.idx],
         "node/kind": [node.kind.to_str()],
@@ -69,7 +74,6 @@ def debug_aggregation_job(
         "train/time": [datetime.datetime.now()],
         "mode": "debug",
     }
-    history = pandas.DataFrame.from_dict(history)
-    return transfer.report(
-        node_state, node.idx, node.kind, module.state_dict(), history
-    )
+    history_df = pandas.DataFrame.from_dict(history)
+    result = JobResult(node_state, node.idx, node.kind, state_dict, history_df)
+    return transfer.report(result)
