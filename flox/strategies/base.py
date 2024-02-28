@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
 
     from typing import Iterable, MutableMapping, TypeAlias
     from flox.flock import FlockNode, FlockNodeID
-    from flox.flock.states import FloxWorkerState, FloxAggregatorState, NodeState
+    from flox.flock.states import WorkerState, AggrState, NodeState
     from flox.nn.typing import StateDict
 
     Loss: TypeAlias = torch.Tensor
@@ -65,7 +65,7 @@ class Strategy(ABC):
 
     @abstractmethod
     def cli_worker_selection(
-        self, state: FloxAggregatorState, children: Iterable[FlockNode], *args, **kwargs
+        self, state: AggrState, children: Iterable[FlockNode], *args, **kwargs
     ) -> Iterable[FlockNode]:
         """
 
@@ -81,7 +81,7 @@ class Strategy(ABC):
         return children
 
     def cli_before_share_params(
-        self, state: FloxAggregatorState, state_dict: StateDict, *args, **kwargs
+        self, state: AggrState, state_dict: StateDict, *args, **kwargs
     ) -> StateDict:
         """Callback before sharing parameters to child nodes.
 
@@ -89,7 +89,7 @@ class Strategy(ABC):
         model parameters, apply noise, personalize, etc.
 
         Args:
-            state (FloxAggregatorState): The current state of the aggregator.
+            state (AggrState): The current state of the aggregator.
             state_dict (StateDict): The global model's current StateDict (i.e., parameters) before
                 sharing with workers.
 
@@ -102,18 +102,18 @@ class Strategy(ABC):
     #                              AGGREGATOR CALLBACKS.                               #
     ####################################################################################
 
-    def agg_before_round(self, state: FloxAggregatorState) -> None:
+    def agg_before_round(self, state: AggrState) -> None:
         """
         Some process to run at the start of a round.
 
         Args:
-            state (FloxAggregatorState): The current state of the Aggregator FloxNode.
+            state (AggrState): The current state of the Aggregator FloxNode.
         """
         raise NotImplementedError
 
     def agg_param_aggregation(
         self,
-        state: FloxAggregatorState,
+        state: AggrState,
         children_states: MutableMapping[FlockNodeID, NodeState],
         children_state_dicts: MutableMapping[FlockNodeID, StateDict],
         *args,
@@ -122,7 +122,7 @@ class Strategy(ABC):
         """
 
         Args:
-            state (FloxAggregatorState):
+            state (AggrState):
             children_states (Mapping[FlockNodeID, NodeState]):
             children_state_dicts (Mapping[FlockNodeID, NodeState]):
             *args ():
@@ -138,7 +138,7 @@ class Strategy(ABC):
     ####################################################################################
 
     def wrk_on_recv_params(
-        self, state: FloxWorkerState, params: StateDict, *args, **kwargs
+        self, state: WorkerState, params: StateDict, *args, **kwargs
     ):
         """
 
@@ -153,7 +153,7 @@ class Strategy(ABC):
         """
         return params
 
-    def wrk_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
+    def wrk_before_train_step(self, state: WorkerState, *args, **kwargs):
         """
 
         Args:
@@ -167,7 +167,7 @@ class Strategy(ABC):
         raise NotImplementedError()
 
     def wrk_after_train_step(
-        self, state: FloxWorkerState, loss: Loss, *args, **kwargs
+        self, state: WorkerState, loss: Loss, *args, **kwargs
     ) -> Loss:
         """
 
@@ -183,7 +183,7 @@ class Strategy(ABC):
         return loss
 
     def wrk_before_submit_params(
-        self, state: FloxWorkerState, *args, **kwargs
+        self, state: WorkerState, *args, **kwargs
     ) -> StateDict:
         """
 

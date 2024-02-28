@@ -100,7 +100,7 @@ def federated_fit(
                 strategy=strategy,
             )
         case _:
-            raise ValueError
+            raise ValueError("Illegal value for the strategy `kind` parameter.")
 
     start_time = datetime.datetime.now()
     module, history = process.start(debug_mode)

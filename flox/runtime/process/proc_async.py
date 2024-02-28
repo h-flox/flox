@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from flox.data import FloxDataset
 from flox.flock import Flock, FlockNodeID
-from flox.flock.states import FloxAggregatorState, FloxWorkerState, NodeState
+from flox.flock.states import AggrState, WorkerState, NodeState
 from flox.nn import FloxModule
 from flox.runtime.jobs import local_training_job
 from flox.runtime.process.proc import BaseProcess
@@ -56,7 +56,7 @@ class AsyncProcess(BaseProcess):
 
         self.state_dict = None
         self.debug_mode = False
-        self.state = FloxAggregatorState(self.flock.leader.idx)
+        self.state = AggrState(self.flock.leader.idx)
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:
         if not self.flock.two_tier:
@@ -68,7 +68,7 @@ class AsyncProcess(BaseProcess):
         worker_state_dicts: dict[FlockNodeID, StateDict] = {}
         for worker in self.flock.workers:
             worker_rounds[worker.idx] = 0
-            worker_states[worker.idx] = FloxWorkerState(worker.idx)
+            worker_states[worker.idx] = WorkerState(worker.idx)
             worker_state_dicts[worker.idx] = self.global_module.state_dict()
 
         futures = set()

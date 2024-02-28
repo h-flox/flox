@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from flox.flock import FlockNodeID
-    from flox.flock.states import FloxAggregatorState, FloxWorkerState, NodeState
+    from flox.flock.states import AggrState, WorkerState, NodeState
     from flox.nn.typing import StateDict
 
 
@@ -46,14 +46,14 @@ class FedAvg(FedSGD):
             participation, probabilistic, always_include_child_aggregators, seed
         )
 
-    def wrk_before_train_step(self, state: FloxWorkerState, *args, **kwargs):
+    def wrk_before_train_step(self, state: WorkerState, *args, **kwargs):
         if "dataset" not in kwargs:
             raise ValueError("`dataset` must be provided")
         state["num_data_samples"] = len(kwargs["dataset"])
 
     def agg_param_aggregation(
         self,
-        state: FloxAggregatorState,
+        state: AggrState,
         children_states: Mapping[FlockNodeID, NodeState],
         children_state_dicts: Mapping[FlockNodeID, StateDict],
         *_args,

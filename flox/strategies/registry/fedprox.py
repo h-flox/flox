@@ -1,6 +1,6 @@
 import torch
 
-from flox.flock.states import FloxWorkerState
+from flox.flock.states import WorkerState
 from flox.strategies import FedAvg
 
 
@@ -51,7 +51,7 @@ class FedProx(FedAvg):
 
     def wrk_after_train_step(
         self,
-        state: FloxWorkerState,
+        state: WorkerState,
         loss: torch.Tensor,
         *args,
         **kwargs,
@@ -66,7 +66,7 @@ class FedProx(FedAvg):
         $$
 
         Args:
-            state (FloxWorkerState):
+            state (WorkerState):
             loss (torch.Tensor):
             **kwargs ():
 

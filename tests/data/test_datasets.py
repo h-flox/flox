@@ -3,7 +3,6 @@ from pathlib import Path
 import pandas as pd
 import torch
 from sklearn.datasets import make_classification
-
 # TODO: Get rid of `sklearn` as a dependency.
 from torch.utils.data import Dataset
 
@@ -62,7 +61,7 @@ def test_dir_datasets(tmpdir):
             print(data.head())
 
     for worker in flock.workers:
-        state = FloxWorkerState(worker.idx, None, None)
+        state = WorkerState(worker.idx, None, None)
         try:
             worker_data = MyDataDir(state, tmpdir)
             assert isinstance(worker_data, Dataset)

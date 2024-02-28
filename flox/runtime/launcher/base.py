@@ -24,4 +24,5 @@ class Launcher(ABC):
 
     @abstractmethod
     def collect(self):
+        # TODO: Check if this is needed at all.
         raise NotImplementedError()

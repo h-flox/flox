@@ -23,7 +23,7 @@ class NodeState:
         if type(self) is NodeState:
             raise NotImplementedError(
                 "Cannot instantiate instance of ``NodeState`` (must instantiate instance of "
-                "subclasses: ``FloxAggregatorState`` or ``FloxWorkerState``)."
+                "subclasses: ``AggrState`` or ``WorkerState``)."
             )
 
     def __iter__(self) -> Iterable[str]:
@@ -42,7 +42,7 @@ class NodeState:
             value (Any): Data to store in ``self.extra_data``.
 
         Examples:
-            >>> state = FloxWorkerState(...)
+            >>> state = WorkerState(...)
             >>> state["foo"] = "bar"
         """
         self.cache[key] = value
@@ -54,7 +54,7 @@ class NodeState:
             key (str): Key to retrieve stored data in ``self.extra_data``.
 
         Examples:
-            >>> state = FloxWorkerState(...)
+            >>> state = WorkerState(...)
             >>> state["foo"] = "bar"  # Stores the data (see `__setitem__()`).
             >>> print(state["foo"])   # Gets the item.
             >>> # "foo"
@@ -65,14 +65,15 @@ class NodeState:
         return self.cache[key]
 
 
-class FloxAggregatorState(NodeState):
+class AggrState(NodeState):
     """State of an Aggregator node in a ``Flock``."""
 
+    # TODO: If there is no difference between ``AggrState`` and ``NodeState``, then do we need the former at all?
     def __init__(self, idx: FlockNodeID):
         super().__init__(idx)
 
 
-class FloxWorkerState(NodeState):
+class WorkerState(NodeState):
     """State of a Worker node in a ``Flock``."""
 
     pre_local_train_model: FloxModule | None = None
@@ -92,11 +93,5 @@ class FloxWorkerState(NodeState):
         self.post_local_train_model = post_local_train_model
 
     def __repr__(self) -> str:
-        template = (
-            "FloxWorkerState(pre_local_train_model={}, post_local_train_model={})"
-        )
+        template = "WorkerState(pre_local_train_model={}, post_local_train_model={})"
         return template.format(self.pre_local_train_model, self.post_local_train_model)
-
-
-# NodeState = NewType("NodeState", Union[FloxAggregatorState, FloxWorkerState])
-# """A `Type` included for convenience. It is equivalent to ``Union[FloxAggregatorState, FloxWorkerState]``."""

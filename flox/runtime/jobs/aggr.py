@@ -19,7 +19,7 @@ def aggregation_job(
         Aggregation results.
     """
     import pandas
-    from flox.flock.states import FloxAggregatorState, NodeState
+    from flox.flock.states import AggrState, NodeState
     from flox.runtime import JobResult
 
     child_states: dict[FlockNodeID, NodeState] = {}
@@ -29,7 +29,7 @@ def aggregation_job(
         child_states[idx] = result.node_state
         child_state_dicts[idx] = result.state_dict
 
-    node_state = FloxAggregatorState(node.idx)
+    node_state = AggrState(node.idx)
     avg_state_dict = strategy.agg_param_aggregation(
         node_state, child_states, child_state_dicts
     )
@@ -59,13 +59,13 @@ def debug_aggregation_job(
     import datetime
     import numpy
     import pandas
-    from flox.flock.states import FloxAggregatorState
+    from flox.flock.states import AggrState
     from flox.runtime import JobResult
 
     result = next(iter(results))
     state_dict = result.state_dict
     state_dict = {} if state_dict is None else state_dict
-    node_state = FloxAggregatorState(node.idx)
+    node_state = AggrState(node.idx)
     history = {
         "node/idx": [node.idx],
         "node/kind": [node.kind.to_str()],

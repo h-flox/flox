@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import functools
 import typing
-from concurrent.futures import Future
 
-from flox.flock import FlockNode
-from flox.runtime.jobs import aggregation_job
-from flox.runtime.runtime import Runtime
-from flox.runtime.utils import set_parent_future
-from flox.strategies import Strategy
+if typing.TYPE_CHECKING:
+    from concurrent.futures import Future
+
+    from flox.flock import FlockNode
+    from flox.runtime.jobs import aggregation_job
+    from flox.runtime.runtime import Runtime
+    from flox.runtime.utils import set_parent_future
+    from flox.strategies import Strategy
 
 
 def all_child_futures_finished_cbk(

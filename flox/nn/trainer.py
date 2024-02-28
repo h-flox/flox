@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-from flox.flock.states import FloxWorkerState
+from flox.flock.states import WorkerState
 from flox.nn import FloxModule
 from flox.nn.logger.csv import CSVLogger
 from flox.strategies import Strategy
@@ -32,7 +32,7 @@ class Trainer:
         train_dataloader: DataLoader,
         num_epochs: int,
         strategy: Strategy,
-        node_state: FloxWorkerState,
+        node_state: WorkerState,
         valid_dataloader: DataLoader | None = None,
         valid_ckpt_path: Path | str | None = None,
     ) -> pd.DataFrame:

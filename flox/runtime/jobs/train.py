@@ -42,7 +42,7 @@ def local_training_job(
         Local fitting results.
     """
     from copy import deepcopy
-    from flox.flock.states import FloxWorkerState
+    from flox.flock.states import WorkerState
     from flox.nn.trainer import Trainer
     from torch.utils.data import DataLoader
     from flox.runtime import JobResult
@@ -66,7 +66,7 @@ def local_training_job(
     global_model.load_state_dict(module_state_dict)
     local_model.load_state_dict(module_state_dict)
 
-    node_state = FloxWorkerState(
+    node_state = WorkerState(
         node.idx, pre_local_train_model=global_model, post_local_train_model=local_model
     )
 
@@ -122,11 +122,11 @@ def debug_training_job(
     import datetime
     import numpy as np
     import pandas
-    from flox.flock.states import FloxWorkerState
+    from flox.flock.states import WorkerState
     from flox.runtime import JobResult
 
     local_module = module
-    node_state = FloxWorkerState(
+    node_state = WorkerState(
         node.idx,
         pre_local_train_model=local_module,
         post_local_train_model=local_module,

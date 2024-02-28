@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from flox.data import FloxDataset
 from flox.flock import Flock, FlockNode, FlockNodeKind
-from flox.flock.states import FloxAggregatorState
+from flox.flock.states import AggrState
 from flox.nn import FloxModule
 from flox.runtime.jobs import local_training_job, debug_training_job
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
@@ -123,7 +123,7 @@ class SyncProcess(BaseProcess):
                 raise ValueError(value_err_template.format(kind, idx))
 
     def _aggr_job(self, node: FlockNode) -> Future[Result]:
-        aggr_state = FloxAggregatorState(node.idx)
+        aggr_state = AggrState(node.idx)
         self.strategy.cli_worker_selection(aggr_state, list(self.flock.children(node)))
         # FIXME: This (^^^) shouldn't be run on the aggregator
         children_futures = [
