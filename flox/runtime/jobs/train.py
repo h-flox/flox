@@ -97,17 +97,14 @@ def local_training_job(
         strategy=strategy,
     )
 
-    try:
-        local_params = strategy.wrk_before_submit_params(node_state)
-    except NotImplementedError:
-        pass
+    local_params = strategy.wrk_before_submit_params(node_state)
 
     history["node/idx"] = node.idx
     history["node/kind"] = node.kind.to_str()
     history["parent/idx"] = parent.idx
     history["parent/kind"] = parent.kind.to_str()
 
-    result = JobResult(node_state, node.idx, node.kind, module.state_dict(), history)
+    result = JobResult(node_state, node.idx, node.kind, local_params, history)
     return transfer.report(result)
 
 

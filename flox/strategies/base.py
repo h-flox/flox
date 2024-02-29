@@ -17,13 +17,15 @@ if typing.TYPE_CHECKING:
 class Strategy:
     """Base class for the logical blocks of a FL process.
 
-    A ``Strategy`` in FLoX is used to implement the logic of an FL process. A ``Strategy`` provides
-    a number of callbacks which can be overridden to inject pieces of logic throughout the FL process.
-    Some of these callbacks are run on the aggregator nodes while others are run on the worker nodes.
+    A ``Strategy`` in FLoX is used to implement the logic of an FL process. A ``Strategy``
+    provides a number of callbacks which can be overridden to inject pieces of logic
+    throughout the FL process. Some of these callbacks are run on the aggregator nodes
+    while others are run on the worker nodes.
 
-    It is _**highly**_ encouraged that you read [What Do Strategies Do](/getting_started/strategies/what/)
-    to better understand how the callbacks included in a Strategy interact with one another and when
-    they are run in an FL process.
+    It is _**highly**_ encouraged that you read
+    [What Do Strategies Do](/getting_started/strategies/what/) to better understand how
+    the callbacks included in a Strategy interact with one another and when they are run
+    in an FL process.
     """
 
     __metaclass__ = abc.ABCMeta
@@ -32,9 +34,9 @@ class Strategy:
     """..."""
 
     def __new__(cls, *args, **kwargs):
-        if cls.__class__ == (Strategy,):
+        if cls is Strategy:
             raise TypeError(f"Abstract class {cls.__name__} cannot be instantiated.")
-        return super(Strategy, cls).__new__(cls, *args, **kwargs)
+        return super().__new__(cls, *args, **kwargs)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -91,13 +93,13 @@ class Strategy:
     ) -> StateDict:
         """Callback before sharing parameters to child nodes.
 
-        This is mostly done is modify the global model's StateDict. This can be done to encrypt the
-        model parameters, apply noise, personalize, etc.
+        This is mostly done is modify the global model's StateDict. This can be done
+        to encrypt the model parameters, apply noise, personalize, etc.
 
         Args:
             state (AggrState): The current state of the aggregator.
-            state_dict (StateDict): The global model's current StateDict (i.e., parameters) before
-                sharing with workers.
+            state_dict (StateDict): The global model's current StateDict
+                (i.e., parameters) before sharing with workers.
 
         Returns:
             The global global_module StateDict.
@@ -195,4 +197,4 @@ class Strategy:
         Returns:
 
         """
-        raise NotImplementedError()
+        return state.post_local_train_model.state_dict()

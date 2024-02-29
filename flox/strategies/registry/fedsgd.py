@@ -37,13 +37,14 @@ class FedSGD(Strategy):
 
         Args:
             participation (float): Fraction of the child nodes to be selected.
-            probabilistic (bool): If `True`, nodes are selected entirely probabilistically rather than
-                based on a fraction (`False`). As an example, consider you have 10 children nodes to select from and
-                `participation=0.5`. If `probabilistic=True`, then exactly 5 children nodes *will* be selected;
-                otherwise, then each child node will be selected with probability 0.5.
-            always_include_child_aggregators (bool): If `True`, child aggregator nodes will always be included;
-                if `False`, then they will only be included if they are naturally selected (similar to worker
-                child nodes).
+            probabilistic (bool): If `True`, nodes are selected entirely probabilistically
+                rather than based on a fraction (`False`). As an example, consider you have
+                10 children nodes to select from and `participation=0.5`. If `probabilistic=True`,
+                then exactly 5 children nodes *will* be selected; otherwise, then each child node
+                will be selected with probability 0.5.
+            always_include_child_aggregators (bool): If `True`, child aggregator nodes will always
+                be included; if `False`, then they will only be included if they are naturally
+                selected (similar to worker child nodes).
             seed (int): Random seed. # TODO: Change this to standardized seeding format.
         """
         super().__init__()

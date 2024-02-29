@@ -47,17 +47,11 @@ class Trainer:
                     optimizer.zero_grad()
                     loss.backward()
 
-                    try:
-                        assert strategy is not None
-                        assert node_state is not None
-                        strategy.wrk_after_train_step(node_state, loss)
-                        # TODO: Check if this (^^^) makes sense...
-                    except (AttributeError, AssertionError, NotImplementedError):
-                        """
-                        ``node_state`` is None, ``strategy`` is None, or ``strategy`` doesn't
-                        implement ``wrk_after_train_step()``.
-                        """
-                        pass
+                    # try:
+                    #     strategy.wrk_after_train_step(node_state, loss)
+                    #     # TODO: Check if this (^^^) makes sense...
+                    # except NotImplementedError:
+                    #     pass
 
                     optimizer.step()
 
