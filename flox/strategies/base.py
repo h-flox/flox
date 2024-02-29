@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import abc
 import typing
-from abc import abstractmethod, ABC
 
 if typing.TYPE_CHECKING:
     import torch
@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
     Loss: TypeAlias = torch.Tensor
 
 
-class Strategy(ABC):
+class Strategy:
     """Base class for the logical blocks of a FL process.
 
     A ``Strategy`` in FLoX is used to implement the logic of an FL process. A ``Strategy`` provides
@@ -26,7 +26,19 @@ class Strategy(ABC):
     they are run in an FL process.
     """
 
+    __metaclass__ = abc.ABCMeta
+
     registry: MutableMapping[str, type["Strategy"]] = {}
+    """..."""
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__class__ == (Strategy,):
+            raise TypeError(f"Abstract class {cls.__name__} cannot be instantiated.")
+        return super(Strategy, cls).__new__(cls, *args, **kwargs)
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.registry[cls.__name__.lower()] = cls
 
     @classmethod
     def get_strategy(cls, name: str) -> type["Strategy"]:
@@ -49,23 +61,17 @@ class Strategy(ABC):
         else:
             raise KeyError(f"Strategy name ({name}) is not in the Strategy registry.")
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        cls.registry[cls.__name__.lower()] = cls
-
     ####################################################################################
     #                                CLIENT CALLBACKS.                                 #
     ####################################################################################
 
-    @abstractmethod
     def cli_get_node_statuses(self):
         """
         Followup callback upon getting status updates from all of the nodes in the Flock.
         """
 
-    @abstractmethod
     def cli_worker_selection(
-        self, state: AggrState, children: Iterable[FlockNode], *args, **kwargs
+        self, state: AggrState, children: Iterable[FlockNode], **kwargs
     ) -> Iterable[FlockNode]:
         """
 
@@ -81,7 +87,7 @@ class Strategy(ABC):
         return children
 
     def cli_before_share_params(
-        self, state: AggrState, state_dict: StateDict, *args, **kwargs
+        self, state: AggrState, state_dict: StateDict, **kwargs
     ) -> StateDict:
         """Callback before sharing parameters to child nodes.
 
@@ -137,9 +143,7 @@ class Strategy(ABC):
     #                                WORKER CALLBACKS.                                 #
     ####################################################################################
 
-    def wrk_on_recv_params(
-        self, state: WorkerState, params: StateDict, *args, **kwargs
-    ):
+    def wrk_on_recv_params(self, state: WorkerState, params: StateDict, **kwargs):
         """
 
         Args:
@@ -153,7 +157,7 @@ class Strategy(ABC):
         """
         return params
 
-    def wrk_before_train_step(self, state: WorkerState, *args, **kwargs):
+    def wrk_before_train_step(self, state: WorkerState, **kwargs):
         """
 
         Args:
@@ -166,9 +170,7 @@ class Strategy(ABC):
         """
         raise NotImplementedError()
 
-    def wrk_after_train_step(
-        self, state: WorkerState, loss: Loss, *args, **kwargs
-    ) -> Loss:
+    def wrk_after_train_step(self, state: WorkerState, loss: Loss, **kwargs) -> Loss:
         """
 
         Args:
@@ -182,9 +184,7 @@ class Strategy(ABC):
         """
         return loss
 
-    def wrk_before_submit_params(
-        self, state: WorkerState, *args, **kwargs
-    ) -> StateDict:
+    def wrk_before_submit_params(self, state: WorkerState, **kwargs) -> StateDict:
         """
 
         Args:

@@ -35,7 +35,7 @@ class GlobusComputeLauncher(Launcher):
 
     def submit(
         self,
-        fn: Callable, # NodeCallable,  # Callable[[FlockNode, Any, ...], Any], # FIXME
+        fn: Callable,  # NodeCallable,  # Callable[[FlockNode, Any, ...], Any], # FIXME
         node: FlockNode,
         /,
         *args,

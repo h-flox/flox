@@ -46,8 +46,9 @@ class FedAvg(FedSGD):
             participation, probabilistic, always_include_child_aggregators, seed
         )
 
-    def wrk_before_train_step(self, state: WorkerState, *args, **kwargs):
+    def wrk_before_train_step(self, state: WorkerState, **kwargs):
         if "dataset" not in kwargs:
+            print(**kwargs)
             raise ValueError("`dataset` must be provided")
         state["num_data_samples"] = len(kwargs["dataset"])
 
@@ -56,8 +57,7 @@ class FedAvg(FedSGD):
         state: AggrState,
         children_states: Mapping[FlockNodeID, NodeState],
         children_state_dicts: Mapping[FlockNodeID, StateDict],
-        *_args,
-        **_kwargs,
+        **kwargs,
     ):
         weights = {}
         for node, child_state in children_states.items():

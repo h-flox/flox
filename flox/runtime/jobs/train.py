@@ -72,13 +72,14 @@ def local_training_job(
 
     strategy.wrk_on_recv_params(node_state, global_state_dict)
 
+    data = dataset.load(node)
     train_loader = DataLoader(
-        dataset.load(node),
+        data,
         batch_size=train_hyper_params.get("batch_size", 32),
         shuffle=train_hyper_params.get("shuffle", True),
     )
 
-    strategy.wrk_before_train_step(node_state, dataset=dataset)
+    strategy.wrk_before_train_step(state=node_state, dataset=data)
     trainer = Trainer()
     history = trainer.fit(
         local_model,
@@ -90,7 +91,11 @@ def local_training_job(
         strategy=strategy,
     )
 
-    local_params = strategy.wrk_before_submit_params(node_state)
+    try:
+        local_params = strategy.wrk_before_submit_params(node_state)
+    except NotImplementedError:
+        pass
+
     history["node/idx"] = node.idx
     history["node/kind"] = node.kind.to_str()
     history["parent/idx"] = parent.idx

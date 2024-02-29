@@ -43,14 +43,6 @@ class Trainer:
         with torch.set_grad_enabled(True):
             for epoch in range(num_epochs):
                 for batch_idx, batch in enumerate(train_dataloader):
-                    try:
-                        strategy.wrk_before_train_step(node_state)
-                    except NotImplementedError:
-                        """
-                        The current strategy does not override the `wrk_before_train_step()` callback.
-                        """
-                        pass
-
                     loss = model.training_step(batch, batch_idx)
                     optimizer.zero_grad()
                     loss.backward()
@@ -59,7 +51,8 @@ class Trainer:
                         assert strategy is not None
                         assert node_state is not None
                         strategy.wrk_after_train_step(node_state, loss)
-                    except (AttributeError, AssertionError):
+                        # TODO: Check if this (^^^) makes sense...
+                    except (AttributeError, AssertionError, NotImplementedError):
                         """
                         ``node_state`` is None, ``strategy`` is None, or ``strategy`` doesn't
                         implement ``wrk_after_train_step()``.

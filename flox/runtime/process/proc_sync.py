@@ -153,7 +153,8 @@ class SyncProcess(BaseProcess):
         raise NotImplementedError
 
     def _worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
-        data = self.fetch_worker_data(node)
+        # data = self.fetch_worker_data(node)
+        data = self.dataset
         return self.runtime.submit(
             local_training_job,
             node,

@@ -57,8 +57,7 @@ class FedSGD(Strategy):
         self,
         state: AggrState,
         children: Iterable[FlockNode],
-        *_args,
-        **_kwargs,
+        **kwargs,
     ) -> list[FlockNode]:
         """Performs a simple average of the model weights returned by the child nodes.
 
@@ -93,8 +92,7 @@ class FedSGD(Strategy):
         state: AggrState,
         children_states: Mapping[FlockNodeID, NodeState],
         children_state_dicts: Mapping[FlockNodeID, StateDict],
-        *_args,
-        **_kwargs,
+        **kwargs,
     ) -> StateDict:
         """Runs simple, unweighted averaging of ``StateDict`` objects from each child node.
 

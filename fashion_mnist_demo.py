@@ -1,16 +1,15 @@
 import os
-import pandas as pd
-import torch
-
-from flox.flock import Flock
-from flox.runtime import federated_fit
-from flox.nn import FloxModule
-from flox.strategies import FedProx
-from flox.data.utils import federated_split
 from pathlib import Path
+
+import torch
 from torch import nn
 from torchvision.datasets import FashionMNIST
 from torchvision.transforms import ToTensor
+
+from flox.data.utils import federated_split
+from flox.flock import Flock
+from flox.nn import FloxModule
+from flox.runtime import federated_fit
 
 
 class MyModule(FloxModule):
@@ -52,27 +51,16 @@ def main():
     fed_data = federated_split(mnist, flock, 10, 1.0, 1.0)
     assert len(fed_data) == len(list(flock.workers))
 
-    df_list = []
-    strategies = {
-        "fedprox": FedProx,
-        # "fed-avg": FedAvg,
-        # "fed-sgd": FedSGD,
-    }
-    for strategy_label, strategy_cls in strategies.items():
-        print(f">>> Running FLoX with strategy={strategy_label}.")
-        _, df = federated_fit(
-            flock,
-            MyModule(),
-            fed_data,
-            5,
-            strategy=strategy_cls(),
-            # where="local",  # "globus_compute",
-        )
-        df["strategy"] = strategy_label
-        df_list.append(df)
-
-    train_history = pd.concat(df_list).reset_index(drop=True)
-    train_history.to_feather(Path("out/demo_history.feather"))
+    module, df = federated_fit(
+        flock,
+        MyModule(),
+        fed_data,
+        5,
+        strategy="fedavg",
+        launcher_cfg={"max_workers": 1},
+        # where="local",  # "globus_compute",
+    )
+    df.to_feather(Path("out/fashion_mnist_demo.feather"))
     print(">>> Finished!")
 
 
