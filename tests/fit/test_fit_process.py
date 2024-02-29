@@ -59,7 +59,9 @@ def test_2_tier_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
+    module, train_history = federated_fit(
+        flock, MyModule(), fed_data, 2, strategy="fedavg", launcher_kind="thread"
+    )
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
@@ -73,7 +75,9 @@ def test_3_tier_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
+    module, train_history = federated_fit(
+        flock, MyModule(), fed_data, 2, strategy="fedavg", launcher_kind="thread"
+    )
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)
 
@@ -87,6 +91,8 @@ def test_complex_fit(data):
         samples_alpha=10.0,
         labels_alpha=10.0,
     )
-    module, train_history = federated_fit(flock, MyModule(), fed_data, 2)
+    module, train_history = federated_fit(
+        flock, MyModule(), fed_data, 2, strategy="fedavg", launcher_kind="thread"
+    )
     assert isinstance(module, FloxModule)
     assert isinstance(train_history, pd.DataFrame)

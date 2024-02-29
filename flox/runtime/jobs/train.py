@@ -70,7 +70,10 @@ def local_training_job(
         node.idx, pre_local_train_model=global_model, post_local_train_model=local_model
     )
 
-    strategy.wrk_on_recv_params(node_state, global_state_dict)
+    try:
+        strategy.wrk_on_recv_params(node_state, global_state_dict)
+    except NotImplementedError:
+        pass
 
     data = dataset.load(node)
     train_loader = DataLoader(
@@ -79,7 +82,10 @@ def local_training_job(
         shuffle=train_hyper_params.get("shuffle", True),
     )
 
-    strategy.wrk_before_train_step(state=node_state, dataset=data)
+    try:
+        strategy.wrk_before_train_step(state=node_state, dataset=data)
+    except NotImplementedError:
+        pass
     trainer = Trainer()
     history = trainer.fit(
         local_model,
