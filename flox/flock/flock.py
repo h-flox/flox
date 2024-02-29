@@ -40,6 +40,7 @@ TODO: Make an `OmegaConf` standard.
 class Flock:
     topo: nx.DiGraph
     node_counter: int
+    leader: FlockNode | None
 
     def __init__(self, topo: nx.DiGraph | None = None, _src: Path | str | None = None):
         """
@@ -61,6 +62,7 @@ class Flock:
             # By default (i.e., `topo is None`),
             self.topo = nx.DiGraph()
             self.node_counter += self.topo.number_of_nodes()
+            self.leader = None
         else:
             self.topo = topo
             if not self.validate_topo():
@@ -89,22 +91,25 @@ class Flock:
 
     def add_node(
         self,
-        kind: FlockNodeKind,
+        kind: FlockNodeKind | str,
         globus_compute_endpoint_id: UUID | None = None,
         proxystore_endpoint_id: UUID | None = None,
-    ) -> FlockNodeID:
+    ) -> FlockNode:
+        if isinstance(kind, str):
+            kind = FlockNodeKind.from_str(kind)
+
         if kind is FlockNodeKind.LEADER and self.leader is not None:
             raise ValueError("A leader node has already been established.")
 
         idx = self.node_counter
+        self.node_counter += 1
         self.topo.add_node(
             idx,
             kind=kind,
-            globus_compute_endpoint_id=globus_compute_endpoint_id,
-            proxystore_endpoint_id=proxystore_endpoint_id,
+            globus_compute_endpoint=globus_compute_endpoint_id,
+            proxystore_endpoint=proxystore_endpoint_id,
         )
-        self.node_counter += 1
-        return idx
+        return self[idx]
 
     def add_edge(self, u: FlockNodeID, v: FlockNodeID, **attrs) -> None:
         """
@@ -436,6 +441,7 @@ class Flock:
 
     @functools.cached_property
     def two_tier(self) -> bool:
+        assert self.leader is not None
         for worker in self.workers:
             if not self.topo.has_edge(self.leader.idx, worker.idx):
                 return False
@@ -459,5 +465,4 @@ class Flock:
         return f"Flock(`{self._src}`)"
 
     def __getitem__(self, idx: FlockNodeID) -> FlockNode:
-        # return self.topo.nodes[item]
         return FlockNode(idx, **self.topo.nodes[idx])

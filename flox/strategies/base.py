@@ -3,6 +3,8 @@ from __future__ import annotations
 import abc
 import typing
 
+from flox.nn import FloxModule
+
 if typing.TYPE_CHECKING:
     import torch
 
@@ -80,7 +82,6 @@ class Strategy:
         Args:
             state ():
             children ():
-            *args ():
             **kwargs ():
 
         Returns:
@@ -124,7 +125,6 @@ class Strategy:
         state: AggrState,
         children_states: MutableMapping[FlockNodeID, NodeState],
         children_state_dicts: MutableMapping[FlockNodeID, StateDict],
-        *args,
         **kwargs,
     ) -> StateDict:
         """
@@ -133,7 +133,6 @@ class Strategy:
             state (AggrState):
             children_states (Mapping[FlockNodeID, NodeState]):
             children_state_dicts (Mapping[FlockNodeID, NodeState]):
-            *args ():
             **kwargs ():
 
         Returns:
@@ -151,7 +150,6 @@ class Strategy:
         Args:
             state ():
             params ():
-            *args ():
             **kwargs ():
 
         Returns:
@@ -164,7 +162,6 @@ class Strategy:
 
         Args:
             state ():
-            *args ():
             **kwargs ():
 
         Returns:
@@ -178,7 +175,6 @@ class Strategy:
         Args:
             state ():
             loss ():
-            *args ():
             **kwargs ():
 
         Returns:
@@ -191,10 +187,11 @@ class Strategy:
 
         Args:
             state ():
-            *args ():
             **kwargs ():
 
         Returns:
 
         """
-        return state.post_local_train_model.state_dict()
+        post_train_model = state.post_local_train_model
+        assert isinstance(post_train_model, FloxModule)
+        return post_train_model.state_dict()

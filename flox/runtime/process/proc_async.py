@@ -56,6 +56,8 @@ class AsyncProcess(BaseProcess):
 
         self.state_dict = None
         self.debug_mode = False
+
+        assert self.flock.leader is not None
         self.state = AggrState(self.flock.leader.idx)
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:

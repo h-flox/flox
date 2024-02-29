@@ -95,6 +95,7 @@ class SyncProcess(BaseProcess):
         value_err_template = "Illegal kind ({}) of `FlockNode` (ID=`{}`)."
 
         if node is None:
+            assert flock.leader is not None
             node = flock.leader
         elif isinstance(node, FlockNode):
             node = node
