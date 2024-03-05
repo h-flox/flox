@@ -8,13 +8,13 @@ from pandas import DataFrame
 from tqdm import tqdm
 
 from flox.data import FloxDataset
-from flox.flock import Flock, FlockNodeID
+from flox.flock import Flock, NodeID
 from flox.flock.states import AggrState, WorkerState, NodeState
+from flox.jobs import LocalTrainJob
 from flox.nn import FloxModule
-from flox.runtime.jobs import local_training_job
 from flox.runtime.process.proc import BaseProcess
 from flox.runtime.runtime import Runtime
-from flox.strategies import Strategy
+from flox.strategies_depr import Strategy
 
 if typing.TYPE_CHECKING:
     from flox.nn.typing import StateDict
@@ -65,9 +65,9 @@ class AsyncProcess(BaseProcess):
             raise ValueError
 
         histories: list[DataFrame] = []
-        worker_rounds: dict[FlockNodeID, int] = {}
-        worker_states: dict[FlockNodeID, NodeState] = {}
-        worker_state_dicts: dict[FlockNodeID, StateDict] = {}
+        worker_rounds: dict[NodeID, int] = {}
+        worker_states: dict[NodeID, NodeState] = {}
+        worker_state_dicts: dict[NodeID, StateDict] = {}
         for worker in self.flock.workers:
             worker_rounds[worker.idx] = 0
             worker_states[worker.idx] = WorkerState(worker.idx)
@@ -77,9 +77,10 @@ class AsyncProcess(BaseProcess):
         progress_bar = tqdm(total=self.num_global_rounds * self.flock.number_of_workers)
         for worker in self.flock.workers:
             # data = self.dataset[worker.idx]
+            job = LocalTrainJob()
             data = self.fetch_worker_data(worker)
             fut = self.runtime.submit(
-                local_training_job,
+                job,
                 worker,
                 parent=self.flock.leader,
                 dataset=self.runtime.proxy(data),
@@ -115,9 +116,10 @@ class AsyncProcess(BaseProcess):
                 )
                 self.global_module.load_state_dict(avg_state_dict)
                 # data = self.dataset[worker.idx]
+                job = LocalTrainJob()
                 data = self.dataset.load(worker)
                 fut = self.runtime.submit(
-                    local_training_job,
+                    job,
                     worker,
                     parent=self.flock.leader,
                     dataset=self.runtime.proxy(data),

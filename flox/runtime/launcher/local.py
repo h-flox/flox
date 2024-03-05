@@ -1,6 +1,7 @@
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, Future, Executor
 
 from flox.flock import FlockNode
+from flox.jobs import NodeCallable
 from flox.runtime.launcher.base import Launcher
 
 
@@ -24,7 +25,7 @@ class LocalLauncher(Launcher):
                     "Illegal value for argument `pool`. Must be either 'pool' or 'thread'."
                 )
 
-    def submit(self, fn, node: FlockNode, /, *args, **kwargs) -> Future:
+    def submit(self, fn: NodeCallable, node: FlockNode, /, *args, **kwargs) -> Future:
         return self.pool.submit(fn, node, *args, **kwargs)
 
     def collect(self):

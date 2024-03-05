@@ -8,7 +8,7 @@ from flox.flock import FlockNode
 from flox.nn import FloxModule
 from flox.runtime.result import Result
 from flox.runtime.transfer import BaseTransfer
-from flox.strategies import Strategy
+from flox.strategies_depr import Strategy
 
 if typing.TYPE_CHECKING:
     from flox.data import FloxDataset
@@ -83,13 +83,16 @@ def local_training_job(
     )
 
     try:
+        # Add optimizer to this strategy.
         strategy.wrk_before_train_step(state=node_state, dataset=data)
     except NotImplementedError:
         pass
     trainer = Trainer()
+    # optimizer = model.configure_optimizer() # TODO
     history = trainer.fit(
         local_model,
         train_loader,
+        # optimizer=optimizer,  TODO
         # TODO: Include `trainer_params` as an argument to
         #       this so users can easily customize Trainer.
         num_epochs=train_hyper_params.get("num_epochs", 2),

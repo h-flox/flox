@@ -1,24 +1,15 @@
 from __future__ import annotations
 
-import typing
+import typing as t
 
 import globus_compute_sdk
 
 from flox.runtime.launcher.base import Launcher
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from concurrent.futures import Future
-    from typing import Any, Callable, TypeAlias, Union
-
     from flox.flock import FlockNode
-
-    """
-    NodeCallable: TypeAlias = Union[
-        Callable[[FlockNode], Any],
-        Callable[[FlockNode, Any], Any],
-        Callable[[FlockNode, Any, ...], Any],
-    ]
-    """
+    from flox.jobs import NodeCallable
 
 
 class GlobusComputeLauncher(Launcher):
@@ -30,12 +21,12 @@ class GlobusComputeLauncher(Launcher):
 
     def __init__(self):
         super().__init__()
-        if self._globus_compute_executor is None:
-            self._globus_compute_executor = globus_compute_sdk.Executor()
+        # if self._globus_compute_executor is None:
+        #     self._globus_compute_executor = globus_compute_sdk.Executor()
 
     def submit(
         self,
-        fn: Callable,  # NodeCallable,  # Callable[[FlockNode, Any, ...], Any], # FIXME
+        fn: NodeCallable,
         node: FlockNode,
         /,
         *args,

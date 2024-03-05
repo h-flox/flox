@@ -9,15 +9,15 @@ from pandas import DataFrame
 from tqdm import tqdm
 
 from flox.data import FloxDataset
-from flox.flock import Flock, FlockNode, FlockNodeKind
+from flox.flock import Flock, FlockNode, NodeKind
 from flox.flock.states import AggrState
+from flox.jobs import LocalTrainJob, DebugLocalTrainJob
 from flox.nn import FloxModule
-from flox.runtime.jobs import local_training_job, debug_training_job
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
 from flox.runtime.process.proc import BaseProcess
 from flox.runtime.result import Result
 from flox.runtime.runtime import Runtime
-from flox.strategies import Strategy
+from flox.strategies_depr import Strategy
 
 if typing.TYPE_CHECKING:
     from flox.nn.typing import StateDict
@@ -103,14 +103,14 @@ class SyncProcess(BaseProcess):
             raise ValueError
 
         match flock.get_kind(node):
-            case FlockNodeKind.LEADER | FlockNodeKind.AGGREGATOR:
+            case NodeKind.LEADER | NodeKind.AGGREGATOR:
                 if self.debug_mode:
                     # return self._debug_aggr_job(node) # FIXME
                     return self._aggr_job(node)
                 else:
                     return self._aggr_job(node)
 
-            case FlockNodeKind.WORKER:
+            case NodeKind.WORKER:
                 assert parent is not None
                 # (^^^) avoids mypy issue which won't naturally occur with valid Flock topo
                 if self.debug_mode:
@@ -154,10 +154,10 @@ class SyncProcess(BaseProcess):
         raise NotImplementedError
 
     def _worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
-        # data = self.fetch_worker_data(node)
+        job = LocalTrainJob()
         data = self.dataset
         return self.runtime.submit(
-            local_training_job,
+            job,
             node,
             parent=parent,
             module=self.global_module,
@@ -167,8 +167,9 @@ class SyncProcess(BaseProcess):
         )
 
     def _debug_worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
+        job = DebugLocalTrainJob()
         return self.runtime.submit(
-            debug_training_job,
+            job,
             node,
             parent=parent,
             module=self.global_module,

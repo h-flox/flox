@@ -1,7 +1,8 @@
 from concurrent.futures import Future
-from typing import Any, Callable, NewType
+from typing import Any, NewType
 
 from flox.flock import FlockNode
+from flox.jobs import Job
 from flox.runtime.launcher import Launcher
 from flox.runtime.transfer import BaseTransfer
 
@@ -25,7 +26,7 @@ class Runtime(Borg):
         self.transfer = transfer
 
     # TODO: Come up with typing for `Job = NewType("Job", Callable[[...], ...])`
-    def submit(self, fn: Callable, node: FlockNode, /, *args, **kwargs) -> Future:
+    def submit(self, fn: Job, node: FlockNode, /, *args, **kwargs) -> Future:
         return self.launcher.submit(fn, node, *args, **kwargs, transfer=self.transfer)
 
     def proxy(self, data: Any):
