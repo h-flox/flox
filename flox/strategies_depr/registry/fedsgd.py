@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import typing
 
-from flox.flock import FlockNode, FlockNodeID
+from flox.flock import FlockNode, NodeID
 from flox.flock.states import AggrState, NodeState
-from flox.strategies.base import Strategy
-from flox.strategies.commons.averaging import average_state_dicts
-from flox.strategies.commons.worker_selection import random_worker_selection
+from flox.strategies_depr.base import Strategy
+from flox.strategies_depr.commons.averaging import average_state_dicts
+from flox.strategies_depr.commons.worker_selection import random_worker_selection
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -91,16 +91,16 @@ class FedSGD(Strategy):
     def agg_param_aggregation(
         self,
         state: AggrState,
-        children_states: Mapping[FlockNodeID, NodeState],
-        children_state_dicts: Mapping[FlockNodeID, StateDict],
+        children_states: Mapping[NodeID, NodeState],
+        children_state_dicts: Mapping[NodeID, StateDict],
         **kwargs,
     ) -> StateDict:
         """Runs simple, unweighted averaging of ``StateDict`` objects from each child node.
 
         Args:
             state (AggrState): ...
-            children_states (dict[FlockNodeID, NodeState]): ...
-            children_state_dicts (dict[FlockNodeID, StateDict]): ...
+            children_states (dict[NodeID, NodeState]): ...
+            children_state_dicts (dict[NodeID, StateDict]): ...
             *args: ...
             **kwargs: ...
 

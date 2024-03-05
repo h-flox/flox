@@ -1,10 +1,13 @@
-"""
-In FLoX, a `Strategy` is used to define the logic for a specific Federated Learning solution.
-"""
+from flox.strategies.aggregator import AggregatorStrategy
+from flox.strategies.client import ClientStrategy
+from flox.strategies.strategy import Strategy
+from flox.strategies.trainer import TrainerStrategy
+from flox.strategies.worker import WorkerStrategy
 
-from flox.strategies.base import Strategy
-from flox.strategies.registry.fedavg import FedAvg
-from flox.strategies.registry.fedprox import FedProx
-from flox.strategies.registry.fedsgd import FedSGD
-
-__all__ = ["Strategy", "FedSGD", "FedAvg", "FedProx"]
+__all__ = [
+    "Strategy",
+    "ClientStrategy",
+    "AggregatorStrategy",
+    "WorkerStrategy",
+    "TrainerStrategy",
+]

@@ -10,7 +10,7 @@ from flox.data.utils import federated_split
 from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.runtime import federated_fit
-from flox.strategies import FedSGD
+from flox.strategies_depr import FedSGD
 
 
 class MyModule(FloxModule):

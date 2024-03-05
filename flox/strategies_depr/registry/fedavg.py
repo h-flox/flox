@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import typing
 
-from flox.strategies.commons.averaging import average_state_dicts
-from flox.strategies.registry.fedsgd import FedSGD
+from flox.strategies_depr.commons.averaging import average_state_dicts
+from flox.strategies_depr.registry.fedsgd import FedSGD
 
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from flox.flock import FlockNodeID
+    from flox.flock import NodeID
     from flox.flock.states import AggrState, WorkerState, NodeState
     from flox.nn.typing import StateDict
 
@@ -55,8 +55,8 @@ class FedAvg(FedSGD):
     def agg_param_aggregation(
         self,
         state: AggrState,
-        children_states: Mapping[FlockNodeID, NodeState],
-        children_state_dicts: Mapping[FlockNodeID, StateDict],
+        children_states: Mapping[NodeID, NodeState],
+        children_state_dicts: Mapping[NodeID, StateDict],
         **kwargs,
     ):
         weights = {}

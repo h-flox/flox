@@ -1,4 +1,4 @@
-from flox.strategies.registry.fedopt import FedOpt
+from flox.strategies_depr.registry.fedopt import FedOpt
 
 
 class FedAdaGrad(FedOpt):

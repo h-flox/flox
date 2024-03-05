@@ -5,7 +5,7 @@ from numpy import array
 from numpy.random import RandomState
 from numpy.typing import NDArray
 
-from flox.flock import FlockNode, FlockNodeKind
+from flox.flock import FlockNode, NodeKind
 
 
 def random_worker_selection(
@@ -78,7 +78,7 @@ def prob_random_worker_selection(
     rand_state = RandomState(seed)
     selected_children = []
     for child in children:
-        if child.kind is FlockNodeKind.WORKER and always_include_child_aggregators:
+        if child.kind is NodeKind.WORKER and always_include_child_aggregators:
             selected_children.append(child)
         elif rand_state.uniform() < participation:
             selected_children.append(child)

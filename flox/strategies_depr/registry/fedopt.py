@@ -1,4 +1,4 @@
-from flox.strategies.base import Strategy
+from flox.strategies_depr.base import Strategy
 
 
 class FedOpt(Strategy):

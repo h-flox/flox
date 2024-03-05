@@ -19,10 +19,10 @@ nav:
       - getting_started/index.md
       - getting_started/flock.md
       - Strategies:
-          - getting_started/strategies/index.md
-          - getting_started/strategies/what.md
-          - getting_started/strategies/callbacks.md
-          - getting_started/strategies/custom.md
+          - getting_started/strategies_depr/index.md
+          - getting_started/strategies_depr/what.md
+          - getting_started/strategies_depr/callbacks.md
+          - getting_started/strategies_depr/custom.md
   - FAQ: faq.md
   - Publications: publications/index.md
   - Docs: docs/

@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from flox.flock.states import WorkerState
 from flox.nn import FloxModule
 from flox.nn.logger.csv import CSVLogger
-from flox.strategies import Strategy
+from flox.strategies import TrainerStrategy
 
 
 class Trainer:
@@ -29,30 +29,26 @@ class Trainer:
     def fit(
         self,
         model: FloxModule,
+        optimizer: torch.optim.Optimizer,
         train_dataloader: DataLoader,
         num_epochs: int,
-        strategy: Strategy,
+        trainer_strategy: TrainerStrategy,
         node_state: WorkerState,
         valid_dataloader: DataLoader | None = None,
         valid_ckpt_path: Path | str | None = None,
     ) -> pd.DataFrame:
         model.train()
-        optimizer = model.configure_optimizers()
         self.logger.clear()
 
         with torch.set_grad_enabled(True):
             for epoch in range(num_epochs):
                 for batch_idx, batch in enumerate(train_dataloader):
                     loss = model.training_step(batch, batch_idx)
+                    loss = trainer_strategy.before_backprop(loss)
+
                     optimizer.zero_grad()
                     loss.backward()
-
-                    # try:
-                    #     strategy.wrk_after_train_step(node_state, loss)
-                    #     # TODO: Check if this (^^^) makes sense...
-                    # except NotImplementedError:
-                    #     pass
-
+                    loss = trainer_strategy.after_backprop(loss)
                     optimizer.step()
 
                     # log data about training

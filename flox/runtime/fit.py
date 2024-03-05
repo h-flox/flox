@@ -18,7 +18,7 @@ from flox.runtime.process.proc_async import AsyncProcess
 from flox.runtime.process.proc_sync import SyncProcess
 from flox.runtime.runtime import Runtime
 from flox.runtime.transfer import BaseTransfer
-from flox.strategies import Strategy
+from flox.strategies_depr import Strategy
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:

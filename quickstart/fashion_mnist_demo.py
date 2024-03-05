@@ -14,7 +14,7 @@ try:
     from flox.flock import Flock
     from flox.nn import FloxModule
     from flox.run import federated_fit
-    from flox.strategies import FedProx
+    from flox.strategies_depr import FedProx
 except Exception as e:
     raise ImportError("unable to import FloX libraries") from e
 

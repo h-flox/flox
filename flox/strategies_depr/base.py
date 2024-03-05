@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     import torch
 
     from typing import Iterable, MutableMapping, TypeAlias
-    from flox.flock import FlockNode, FlockNodeID
+    from flox.flock import FlockNode, NodeID
     from flox.flock.states import WorkerState, AggrState, NodeState
     from flox.nn.typing import StateDict
 
@@ -25,7 +25,7 @@ class Strategy:
     while others are run on the worker nodes.
 
     It is _**highly**_ encouraged that you read
-    [What Do Strategies Do](/getting_started/strategies/what/) to better understand how
+    [What Do Strategies Do](/getting_started/strategies_depr/what/) to better understand how
     the callbacks included in a Strategy interact with one another and when they are run
     in an FL process.
     """
@@ -123,16 +123,16 @@ class Strategy:
     def agg_param_aggregation(
         self,
         state: AggrState,
-        children_states: MutableMapping[FlockNodeID, NodeState],
-        children_state_dicts: MutableMapping[FlockNodeID, StateDict],
+        children_states: MutableMapping[NodeID, NodeState],
+        children_state_dicts: MutableMapping[NodeID, StateDict],
         **kwargs,
     ) -> StateDict:
         """
 
         Args:
             state (AggrState):
-            children_states (Mapping[FlockNodeID, NodeState]):
-            children_state_dicts (Mapping[FlockNodeID, NodeState]):
+            children_states (Mapping[NodeID, NodeState]):
+            children_state_dicts (Mapping[NodeID, NodeState]):
             **kwargs ():
 
         Returns:
