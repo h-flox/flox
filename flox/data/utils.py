@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 from torch.utils.data import Dataset, DataLoader
 
 from flox.data import FederatedSubsets
-from flox.flock import Flock, FlockNodeID
+from flox.flock import Flock, NodeID
 
 
 # TODO: Implement something similar for regression-based data.
@@ -47,7 +47,7 @@ def federated_split(
         >>> data = MNIST()
         >>> subsets = federated_split(data, flock, num_classes=10, samples_alpha=1., labels_alpha=1.)
         >>> next(iter(subsets.items()))
-        >>> # (FlockNodeID(1), Subset(...)) # TODO: Run a real example and paste it here.
+        >>> # (NodeID(1), Subset(...)) # TODO: Run a real example and paste it here.
 
     Returns:
         A federated version of the dataset that is split up statistically based on the arguments alpha arguments.
@@ -81,9 +81,9 @@ def federated_split(
     }
     label_probs = {w.idx: label_distr[i] for i, w in enumerate(flock.workers)}
 
-    indices: dict[FlockNodeID, list[int]] = defaultdict(list)
+    indices: dict[NodeID, list[int]] = defaultdict(list)
     loader = DataLoader(data, batch_size=1)
-    worker_samples: Counter[FlockNodeID] = Counter()
+    worker_samples: Counter[NodeID] = Counter()
     for idx, batch in enumerate(loader):
         _, y = batch
         label = y.item()

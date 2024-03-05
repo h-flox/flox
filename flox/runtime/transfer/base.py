@@ -5,8 +5,8 @@ class BaseTransfer:
     # def report(
     #     self,
     #     node_state: NodeState | dict[str, Any] | None,
-    #     node_idx: FlockNodeID | None,
-    #     node_kind: FlockNodeKind | None,
+    #     node_idx: NodeID | None,
+    #     node_kind: NodeKind | None,
     #     state_dict: StateDict | None,
     #     history: DataFrame | None,
     # ) -> Result:

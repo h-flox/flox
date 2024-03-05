@@ -6,13 +6,13 @@ from dataclasses import dataclass, field
 if typing.TYPE_CHECKING:
     from typing import Any, Iterable
 
-    from flox.flock import FlockNodeID
+    from flox.flock import NodeID
     from flox.nn import FloxModule
 
 
 @dataclass
 class NodeState:
-    idx: FlockNodeID
+    idx: NodeID
     """The ID of the ``FlockNode`` that the ``NodeState`` corresponds with."""
 
     cache: dict[str, Any] = field(default_factory=dict)
@@ -69,7 +69,7 @@ class AggrState(NodeState):
     """State of an Aggregator node in a ``Flock``."""
 
     # TODO: If there is no difference between ``AggrState`` and ``NodeState``, then do we need the former at all?
-    def __init__(self, idx: FlockNodeID):
+    def __init__(self, idx: NodeID):
         super().__init__(idx)
 
 
@@ -84,7 +84,7 @@ class WorkerState(NodeState):
 
     def __init__(
         self,
-        idx: FlockNodeID,
+        idx: NodeID,
         pre_local_train_model: FloxModule | None = None,
         post_local_train_model: FloxModule | None = None,
     ):

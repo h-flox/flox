@@ -8,7 +8,7 @@ from proxystore.proxy import Proxy
 if typing.TYPE_CHECKING:
     from pandas import DataFrame
 
-    from flox.flock import FlockNodeID, FlockNodeKind
+    from flox.flock import NodeID, NodeKind
     from flox.flock.states import NodeState
     from flox.nn.typing import StateDict
 
@@ -23,10 +23,10 @@ class JobResult:
     node_state: NodeState
     """The state of the ``Flock`` node based on its kind."""
 
-    node_idx: FlockNodeID
+    node_idx: NodeID
     """The ID of the ``Flock`` node."""
 
-    node_kind: FlockNodeKind
+    node_kind: NodeKind
     """The kind of the ``Flock`` node."""
 
     state_dict: StateDict

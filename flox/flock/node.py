@@ -3,10 +3,10 @@ from enum import Enum, auto
 from uuid import UUID
 
 
-FlockNodeID = int | str  # NewType("FlockNodeID", int | str)
+NodeID = int | str  # NewType("NodeID", int | str)
 
 
-class FlockNodeKind(Enum):
+class NodeKind(Enum):
     """
     The different kinds of nodes that can exist in a Flock topology.
     """
@@ -16,12 +16,12 @@ class FlockNodeKind(Enum):
     WORKER = auto()  # leaf
 
     @staticmethod
-    def from_str(s: str) -> "FlockNodeKind":
+    def from_str(s: str) -> "NodeKind":
         """
         Converts a string (namely, 'leader', 'aggregator', and 'worker') into their respective item in this Enum.
 
         For convenience, this function is *not* sensitive to capitalization or trailing whitespace (i.e.,
-        `FlockNodeKind.from_str('LeaAder  ')` and `FlockNodeKind.from_str('leader')` are both valid and equivalent).
+        `NodeKind.from_str('LeaAder  ')` and `NodeKind.from_str('leader')` are both valid and equivalent).
 
         Args:
             s (str): String to convert into the respective Enum item.
@@ -30,18 +30,18 @@ class FlockNodeKind(Enum):
             ValueError: Thrown by illegal string values do not match the above description.
 
         Returns:
-            FlockNodeKind corresponding to the passed in String.
+            NodeKind corresponding to the passed in String.
         """
         s = s.lower().strip()
         matches = {
-            "leader": FlockNodeKind.LEADER,
-            "aggregator": FlockNodeKind.AGGREGATOR,
-            "worker": FlockNodeKind.WORKER,
+            "leader": NodeKind.LEADER,
+            "aggregator": NodeKind.AGGREGATOR,
+            "worker": NodeKind.WORKER,
         }
         if s in matches:
             return matches[s]
         raise ValueError(
-            f"Illegal `str` value given to `FlockNodeKind.from_str()`. "
+            f"Illegal `str` value given to `NodeKind.from_str()`. "
             f"Must be one of the following: {list(matches.keys())}."
         )
 
@@ -50,12 +50,12 @@ class FlockNodeKind(Enum):
         Returns the string representation of the Enum item.
 
         Returns:
-            String corresponding to the FlockNodeKind.
+            String corresponding to the NodeKind.
         """
         matches = {
-            FlockNodeKind.LEADER: "leader",
-            FlockNodeKind.AGGREGATOR: "aggregator",
-            FlockNodeKind.WORKER: "worker",
+            NodeKind.LEADER: "leader",
+            NodeKind.AGGREGATOR: "aggregator",
+            NodeKind.WORKER: "worker",
         }
         return matches[self]
 
@@ -66,18 +66,18 @@ class FlockNode:
     A node in a Flock.
 
     Args:
-        idx (FlockNodeID): The index of the node within the Flock as a whole (this is assigned by its `Flock`).
-        kind (FlockNodeKind): The kind of node.
+        idx (NodeID): The index of the node within the Flock as a whole (this is assigned by its `Flock`).
+        kind (NodeKind): The kind of node.
         globus_compute_endpoint (UUID | None): Required if you want to run fitting on Globus Compute;
             defaults to None.
         proxystore_endpoint (UUID | None): Required if you want to run fitting with Proxystore
             (recommended if you are using Globus Compute); defaults to None.
     """
 
-    idx: FlockNodeID
+    idx: NodeID
     """Assigned during the Flock construction (i.e., not in .yaml/.json file)"""
 
-    kind: FlockNodeKind
+    kind: NodeKind
     """Which kind of node."""
 
     globus_compute_endpoint: UUID | None = None

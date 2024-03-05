@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
     from typing import TypeVar, Iterator
 
     from flox.flock.states import NodeState
-    from flox.flock import FlockNodeID
+    from flox.flock import NodeID
 
     T_co = TypeVar("T_co", covariant=True)
 
@@ -25,7 +25,7 @@ class FloxDataset(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def load(self, node: FlockNode | FlockNodeID):
+    def load(self, node: FlockNode | NodeID):
         pass
 
 
@@ -34,13 +34,13 @@ class FederatedSubsets(FloxDataset):
     A subset...
     """
 
-    def __init__(self, dataset: Dataset[T_co], indices: dict[FlockNodeID, list[int]]):
+    def __init__(self, dataset: Dataset[T_co], indices: dict[NodeID, list[int]]):
         super().__init__()
         self.dataset = dataset
         self.indices = indices
         self._num_subsets = len(list(self.indices))
 
-    def load(self, node: FlockNode | FlockNodeID) -> Subset[T_co]:
+    def load(self, node: FlockNode | NodeID) -> Subset[T_co]:
         if isinstance(node, FlockNode):
             node = node.idx
         return Subset(self.dataset, self.indices[node])
@@ -49,13 +49,13 @@ class FederatedSubsets(FloxDataset):
     def number_of_subsets(self):
         return self._num_subsets
 
-    def __getitem__(self, node: FlockNode | FlockNodeID) -> Subset[T_co]:
+    def __getitem__(self, node: FlockNode | NodeID) -> Subset[T_co]:
         return self.load(node)
 
     def __len__(self):
         return self._num_subsets
 
-    def __iter__(self) -> Iterator[tuple[FlockNodeID, Subset[T_co]]]:
+    def __iter__(self) -> Iterator[tuple[NodeID, Subset[T_co]]]:
         for idx in self.indices:
             yield idx, self.load(idx)
 
@@ -68,11 +68,11 @@ class LocalDataset(FloxDataset):
     def __init__(self, state: NodeState, /, *args, **kwargs):
         super().__init__()
 
-    def load(self, node: FlockNode | FlockNodeID) -> Dataset[T_co]:
+    def load(self, node: FlockNode | NodeID) -> Dataset[T_co]:
         """Loads local dataset into a PyTorch object.
 
         Args:
-            node (FlockNode | FlockNodeID): ...
+            node (FlockNode | NodeID): ...
 
         Returns:
             Dataset object using local data.
