@@ -8,7 +8,7 @@ if t.TYPE_CHECKING:
     from flox.data import FloxDataset
     from flox.flock import FlockNode
     from flox.nn import FloxModule
-    from flox.nn.typing import StateDict
+    from flox.nn.typing import Params
     from flox.runtime import Result
     from flox.runtime.transfer import BaseTransfer
     from flox.strategies import WorkerStrategy, TrainerStrategy
@@ -19,8 +19,8 @@ class LocalTrainJob(TrainableJob):
     def __call__(
         node: FlockNode,
         parent: FlockNode,
-        module: FloxModule,
-        module_state_dict: StateDict,
+        global_model: FloxModule,
+        module_state_dict: Params,
         dataset: FloxDataset,
         transfer: BaseTransfer,
         worker_strategy: WorkerStrategy,
@@ -35,7 +35,7 @@ class LocalTrainJob(TrainableJob):
             parent (FlockNode):
             strategy (Strategy):
             module (FloxModule):
-            module_state_dict (StateDict):
+            module_state_dict (Params):
             dataset (Dataset | Subset | None):
             **train_hyper_params ():
 
@@ -44,23 +44,22 @@ class LocalTrainJob(TrainableJob):
         """
         from copy import deepcopy
         from flox.flock.states import WorkerState
-        from flox.nn.trainer import Trainer
+        from flox.nn.model_trainer import Trainer
         from torch.utils.data import DataLoader
         from flox.runtime import JobResult
 
-        global_model = module
-        global_state_dict = module.state_dict()
-        local_model = deepcopy(module)
+        # global_state_dict = global_model.state_dict()
+        local_model = deepcopy(global_model)
         global_model.load_state_dict(module_state_dict)
         local_model.load_state_dict(module_state_dict)
 
-        node_state = WorkerState(
+        state = WorkerState(
             node.idx,
-            pre_local_train_model=global_model,
-            post_local_train_model=local_model,
+            global_model=global_model,
+            local_model=local_model,
         )
+        state = worker_strategy.work_start(state)  # NOTE: Double-check.
 
-        worker_strategy.work_start()
         data = dataset.load(node)
         train_dataloader = DataLoader(
             data,
@@ -68,10 +67,10 @@ class LocalTrainJob(TrainableJob):
             shuffle=train_hyper_params.get("shuffle", True),
         )
 
-        # Add optimizer to this strategy.
-        worker_strategy.before_training(node_state, data)
-        trainer = Trainer()
-        optimizer = local_model.configure_optimizer()
+        trainer = Trainer(trainer_strategy)
+        optimizer = local_model.configure_optimizers()
+
+        state, data = worker_strategy.before_training(state, data)
         history = trainer.fit(
             local_model,
             optimizer,
@@ -79,18 +78,23 @@ class LocalTrainJob(TrainableJob):
             # TODO: Include `trainer_params` as an argument to
             #       this so users can easily customize Trainer.
             num_epochs=train_hyper_params.get("num_epochs", 2),
-            node_state=node_state,
-            trainer_strategy=trainer_strategy,
+            node_state=state,
         )
 
-        local_params = worker_strategy.after_training(node_state)
+        state = worker_strategy.after_training(state)  # NOTE: Double-check.
 
+        ################################################################################
+        # TRAINING DATA POST-PROCESSING
+        ################################################################################
         history["node/idx"] = node.idx
         history["node/kind"] = node.kind.to_str()
         history["parent/idx"] = parent.idx
         history["parent/kind"] = parent.kind.to_str()
 
-        result = JobResult(node_state, node.idx, node.kind, local_params, history)
+        local_params = state.local_model.state_dict()
+        result = JobResult(state, node.idx, node.kind, local_params, history)
+
+        result = worker_strategy.work_end(result)  # NOTE: Double-check.
         return transfer.report(result)
 
 
@@ -99,8 +103,8 @@ class DebugLocalTrainJob(TrainableJob):
     def __call__(
         node: FlockNode,
         parent: FlockNode,
-        module: FloxModule,
-        module_state_dict: StateDict,
+        global_model: FloxModule,
+        module_state_dict: Params,
         dataset: FloxDataset,
         transfer: BaseTransfer,
         worker_strategy: WorkerStrategy,
@@ -128,8 +132,8 @@ class DebugLocalTrainJob(TrainableJob):
         local_module = module
         node_state = WorkerState(
             node.idx,
-            pre_local_train_model=local_module,
-            post_local_train_model=local_module,
+            global_model=local_module,
+            local_model=local_module,
         )
         history = {
             "node/idx": [node.idx],

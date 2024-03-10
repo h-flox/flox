@@ -11,16 +11,16 @@ from tqdm import tqdm
 from flox.data import FloxDataset
 from flox.flock import Flock, FlockNode, NodeKind
 from flox.flock.states import AggrState
-from flox.jobs import LocalTrainJob, DebugLocalTrainJob
+from flox.jobs import LocalTrainJob, DebugLocalTrainJob, AggregateJob
 from flox.nn import FloxModule
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
 from flox.runtime.process.proc import BaseProcess
 from flox.runtime.result import Result
 from flox.runtime.runtime import Runtime
-from flox.strategies_depr import Strategy
+from flox.strategies import Strategy
 
 if typing.TYPE_CHECKING:
-    from flox.nn.typing import StateDict
+    from flox.nn.typing import Params
 
 
 class SyncProcess(BaseProcess):
@@ -34,7 +34,7 @@ class SyncProcess(BaseProcess):
     strategy: Strategy
     dataset: FloxDataset
     aggr_callback: typing.Any  # TODO: Fix
-    state_dict: StateDict | None
+    params: Params | None
     debug_mode: bool
     pbar_desc: str
 
@@ -55,35 +55,31 @@ class SyncProcess(BaseProcess):
         self.dataset = dataset
 
         self.aggr_callback = all_child_futures_finished_cbk
-        self.state_dict = None
+        self.params = None
         self.debug_mode = False
         self.pbar_desc = "federated_fit::sync"
 
         # TODO: Add description option for the progress bar when it's training.
         #  Also, add a configurable stop condition
 
-    def start(
-        self, testing_mode: bool = False
-    ) -> tuple[FloxModule, DataFrame]:  # , global_module: FloxModule):
+    def start(self, testing_mode: bool = False) -> tuple[FloxModule, DataFrame]:
         if testing_mode:
             from flox.runtime.process.debug_utils import DebugModule
 
             self.debug_mode = True
             self.global_module = DebugModule()
 
-        dataframes = []
+        histories = []
         progress_bar = tqdm(total=self.num_global_rounds, desc=self.pbar_desc)
         for round_num in range(self.num_global_rounds):
-            self.state_dict = self.global_module.state_dict()
-            future = self.step()
-            update = future.result()
-            history = update.history
-            history["round"] = round_num
-            dataframes.append(history)
-            self.global_module.load_state_dict(update.state_dict)
+            self.params = self.global_module.state_dict()
+            step_result = self.step().result()
+            step_result.history["round"] = round_num
+            histories.append(step_result.history)
+            self.global_module.load_state_dict(step_result.params)
             progress_bar.update()
 
-        history = pd.concat(dataframes)
+        history = pd.concat(histories)
         return self.global_module, history
 
     def step(
@@ -104,28 +100,33 @@ class SyncProcess(BaseProcess):
 
         match flock.get_kind(node):
             case NodeKind.LEADER | NodeKind.AGGREGATOR:
-                if self.debug_mode:
-                    # return self._debug_aggr_job(node) # FIXME
-                    return self._aggr_job(node)
-                else:
-                    return self._aggr_job(node)
+                return self.submit_aggr_job(node)
+                # if self.debug_mode:
+                #     return self.submit_aggr_debug_job(node) # FIXME
+                # else:
+                #     return self.submit_aggr_job(node)
 
             case NodeKind.WORKER:
                 assert parent is not None
                 # (^^^) avoids mypy issue which won't naturally occur with valid Flock topo
                 if self.debug_mode:
-                    return self._debug_worker_job(node, parent)
+                    return self.submit_worker_debug_job(node, parent)
                 else:
-                    return self._worker_job(node, parent)
+                    return self.submit_worker_job(node, parent)
 
             case _:
                 kind = flock.get_kind(node)
                 idx = node.idx
                 raise ValueError(value_err_template.format(kind, idx))
 
-    def _aggr_job(self, node: FlockNode) -> Future[Result]:
+    ########################################################################################################
+    ########################################################################################################
+
+    def submit_aggr_job(self, node: FlockNode) -> Future[Result]:
         aggr_state = AggrState(node.idx)
-        self.strategy.cli_worker_selection(aggr_state, list(self.flock.children(node)))
+        self.strategy.client_strategy.select_worker_nodes(
+            aggr_state, list(self.flock.children(node)), None
+        )
         # FIXME: This (^^^) shouldn't be run on the aggregator
         children_futures = [
             self.step(node=child, parent=node) for child in self.flock.children(node)
@@ -137,41 +138,46 @@ class SyncProcess(BaseProcess):
         # future. But, it will only perform aggregation once since only the last future
         # to be completed will activate the conditional.
         future: Future[Result] = Future()
+        job = AggregateJob()
         subtree_done_cbk = functools.partial(
             self.aggr_callback,
+            job,
             future,
             children_futures,
             node,
             self.runtime,
-            self.strategy,
+            self.strategy.aggr_strategy,
         )
         for child_fut in children_futures:
             child_fut.add_done_callback(subtree_done_cbk)
 
         return future
 
-    def _debug_aggr_job(self, node: FlockNode) -> Future[Result]:
+    def submit_aggr_debug_job(self, node: FlockNode) -> Future[Result]:
         raise NotImplementedError
 
-    def _worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
+    def submit_worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
         job = LocalTrainJob()
         data = self.dataset
         return self.runtime.submit(
             job,
             node,
             parent=parent,
-            module=self.global_module,
-            strategy=self.strategy,
+            global_model=self.global_module,
+            worker_strategy=self.strategy.worker_strategy,
+            trainer_strategy=self.strategy.trainer_strategy,
             dataset=self.runtime.proxy(data),
-            module_state_dict=self.runtime.proxy(self.state_dict),
+            module_state_dict=self.runtime.proxy(self.params),
         )
 
-    def _debug_worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
+    def submit_worker_debug_job(
+        self, node: FlockNode, parent: FlockNode
+    ) -> Future[Result]:
         job = DebugLocalTrainJob()
         return self.runtime.submit(
             job,
             node,
             parent=parent,
-            module=self.global_module,
+            global_model=self.global_module,
             strategy=self.strategy,
         )

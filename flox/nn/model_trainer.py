@@ -1,6 +1,5 @@
 import datetime
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 import torch
@@ -15,16 +14,11 @@ from flox.strategies import TrainerStrategy
 class Trainer:
     def __init__(
         self,
-        logger: str = "csv",
-        device="cpu",
-        config: dict[str, Any] | None = None,
+        trainer_strategy: TrainerStrategy,
     ):
-        self.device = device
-        self.config = config  # TODO: Not implemented to do anything at the moment.
-        if logger == "csv":
-            self.logger = CSVLogger()
-        else:
-            raise ValueError("Illegal value for `logger`.")
+        self.trainer_strategy = trainer_strategy
+        self.device = "cpu"
+        self.logger = CSVLogger()
 
     def fit(
         self,
@@ -32,7 +26,6 @@ class Trainer:
         optimizer: torch.optim.Optimizer,
         train_dataloader: DataLoader,
         num_epochs: int,
-        trainer_strategy: TrainerStrategy,
         node_state: WorkerState,
         valid_dataloader: DataLoader | None = None,
         valid_ckpt_path: Path | str | None = None,
@@ -44,11 +37,11 @@ class Trainer:
             for epoch in range(num_epochs):
                 for batch_idx, batch in enumerate(train_dataloader):
                     loss = model.training_step(batch, batch_idx)
-                    loss = trainer_strategy.before_backprop(loss)
+                    loss = self.trainer_strategy.before_backprop(node_state, loss)
 
                     optimizer.zero_grad()
                     loss.backward()
-                    loss = trainer_strategy.after_backprop(loss)
+                    loss = self.trainer_strategy.after_backprop(node_state, loss)
                     optimizer.step()
 
                     # log data about training
@@ -74,8 +67,8 @@ class Trainer:
         ckpt_path: Path | str | None = None,
     ):
         with torch.no_grad():
-            for i, batch in enumerate(test_dataloader):
-                model.test_step(batch, i)
+            for batch_idx, batch in enumerate(test_dataloader):
+                model.test_step(batch, batch_idx)
 
     def validate(
         self,

@@ -7,14 +7,14 @@ class BaseTransfer:
     #     node_state: NodeState | dict[str, Any] | None,
     #     node_idx: NodeID | None,
     #     node_kind: NodeKind | None,
-    #     state_dict: StateDict | None,
+    #     params: Params | None,
     #     history: DataFrame | None,
     # ) -> Result:
     #     return JobResult(
     #         node_state=node_state,
     #         node_idx=node_idx,
     #         node_kind=node_kind,
-    #         state_dict=state_dict,
+    #         params=params,
     #         history=history,
     #     )
 

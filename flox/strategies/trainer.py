@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 import typing as t
 
-import torch
-
-Loss: t.TypeAlias = torch.Tensor
-
 if t.TYPE_CHECKING:
-    pass
+    from flox.flock import WorkerState
+    from flox.nn.typing import Loss
 
 
 class TrainerStrategy(t.Protocol):
-    def before_backprop(self, loss: Loss) -> Loss:
-        pass
+    def trainer_kwargs(self) -> dict[str, t.Any]:
+        return {}
 
-    def after_backprop(self, loss: Loss) -> Loss:
-        pass
+    def before_backprop(self, state: WorkerState, loss: Loss) -> Loss:
+        return loss
+
+    def after_backprop(self, state: WorkerState, loss: Loss) -> Loss:
+        return loss

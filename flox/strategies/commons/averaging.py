@@ -8,22 +8,22 @@ import torch
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping
     from flox.flock import NodeID
-    from flox.nn.typing import StateDict
+    from flox.nn.typing import Params
 
 
 def average_state_dicts(
-    state_dicts: Mapping[NodeID, StateDict],
+    state_dicts: Mapping[NodeID, Params],
     weights: Mapping[NodeID, float] | None = None,
-) -> StateDict:
-    """Averages the parameters given by ``global_module.state_dict()`` from a set of ``FlockNodes``.
+) -> Params:
+    """Averages the parameters given by ``global_module.params()`` from a set of ``FlockNodes``.
 
     Args:
-        state_dicts (dict[NodeID, StateDict]): The global_module state dicts of each FlockNode to average.
+        state_dicts (dict[NodeID, Params]): The global_module state dicts of each FlockNode to average.
         weights (dict[NodeID, float] | None): The weights for each ``FlockNode`` used do weighted averaging. If
             no weights are provided (i.e., `weights=None`), then standard averaging is done.
 
     Returns:
-        Averaged weights as a ``StateDict``.
+        Averaged weights as a ``Params``.
     """
     num_nodes = len(state_dicts)
     weight_sum = None if weights is None else numpy.sum(list(weights.values()))

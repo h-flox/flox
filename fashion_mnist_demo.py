@@ -61,7 +61,6 @@ def main():
         # where="local",  # "globus_compute",
     )
     df.to_feather(Path("out/fashion_mnist_demo.feather"))
-    print(">>> Finished!")
 
 
 if __name__ == "__main__":

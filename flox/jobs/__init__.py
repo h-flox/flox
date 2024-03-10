@@ -17,7 +17,7 @@ from flox.jobs.protocols import NodeCallable, AggregableJob, TrainableJob
 Job: t.TypeAlias = AggregableJob | TrainableJob | NodeCallable
 """
 An umbrella typing that encapsulates both ``AggregableJob`` and ``TrainableJob`` protocols
-for job implementations for both the aggregator and worker nodes (respectively).
+for job impl for both the aggregator and worker nodes (respectively).
 """
 
 
@@ -27,7 +27,7 @@ __all__ = [
     "AggregableJob",
     "TrainableJob",
     "NodeCallable",
-    # Job implementations.
+    # Job impl.
     "AggregateJob",
     "DebugAggregateJob",
     "LocalTrainJob",

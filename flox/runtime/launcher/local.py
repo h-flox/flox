@@ -26,7 +26,13 @@ class LocalLauncher(Launcher):
                 )
 
     def submit(self, fn: NodeCallable, node: FlockNode, /, *args, **kwargs) -> Future:
+        # TODO: Adjust this typing (i.e., Future is not always returned in the case where `n_workers == 1`.
+        #       Then clarify the logic behind this.
         return self.pool.submit(fn, node, *args, **kwargs)
+        # if self.n_workers > 1:
+        #     return self.pool.submit(fn, node, *args, **kwargs)
+        # else:
+        #     return fn(node, *args, **kwargs)
 
     def collect(self):
         pass

@@ -5,7 +5,7 @@ define protocols for:
 1. aggregation jobs (``AggregableJob``)
 2. local training jobs (``TrainableJob``)
 
-These protocols can be used to define custom implementations of aggregation jobs for highly-customized FLoX processes.
+These protocols can be used to define custom impl of aggregation jobs for highly-customized FLoX processes.
 However, this is not necessary for the vast majority of imaginable cases.
 Should users choose to do this, it is up to the user's discretion to do so safely and correctly.
 
@@ -27,11 +27,14 @@ if t.TYPE_CHECKING:
     from flox.data import FloxDataset
     from flox.flock import FlockNode
     from flox.nn import FloxModule
-    from flox.nn.typing import StateDict
+    from flox.nn.typing import Params
     from flox.runtime import Result
     from flox.runtime.transfer import BaseTransfer
-    from flox.strategies import WorkerStrategy, TrainerStrategy
-    from flox.strategies_depr import Strategy
+    from flox.strategies import (
+        WorkerStrategy,
+        TrainerStrategy,
+        AggregatorStrategy,
+    )
 
 
 class NodeCallable(t.Protocol):
@@ -46,11 +49,11 @@ class NodeCallable(t.Protocol):
 @t.runtime_checkable
 class AggregableJob(t.Protocol):
     """
-    A protocol that defines functions that are valid implementations to be used for model aggregation in
+    A protocol that defines functions that are valid impl to be used for model aggregation in
     launching FLoX processes.
 
     Notes:
-        FLoX provides default implementations of this protocol via
+        FLoX provides default impl of this protocol via
         [AggregateJob][flox.jobs.aggregation.AggregateJob] and
         [DebugAggregateJob][flox.jobs.aggregation.DebugAggregateJob].
     """
@@ -59,7 +62,7 @@ class AggregableJob(t.Protocol):
     def __call__(
         node: FlockNode,
         transfer: BaseTransfer,
-        strategy: Strategy,
+        aggr_strategy: AggregatorStrategy,
         results: list[Result],
     ) -> Result:
         """
@@ -68,7 +71,7 @@ class AggregableJob(t.Protocol):
         Args:
             node (FlockNode):
             transfer (BaseTransfer):
-            strategy (Strategy):
+            aggr_strategy (AggregatorStrategy):
             results (list[Result]):
 
         Returns:
@@ -79,11 +82,11 @@ class AggregableJob(t.Protocol):
 @t.runtime_checkable
 class TrainableJob(t.Protocol):
     """
-    A protocol that defines functions that are valid implementations to be used for local training in
+    A protocol that defines functions that are valid impl to be used for local training in
     launching FLoX processes.
 
     Notes:
-        FLoX provides default implementations of this protocol via
+        FLoX provides default impl of this protocol via
         [LocalTrainJob][flox.jobs.local_training.LocalTrainJob] and
         [DebugLocalTrainJob][flox.jobs.local_training.DebugLocalTrainJob].
     """
@@ -92,8 +95,8 @@ class TrainableJob(t.Protocol):
     def __call__(
         node: FlockNode,
         parent: FlockNode,
-        module: FloxModule,
-        module_state_dict: StateDict,
+        global_model: FloxModule,
+        module_state_dict: Params,
         dataset: FloxDataset,
         transfer: BaseTransfer,
         worker_strategy: WorkerStrategy,

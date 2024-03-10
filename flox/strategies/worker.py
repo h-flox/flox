@@ -1,20 +1,24 @@
+from __future__ import annotations
+
 import typing as t
 
-from flox.flock.states import NodeState
+from flox.flock.states import WorkerState
 
 if t.TYPE_CHECKING:
-    pass
+    from flox.runtime import JobResult
 
 
 class WorkerStrategy(t.Protocol):
-    def work_start(self):
-        pass
+    def work_start(self, state: WorkerState) -> WorkerState:
+        return state
 
-    def before_training(self, state: NodeState, data: t.Any):
-        pass
+    def before_training(
+        self, state: WorkerState, data: t.Any
+    ) -> tuple[WorkerState, t.Any]:
+        return state, data
 
-    def after_training(self, node_state: NodeState):
-        pass
+    def after_training(self, state: WorkerState) -> WorkerState:
+        return state
 
-    def work_end(self):
-        pass
+    def work_end(self, result: JobResult) -> JobResult:
+        return result

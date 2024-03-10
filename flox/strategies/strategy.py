@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import typing as t
+from dataclasses import dataclass, field
 
 from flox.strategies.aggregator import AggregatorStrategy
 from flox.strategies.client import ClientStrategy
@@ -6,16 +9,66 @@ from flox.strategies.trainer import TrainerStrategy
 from flox.strategies.worker import WorkerStrategy
 
 
-class Strategy(t.NamedTuple):
+class DefaultClientStrategy(ClientStrategy):
+    def __init__(self):
+        super().__init__()
+
+
+class DefaultAggregatorStrategy(AggregatorStrategy):
+    def __init__(self):
+        super().__init__()
+
+
+class DefaultWorkerStrategy(WorkerStrategy):
+    def __init__(self):
+        super().__init__()
+
+
+class DefaultTrainerStrategy(TrainerStrategy):
+    def __init__(self):
+        super().__init__()
+
+
+@dataclass(frozen=True, repr=False)
+class Strategy:
     """
-    A strategy...
+    A ``Strategy`` implementation is made up of a set of implementations for strategies on each part of the
+    topology during execution.
     """
 
-    client_strategy: ClientStrategy | None = None
-    """..."""
-    aggr_strategy: AggregatorStrategy | None = None
-    """..."""
-    worker_strategy: WorkerStrategy | None = None
-    """..."""
-    trainer_strategy: TrainerStrategy | None = None
-    """..."""
+    client_strategy: ClientStrategy = field(default=DefaultClientStrategy)
+    """Implementation of callbacks specific to the CLIENT node."""
+    aggr_strategy: AggregatorStrategy = field(default=DefaultAggregatorStrategy)
+    """Implementation of callbacks specific to the AGGREGATOR nodes."""
+    worker_strategy: WorkerStrategy = field(default_factory=DefaultWorkerStrategy)
+    """Implementation of callbacks specific to the WORKER nodes."""
+    trainer_strategy: TrainerStrategy = field(default_factory=DefaultTrainerStrategy)
+    """Implementation of callbacks specific to the training loop on the worker nodes."""
+
+    # def __post_init__(self):
+    #     if self.client_strategy is not None:
+    #         self.client_strategy
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self) -> str:
+        name = self.__class__.__name__
+        inner = ", ".join(
+            [
+                f"{strategy_key}={strategy_value.__class__.__name__}"
+                for (strategy_key, strategy_value) in iter(self)
+                if strategy_value is not None
+            ]
+        )
+        return f"{name}({inner})"
+
+    def __iter__(self) -> t.Iterator[tuple[str, t.Any]]:
+        strategies = (
+            ("client_strategy", self.client_strategy),
+            ("aggr_strategy", self.aggr_strategy),
+            ("worker_strategy", self.worker_strategy),
+            ("trainer_strategy", self.trainer_strategy),
+        )
+        for strategy_key, strategy_value in strategies:
+            yield strategy_key, strategy_value

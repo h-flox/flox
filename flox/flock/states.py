@@ -76,22 +76,22 @@ class AggrState(NodeState):
 class WorkerState(NodeState):
     """State of a Worker node in a ``Flock``."""
 
-    pre_local_train_model: FloxModule | None = None
+    global_model: FloxModule | None = None
     """Global model."""
 
-    post_local_train_model: FloxModule | None = None
+    local_model: FloxModule | None = None
     """Local model after local fitting/training."""
 
     def __init__(
         self,
         idx: NodeID,
-        pre_local_train_model: FloxModule | None = None,
-        post_local_train_model: FloxModule | None = None,
+        global_model: FloxModule | None = None,
+        local_model: FloxModule | None = None,
     ):
         super().__init__(idx)
-        self.pre_local_train_model = pre_local_train_model
-        self.post_local_train_model = post_local_train_model
+        self.global_model = global_model
+        self.local_model = local_model
 
     def __repr__(self) -> str:
-        template = "WorkerState(pre_local_train_model={}, post_local_train_model={})"
-        return template.format(self.pre_local_train_model, self.post_local_train_model)
+        template = "WorkerState(global_model={}, local_model={})"
+        return template.format(self.global_model, self.local_model)

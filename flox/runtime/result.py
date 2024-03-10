@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
 
     from flox.flock import NodeID, NodeKind
     from flox.flock.states import NodeState
-    from flox.nn.typing import StateDict
+    from flox.nn.typing import Params
 
 
 @dataclass
@@ -29,8 +29,8 @@ class JobResult:
     node_kind: NodeKind
     """The kind of the ``Flock`` node."""
 
-    state_dict: StateDict
-    """The ``StateDict`` of the PyTorch global_module (either aggregated or trained locally)."""
+    params: Params
+    """The ``Params`` of the PyTorch global_module (either aggregated or trained locally)."""
 
     history: DataFrame
     """The history of results."""

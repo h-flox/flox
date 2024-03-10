@@ -1,8 +1,9 @@
 import datetime
-import typing
+import typing as t
 
 from pandas import DataFrame
 
+import flox.strategies as strats
 from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
@@ -18,7 +19,6 @@ from flox.runtime.process.proc_async import AsyncProcess
 from flox.runtime.process.proc_sync import SyncProcess
 from flox.runtime.runtime import Runtime
 from flox.runtime.transfer import BaseTransfer
-from flox.strategies_depr import Strategy
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
@@ -44,10 +44,16 @@ def federated_fit(
     module: FloxModule,
     datasets: FloxDataset,
     num_global_rounds: int,
-    strategy: Strategy | str | None = None,
+    # Strategy arguments.
+    strategy: strats.Strategy | str | None = None,
+    client_strategy: strats.ClientStrategy | None = None,
+    aggr_strategy: strats.AggregatorStrategy | None = None,
+    worker_strategy: strats.WorkerStrategy | None = None,
+    trainer_strategy: strats.TrainerStrategy | None = None,
+    # Process arguments.
     kind: Kind = "sync",
     launcher_kind: str = "process",
-    launcher_cfg: dict[str, typing.Any] | None = None,
+    launcher_cfg: dict[str, t.Any] | None = None,
     debug_mode: bool = False,
 ) -> tuple[FloxModule, DataFrame]:
     """
@@ -58,9 +64,13 @@ def federated_fit(
         datasets (FloxDataset):
         num_global_rounds (int):
         strategy (Strategy | str | None):
+        client_strategy (strats.ClientStrategy): ...
+        aggr_strategy (strats.AggregatorStrategy): ...
+        worker_strategy (strats.WorkerStrategy): ...
+        trainer_strategy (strats.TrainerStrategy): ...
         kind (Kind):
         launcher_kind (str):
-        launcher_cfg (dict[str, typing.Any] | None):
+        launcher_cfg (dict[str, t.Any] | None):
         debug_mode (bool): ...
 
     Returns:
@@ -71,11 +81,13 @@ def federated_fit(
     launcher = create_launcher(launcher_kind, **launcher_cfg)
     transfer = BaseTransfer()
     runtime = Runtime(launcher, transfer)
-
-    if strategy is None:
-        strategy = "fedsgd"
-    if isinstance(strategy, str):
-        strategy = Strategy.get_strategy(strategy)()
+    parsed_strategy = parse_strategy_args(
+        strategy=strategy,
+        client_strategy=client_strategy,
+        aggr_strategy=aggr_strategy,
+        worker_strategy=worker_strategy,
+        trainer_strategy=trainer_strategy,
+    )
 
     # runner = runner_factory.build(kind, ...)
     # runner.start()
@@ -88,7 +100,7 @@ def federated_fit(
                 num_global_rounds=num_global_rounds,
                 module=module,
                 dataset=datasets,
-                strategy=strategy,
+                strategy=parsed_strategy,
             )
         case "async":
             process = AsyncProcess(
@@ -97,7 +109,7 @@ def federated_fit(
                 num_global_rounds=num_global_rounds,
                 module=module,
                 dataset=datasets,
-                strategy=strategy,
+                strategy=parsed_strategy,
             )
         case _:
             raise ValueError("Illegal value for the strategy `kind` parameter.")
@@ -107,3 +119,43 @@ def federated_fit(
     history["train/rel_time"] = history["train/time"] - start_time
     history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
     return module, history
+
+
+def parse_strategy_args(
+    strategy: strats.Strategy | str | None,
+    client_strategy: strats.ClientStrategy | None,
+    aggr_strategy: strats.AggregatorStrategy | None,
+    worker_strategy: strats.WorkerStrategy | None,
+    trainer_strategy: strats.TrainerStrategy | None,
+    **kwargs,
+) -> strats.Strategy:
+    if isinstance(strategy, strats.Strategy):
+        return strategy
+
+    if isinstance(strategy, str):
+        return strats.load_strategy(strategy, **kwargs)
+
+    if strategy is not None:
+        raise ValueError(
+            "Argument ``strategy`` is not a legal value. Must be either a ``Strategy``, "
+            "a supported string value, or ``None``. "
+        )
+
+    # If the user provided each individual strategy implementations, then we must first check and confirm
+    # that none of those arguments are ``None``. If they are not, then we can package them as a single
+    # ``Strategy`` and return that.
+    strategies = [client_strategy, aggr_strategy, worker_strategy, trainer_strategy]
+    for _name, _strategy in zip(["client", "aggr", "worker", "trainer"], strategies):
+        if _strategy is None:
+            cls_name = "aggregator" if _name == "aggr" else _name
+            cls_name = cls_name.title()
+            raise ValueError(
+                f"Argument `{_name}_strategy` must be a class that implements protocol ``{cls_name}``."
+            )
+
+    return strats.Strategy(
+        client_strategy=client_strategy,
+        aggr_strategy=aggr_strategy,
+        worker_strategy=worker_strategy,
+        trainer_strategy=trainer_strategy,
+    )

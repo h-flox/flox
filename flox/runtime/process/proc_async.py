@@ -14,10 +14,10 @@ from flox.jobs import LocalTrainJob
 from flox.nn import FloxModule
 from flox.runtime.process.proc import BaseProcess
 from flox.runtime.runtime import Runtime
-from flox.strategies_depr import Strategy
+from flox.strategies import Strategy
 
 if typing.TYPE_CHECKING:
-    from flox.nn.typing import StateDict
+    from flox.nn.typing import Params
 
 
 class AsyncProcess(BaseProcess):
@@ -67,7 +67,7 @@ class AsyncProcess(BaseProcess):
         histories: list[DataFrame] = []
         worker_rounds: dict[NodeID, int] = {}
         worker_states: dict[NodeID, NodeState] = {}
-        worker_state_dicts: dict[NodeID, StateDict] = {}
+        worker_state_dicts: dict[NodeID, Params] = {}
         for worker in self.flock.workers:
             worker_rounds[worker.idx] = 0
             worker_states[worker.idx] = WorkerState(worker.idx)
@@ -108,7 +108,7 @@ class AsyncProcess(BaseProcess):
 
                 worker = self.flock[result.node_idx]
                 worker_states[worker.idx] = result.node_state
-                worker_state_dicts[worker.idx] = result.state_dict
+                worker_state_dicts[worker.idx] = result.params
                 result.history["round"] = worker_rounds[result.node_idx]
                 histories.append(result.history)
                 avg_state_dict = self.strategy.agg_param_aggregation(

@@ -2,7 +2,7 @@ from flox.flock import FlockNode, NodeID
 from flox.jobs.protocols import AggregableJob
 from flox.runtime.result import Result
 from flox.runtime.transfer import BaseTransfer
-from flox.strategies_depr import Strategy
+from flox.strategies import AggregatorStrategy
 
 
 class AggregateJob(AggregableJob):
@@ -10,7 +10,7 @@ class AggregateJob(AggregableJob):
     def __call__(
         node: FlockNode,
         transfer: BaseTransfer,
-        strategy: Strategy,
+        aggr_strategy: AggregatorStrategy,
         results: list[Result],
     ) -> Result:
         """Aggregate the state dicts from each of the results.
@@ -18,7 +18,7 @@ class AggregateJob(AggregableJob):
         Args:
             node (FlockNode): The aggregator node.
             transfer (Transfer): ...
-            strategy (Strategy): ...
+            aggr_strategy (AggregatorStrategy): ...
             results (list[JobResult]): Results from children of ``node``.
 
         Returns:
@@ -33,10 +33,10 @@ class AggregateJob(AggregableJob):
         for result in results:
             idx: NodeID = result.node_idx
             child_states[idx] = result.node_state
-            child_state_dicts[idx] = result.state_dict
+            child_state_dicts[idx] = result.params
 
         node_state = AggrState(node.idx)
-        avg_state_dict = strategy.agg_param_aggregation(
+        avg_state_dict = aggr_strategy.aggregate_params(
             node_state, child_states, child_state_dicts
         )
 
@@ -64,7 +64,7 @@ class DebugAggregateJob(AggregableJob):
     def __call__(
         node: FlockNode,
         transfer: BaseTransfer,
-        strategy: Strategy,
+        aggr_strategy: AggregatorStrategy,
         results: list[Result],
     ) -> Result:
         """
@@ -72,7 +72,7 @@ class DebugAggregateJob(AggregableJob):
         Args:
             node ():
             transfer ():
-            strategy ():
+            aggr_strategy ():
             results ():
 
         Returns:
@@ -85,7 +85,7 @@ class DebugAggregateJob(AggregableJob):
         from flox.runtime import JobResult
 
         result = next(iter(results))
-        state_dict = result.state_dict
+        state_dict = result.params
         state_dict = {} if state_dict is None else state_dict
         node_state = AggrState(node.idx)
         history = {
