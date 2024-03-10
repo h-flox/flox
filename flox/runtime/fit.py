@@ -153,6 +153,12 @@ def parse_strategy_args(
                 f"Argument `{_name}_strategy` must be a class that implements protocol ``{cls_name}``."
             )
 
+    # Explicit asserts to satisfy `mypy`.
+    assert client_strategy is not None
+    assert aggr_strategy is not None
+    assert worker_strategy is not None
+    assert trainer_strategy is not None
+
     return strats.Strategy(
         client_strategy=client_strategy,
         aggr_strategy=aggr_strategy,

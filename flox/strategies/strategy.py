@@ -10,23 +10,27 @@ from flox.strategies.worker import WorkerStrategy
 
 
 class DefaultClientStrategy(ClientStrategy):
-    def __init__(self):
-        super().__init__()
+    pass
+    # def __init__(self):
+    #     super().__init__(self)
 
 
 class DefaultAggregatorStrategy(AggregatorStrategy):
-    def __init__(self):
-        super().__init__()
+    pass
+    # def __init__(self):
+    #     super().__init__(self)
 
 
 class DefaultWorkerStrategy(WorkerStrategy):
-    def __init__(self):
-        super().__init__()
+    pass
+    # def __init__(self):
+    #     super().__init__(self)
 
 
 class DefaultTrainerStrategy(TrainerStrategy):
-    def __init__(self):
-        super().__init__()
+    pass
+    # def __init__(self):
+    #     super().__init__(self)
 
 
 @dataclass(frozen=True, repr=False)
@@ -36,9 +40,9 @@ class Strategy:
     topology during execution.
     """
 
-    client_strategy: ClientStrategy = field(default=DefaultClientStrategy)
+    client_strategy: ClientStrategy = field(default_factory=DefaultClientStrategy)
     """Implementation of callbacks specific to the CLIENT node."""
-    aggr_strategy: AggregatorStrategy = field(default=DefaultAggregatorStrategy)
+    aggr_strategy: AggregatorStrategy = field(default_factory=DefaultAggregatorStrategy)
     """Implementation of callbacks specific to the AGGREGATOR nodes."""
     worker_strategy: WorkerStrategy = field(default_factory=DefaultWorkerStrategy)
     """Implementation of callbacks specific to the WORKER nodes."""

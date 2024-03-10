@@ -49,11 +49,7 @@ class AsyncProcess(BaseProcess):
         self.num_global_rounds = num_global_rounds
         self.global_module = module
         self.dataset = dataset
-        if isinstance(strategy, str):
-            self.strategy = Strategy.get_strategy(strategy)()
-        else:
-            self.strategy = strategy
-
+        self.strategy = strategy
         self.state_dict = None
         self.debug_mode = False
 
@@ -81,10 +77,10 @@ class AsyncProcess(BaseProcess):
             data = self.fetch_worker_data(worker)
             fut = self.runtime.submit(
                 job,
-                worker,
+                node=worker,
                 parent=self.flock.leader,
                 dataset=self.runtime.proxy(data),
-                module=self.global_module,
+                global_model=self.global_module,
                 module_state_dict=self.runtime.proxy(self.global_module.state_dict()),
                 strategy=self.strategy,
             )
@@ -111,7 +107,7 @@ class AsyncProcess(BaseProcess):
                 worker_state_dicts[worker.idx] = result.params
                 result.history["round"] = worker_rounds[result.node_idx]
                 histories.append(result.history)
-                avg_state_dict = self.strategy.agg_param_aggregation(
+                avg_state_dict = self.strategy.aggr_strategy.aggregate_params(
                     self.state, worker_states, worker_state_dicts
                 )
                 self.global_module.load_state_dict(avg_state_dict)
@@ -120,10 +116,10 @@ class AsyncProcess(BaseProcess):
                 data = self.dataset.load(worker)
                 fut = self.runtime.submit(
                     job,
-                    worker,
+                    node=worker,
                     parent=self.flock.leader,
                     dataset=self.runtime.proxy(data),
-                    module=self.global_module,
+                    global_model=self.global_module,
                     module_state_dict=self.runtime.proxy(
                         self.global_module.state_dict()
                     ),

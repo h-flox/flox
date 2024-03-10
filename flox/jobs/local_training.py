@@ -91,6 +91,7 @@ class LocalTrainJob(TrainableJob):
         history["parent/idx"] = parent.idx
         history["parent/kind"] = parent.kind.to_str()
 
+        assert state.local_model is not None
         local_params = state.local_model.state_dict()
         result = JobResult(state, node.idx, node.kind, local_params, history)
 
@@ -129,7 +130,7 @@ class DebugLocalTrainJob(TrainableJob):
         from flox.flock.states import WorkerState
         from flox.runtime import JobResult
 
-        local_module = module
+        local_module = global_model
         node_state = WorkerState(
             node.idx,
             global_model=local_module,
@@ -148,6 +149,6 @@ class DebugLocalTrainJob(TrainableJob):
         }
         history_df = pandas.DataFrame.from_dict(history)
         result = JobResult(
-            node_state, node.idx, node.kind, module.state_dict(), history_df
+            node_state, node.idx, node.kind, global_model.state_dict(), history_df
         )
         return transfer.report(result)

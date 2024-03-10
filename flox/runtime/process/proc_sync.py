@@ -161,7 +161,7 @@ class SyncProcess(BaseProcess):
         data = self.dataset
         return self.runtime.submit(
             job,
-            node,
+            node=node,
             parent=parent,
             global_model=self.global_module,
             worker_strategy=self.strategy.worker_strategy,
@@ -176,7 +176,7 @@ class SyncProcess(BaseProcess):
         job = DebugLocalTrainJob()
         return self.runtime.submit(
             job,
-            node,
+            node=node,
             parent=parent,
             global_model=self.global_module,
             strategy=self.strategy,

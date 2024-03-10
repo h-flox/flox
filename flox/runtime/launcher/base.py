@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import Future
 
-from flox.flock import FlockNode
-from flox.jobs import Job, NodeCallable
+from flox.jobs import Job
 
 
 # @dataclass
@@ -20,7 +19,7 @@ class Launcher(ABC):
         pass
 
     @abstractmethod
-    def submit(self, fn: NodeCallable, node: FlockNode, /, *args, **kwargs) -> Future:
+    def submit(self, job: Job, /, **kwargs) -> Future:
         raise NotImplementedError()
 
     @abstractmethod

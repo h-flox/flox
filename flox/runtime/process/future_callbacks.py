@@ -29,7 +29,7 @@ def all_child_futures_finished_cbk(
         children_results = [child_future.result() for child_future in children_futures]
         future = runtime.submit(
             job,
-            node,
+            node=node,
             aggr_strategy=aggr_strategy,
             results=children_results,
         )

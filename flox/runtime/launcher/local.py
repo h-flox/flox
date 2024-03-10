@@ -1,7 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, Future, Executor
 
-from flox.flock import FlockNode
-from flox.jobs import NodeCallable
+from flox.jobs import Job
 from flox.runtime.launcher.base import Launcher
 
 
@@ -25,10 +24,10 @@ class LocalLauncher(Launcher):
                     "Illegal value for argument `pool`. Must be either 'pool' or 'thread'."
                 )
 
-    def submit(self, fn: NodeCallable, node: FlockNode, /, *args, **kwargs) -> Future:
+    def submit(self, job: Job, /, **kwargs) -> Future:
         # TODO: Adjust this typing (i.e., Future is not always returned in the case where `n_workers == 1`.
         #       Then clarify the logic behind this.
-        return self.pool.submit(fn, node, *args, **kwargs)
+        return self.pool.submit(job, **kwargs)  # type: ignore
         # if self.n_workers > 1:
         #     return self.pool.submit(fn, node, *args, **kwargs)
         # else:
