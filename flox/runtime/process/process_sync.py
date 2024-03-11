@@ -14,7 +14,7 @@ from flox.flock.states import AggrState
 from flox.jobs import LocalTrainJob, DebugLocalTrainJob, AggregateJob
 from flox.nn import FloxModule
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
-from flox.runtime.process.proc import BaseProcess
+from flox.runtime.process.process import Process
 from flox.runtime.result import Result
 from flox.runtime.runtime import Runtime
 from flox.strategies import Strategy
@@ -23,7 +23,7 @@ if typing.TYPE_CHECKING:
     from flox.nn.typing import Params
 
 
-class SyncProcess(BaseProcess):
+class SyncProcess(Process):
     """
     Synchronous Federated Learning process.
     """

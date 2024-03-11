@@ -7,7 +7,7 @@ from flox.flock import FlockNode
 from flox.nn.model import FloxModule
 
 
-class BaseProcess(ABC):
+class Process(ABC):
     dataset: FloxDataset
 
     @abstractmethod

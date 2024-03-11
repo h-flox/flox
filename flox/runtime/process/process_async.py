@@ -12,7 +12,7 @@ from flox.flock import Flock, NodeID
 from flox.flock.states import AggrState, WorkerState, NodeState
 from flox.jobs import LocalTrainJob
 from flox.nn import FloxModule
-from flox.runtime.process.proc import BaseProcess
+from flox.runtime.process.process import Process
 from flox.runtime.runtime import Runtime
 from flox.strategies import Strategy
 
@@ -20,7 +20,7 @@ if typing.TYPE_CHECKING:
     from flox.nn.typing import Params
 
 
-class AsyncProcess(BaseProcess):
+class AsyncProcess(Process):
     """
     Asynchronous Federated Learning process.
 

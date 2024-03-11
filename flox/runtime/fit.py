@@ -14,9 +14,9 @@ from flox.runtime.launcher import (
     LocalLauncher,
     ParslLauncher,
 )
-from flox.runtime.process.proc import BaseProcess
-from flox.runtime.process.proc_async import AsyncProcess
-from flox.runtime.process.proc_sync import SyncProcess
+from flox.runtime.process.process import Process
+from flox.runtime.process.process_async import AsyncProcess
+from flox.runtime.process.process_sync import SyncProcess
 from flox.runtime.runtime import Runtime
 from flox.runtime.transfer import BaseTransfer
 
@@ -91,7 +91,7 @@ def federated_fit(
 
     # runner = runner_factory.build(kind, ...)
     # runner.start()
-    process: BaseProcess
+    process: Process
     match kind:
         case "sync":
             process = SyncProcess(
