@@ -427,7 +427,10 @@ class Flock:
         Returns:
             ``True`` if the topology is two-tier, ``False`` otherwise.
         """
-        tree = nx.bfs_tree(self.topo, self.leader, depth_limit=1)
+        assert self.leader is not None, "There must be a leader node in the topology."
+        leader_id = self.leader.idx
+        assert leader_id is not None, "Leader ID cannot be `None`."
+        tree = nx.bfs_tree(self.topo, leader_id, depth_limit=1)
         return tree.number_of_nodes() == self.topo.number_of_nodes()
 
     @functools.cached_property

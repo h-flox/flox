@@ -22,7 +22,8 @@ if typing.TYPE_CHECKING:
 
 class AsyncProcess(Process):
     """
-    Asynchronous Federated Learning process.
+    Asynchronous Federated Learning process. This code is very much still in 'beta' and not as robust as the
+    [synchronous FL process][flox.runtime.process.process_sync.SyncProcess].
 
     Notes:
         Currently, this process is only compatible with two-tier ``Flock`` topologies.
@@ -74,7 +75,7 @@ class AsyncProcess(Process):
         for worker in self.flock.workers:
             # data = self.dataset[worker.idx]
             job = LocalTrainJob()
-            data = self.fetch_worker_data(worker)
+            data = self.dataset  # self.fetch_worker_data(worker)
             fut = self.runtime.submit(
                 job,
                 node=worker,
@@ -82,7 +83,8 @@ class AsyncProcess(Process):
                 dataset=self.runtime.proxy(data),
                 global_model=self.global_module,
                 module_state_dict=self.runtime.proxy(self.global_module.state_dict()),
-                strategy=self.strategy,
+                worker_strategy=self.strategy.worker_strategy,
+                trainer_strategy=self.strategy.trainer_strategy,
             )
             futures.add(fut)
 
@@ -113,7 +115,7 @@ class AsyncProcess(Process):
                 self.global_module.load_state_dict(avg_state_dict)
                 # data = self.dataset[worker.idx]
                 job = LocalTrainJob()
-                data = self.dataset.load(worker)
+                data = self.dataset  # self.dataset.load(worker)
                 fut = self.runtime.submit(
                     job,
                     node=worker,
@@ -123,7 +125,8 @@ class AsyncProcess(Process):
                     module_state_dict=self.runtime.proxy(
                         self.global_module.state_dict()
                     ),
-                    strategy=self.strategy,
+                    worker_strategy=self.strategy.worker_strategy,
+                    trainer_strategy=self.strategy.trainer_strategy,
                 )
                 # futures.append(fut)
                 futures.add(fut)
@@ -134,4 +137,5 @@ class AsyncProcess(Process):
         return self.global_module, pd.concat(histories)
 
     def step(self):
-        ...
+        # TODO
+        pass

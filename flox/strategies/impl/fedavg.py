@@ -2,20 +2,17 @@ from __future__ import annotations
 
 import typing as t
 
-from flox.strategies import (
-    AggregatorStrategy,
-    Strategy,
-    WorkerStrategy,
-)
+from flox.strategies import Strategy
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.impl.fedsgd import FedSGDClient
+from flox.strategies.strategy import DefaultWorkerStrategy, DefaultAggregatorStrategy
 
 if t.TYPE_CHECKING:
     from flox.flock import AggrState, NodeID, NodeState, WorkerState
     from flox.nn.typing import Params
 
 
-class FedAvgAggr(AggregatorStrategy):
+class FedAvgAggr(DefaultAggregatorStrategy):
     def aggregate_params(
         self,
         state: AggrState,
@@ -52,7 +49,7 @@ class FedAvgAggr(AggregatorStrategy):
         return average_state_dicts(children_state_dicts, weights=weights)
 
 
-class FedAvgWorker(WorkerStrategy):
+class FedAvgWorker(DefaultWorkerStrategy):
     def before_training(
         self, state: WorkerState, data: t.Any
     ) -> tuple[WorkerState, t.Any]:

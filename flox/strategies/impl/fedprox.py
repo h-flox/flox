@@ -4,16 +4,17 @@ import typing as t
 
 import torch
 
-from flox.strategies import Strategy, TrainerStrategy
+from flox.strategies import Strategy
 from flox.strategies.impl.fedavg import FedAvgAggr, FedAvgWorker
 from flox.strategies.impl.fedsgd import FedSGDClient
+from flox.strategies.strategy import DefaultTrainerStrategy
 
 if t.TYPE_CHECKING:
     from flox.flock import WorkerState
     from flox.nn.typing import Loss
 
 
-class FedProxTrainer(TrainerStrategy):
+class FedProxTrainer(DefaultTrainerStrategy):
     def __init__(self, mu: float = 0.3):
         self.mu = mu
 

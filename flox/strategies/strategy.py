@@ -3,34 +3,67 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass, field
 
-from flox.strategies.aggregator import AggregatorStrategy
-from flox.strategies.client import ClientStrategy
-from flox.strategies.trainer import TrainerStrategy
-from flox.strategies.worker import WorkerStrategy
+if t.TYPE_CHECKING:
+    import torch
+    from flox.flock import AggrState, NodeID, NodeState, WorkerState
+    from flox.nn.typing import Params, Loss
+    from flox.runtime import JobResult
+    from flox.strategies.aggregator import AggregatorStrategy
+    from flox.strategies.client import ClientStrategy
+    from flox.strategies.commons.averaging import average_state_dicts
+    from flox.strategies.trainer import TrainerStrategy
+    from flox.strategies.worker import WorkerStrategy
 
 
-class DefaultClientStrategy(ClientStrategy):
-    pass
-    # def __init__(self):
-    #     super().__init__(self)
+class DefaultClientStrategy:
+    def select_worker_nodes(self, state, children, seed):
+        return children
 
 
-class DefaultAggregatorStrategy(AggregatorStrategy):
-    pass
-    # def __init__(self):
-    #     super().__init__(self)
+class DefaultAggregatorStrategy:
+    def round_start(self):
+        pass
+
+    def aggregate_params(
+        self,
+        state: AggrState,
+        children_states: t.Mapping[NodeID, NodeState],
+        children_state_dicts: t.Mapping[NodeID, Params],
+        **kwargs,
+    ) -> Params:
+        return average_state_dicts(children_state_dicts, weights=None)
+
+    def round_end(self):
+        pass
 
 
-class DefaultWorkerStrategy(WorkerStrategy):
-    pass
-    # def __init__(self):
-    #     super().__init__(self)
+class DefaultWorkerStrategy:
+    def work_start(self, state: WorkerState) -> WorkerState:
+        return state
+
+    def before_training(
+        self, state: WorkerState, data: t.Any
+    ) -> tuple[WorkerState, t.Any]:
+        return state, data
+
+    def after_training(
+        self, state: WorkerState, optimizer: torch.optim.Optimizer
+    ) -> WorkerState:
+        return state
+
+    def work_end(self, result: JobResult) -> JobResult:
+        return result
 
 
-class DefaultTrainerStrategy(TrainerStrategy):
-    pass
-    # def __init__(self):
-    #     super().__init__(self)
+class DefaultTrainerStrategy:
+    def trainer_kwargs(self) -> dict[str, t.Any]:
+        return {}
+
+    def before_backprop(self, state: WorkerState, loss: Loss) -> Loss:
+        return loss
+
+    def after_backprop(self, state: WorkerState, loss: Loss) -> Loss:
+        return loss
 
 
 @dataclass(frozen=True, repr=False)
@@ -47,11 +80,7 @@ class Strategy:
     worker_strategy: WorkerStrategy = field(default_factory=DefaultWorkerStrategy)
     """Implementation of callbacks specific to the WORKER nodes."""
     trainer_strategy: TrainerStrategy = field(default_factory=DefaultTrainerStrategy)
-    """Implementation of callbacks specific to the training loop on the worker nodes."""
-
-    # def __post_init__(self):
-    #     if self.client_strategy is not None:
-    #         self.client_strategy
+    """Implementation of callbacks specific to the execution of the training loop on the worker nodes."""
 
     def __repr__(self):
         return str(self)
@@ -76,3 +105,13 @@ class Strategy:
         )
         for strategy_key, strategy_value in strategies:
             yield strategy_key, strategy_value
+
+
+class DefaultStrategy(Strategy):
+    def __init__(self):
+        super().__init__(
+            DefaultClientStrategy(),
+            DefaultAggregatorStrategy(),
+            DefaultWorkerStrategy(),
+            DefaultTrainerStrategy(),
+        )

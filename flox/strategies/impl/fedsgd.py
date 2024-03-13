@@ -2,12 +2,13 @@ import typing as t
 
 from flox.flock import NodeID, NodeState, AggrState
 from flox.nn.typing import Params
-from flox.strategies import Strategy, AggregatorStrategy, ClientStrategy
+from flox.strategies import Strategy
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.commons.worker_selection import random_worker_selection
+from flox.strategies.strategy import DefaultClientStrategy, DefaultAggregatorStrategy
 
 
-class FedSGDClient(ClientStrategy):
+class FedSGDClient(DefaultClientStrategy):
     """
     ...
     """
@@ -32,7 +33,7 @@ class FedSGDClient(ClientStrategy):
         )
 
 
-class FedSGDAggr(AggregatorStrategy):
+class FedSGDAggr(DefaultAggregatorStrategy):
     """
     ...
     """

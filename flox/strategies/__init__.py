@@ -11,23 +11,9 @@ class ClientStrategy {
 
 from flox.strategies.aggregator import AggregatorStrategy
 from flox.strategies.client import ClientStrategy
-from flox.strategies.impl.default import (
-    DefaultClientStrategy,
-    DefaultAggregatorStrategy,
-    DefaultWorkerStrategy,
-    DefaultTrainerStrategy,
-)
-from flox.strategies.strategy import Strategy
+from flox.strategies.strategy import Strategy, DefaultStrategy
 from flox.strategies.trainer import TrainerStrategy
 from flox.strategies.worker import WorkerStrategy
-
-
-DefaultStrategy = Strategy(
-    DefaultClientStrategy(),
-    DefaultAggregatorStrategy(),
-    DefaultWorkerStrategy(),
-    DefaultTrainerStrategy(),
-)
 
 
 def load_strategy(strategy_name: str, **kwargs) -> Strategy:
@@ -51,7 +37,7 @@ def load_strategy(strategy_name: str, **kwargs) -> Strategy:
     assert isinstance(strategy_name, str), "`strategy_name` must be a string."
     match strategy_name.lower():
         case "default":
-            return DefaultStrategy
+            return DefaultStrategy()
         case "fedavg" | "fed-avg":
             from flox.strategies.impl.fedavg import FedAvg
 
@@ -70,6 +56,5 @@ __all__ = [
     "AggregatorStrategy",
     "WorkerStrategy",
     "TrainerStrategy",
-    "DefaultStrategy",
     "load_strategy",
 ]

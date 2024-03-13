@@ -25,6 +25,7 @@ class LocalTrainJob(TrainableJob):
         transfer: BaseTransfer,
         worker_strategy: WorkerStrategy,
         trainer_strategy: TrainerStrategy,
+        # TODO: Get extra cached content from
         **train_hyper_params,
     ) -> Result:
         """Perform local training on a worker node.
@@ -58,7 +59,9 @@ class LocalTrainJob(TrainableJob):
             global_model=global_model,
             local_model=local_model,
         )
+        # print(f"{state=} (after state init)")
         state = worker_strategy.work_start(state)  # NOTE: Double-check.
+        # print(f"{state=} (after `work_start`)")
 
         data = dataset.load(node)
         train_dataloader = DataLoader(
@@ -71,6 +74,7 @@ class LocalTrainJob(TrainableJob):
         optimizer = local_model.configure_optimizers()
 
         state, data = worker_strategy.before_training(state, data)
+        # print(f"{state=} (after `before_training`)")
         history = trainer.fit(
             local_model,
             optimizer,
@@ -81,7 +85,7 @@ class LocalTrainJob(TrainableJob):
             node_state=state,
         )
 
-        state = worker_strategy.after_training(state)  # NOTE: Double-check.
+        state = worker_strategy.after_training(state, optimizer)  # NOTE: Double-check.
 
         ################################################################################
         # TRAINING DATA POST-PROCESSING

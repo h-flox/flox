@@ -9,10 +9,10 @@ if t.TYPE_CHECKING:
 
 class TrainerStrategy(t.Protocol):
     def trainer_kwargs(self) -> dict[str, t.Any]:
-        return {}
+        pass
 
     def before_backprop(self, state: WorkerState, loss: Loss) -> Loss:
-        return loss
+        pass
 
     def after_backprop(self, state: WorkerState, loss: Loss) -> Loss:
-        return loss
+        pass

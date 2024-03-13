@@ -10,7 +10,6 @@ from flox.data.utils import federated_split
 from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.runtime import federated_fit
-from flox.strategies_depr import FedSGD
 
 
 class MyModule(FloxModule):
@@ -59,7 +58,7 @@ def main():
             MyModule(),
             fed_data,
             5,
-            strategy=FedSGD(),
+            strategy="fedsgd",
             kind=kind,
             # where="local",  # "globus_compute",
         )
