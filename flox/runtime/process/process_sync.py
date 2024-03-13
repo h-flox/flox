@@ -11,7 +11,7 @@ from tqdm import tqdm
 from flox.data import FloxDataset
 from flox.flock import Flock, FlockNode, NodeKind
 from flox.flock.states import AggrState
-from flox.jobs import LocalTrainJob, DebugLocalTrainJob, AggregateJob
+from flox.jobs import AggregateJob, DebugLocalTrainJob, LocalTrainJob
 from flox.nn import FloxModule
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
 from flox.runtime.process.process import Process

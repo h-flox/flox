@@ -5,7 +5,7 @@ import typing as t
 from flox.strategies import Strategy
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.impl.fedsgd import FedSGDClient
-from flox.strategies.strategy import DefaultWorkerStrategy, DefaultAggregatorStrategy
+from flox.strategies.strategy import DefaultAggregatorStrategy, DefaultWorkerStrategy
 
 if t.TYPE_CHECKING:
     from flox.flock import AggrState, NodeID, NodeState, WorkerState

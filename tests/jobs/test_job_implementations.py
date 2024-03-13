@@ -1,5 +1,5 @@
 from flox.jobs.aggregation import AggregateJob, DebugAggregateJob
-from flox.jobs.local_training import LocalTrainJob, DebugLocalTrainJob
+from flox.jobs.local_training import DebugLocalTrainJob, LocalTrainJob
 from flox.jobs.protocols import AggregableJob, TrainableJob
 
 

@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 def create_two_tier_flock(num_workers: int, **edge_attrs) -> Flock:
     flock = Flock()
     flock.leader = flock.add_node("leader")
-    for i in range(num_workers):
+    for _ in range(num_workers):
         worker = flock.add_node("worker")
         flock.add_edge(flock.leader.idx, worker.idx, **edge_attrs)
     return flock

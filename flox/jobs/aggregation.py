@@ -25,6 +25,7 @@ class AggregateJob(AggregableJob):
             Aggregation results.
         """
         import pandas
+
         from flox.flock.states import AggrState, NodeState
         from flox.runtime import JobResult
 
@@ -79,8 +80,10 @@ class DebugAggregateJob(AggregableJob):
 
         """
         import datetime
+
         import numpy
         import pandas
+
         from flox.flock.states import AggrState
         from flox.runtime import JobResult
 

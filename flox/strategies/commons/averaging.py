@@ -7,6 +7,7 @@ import torch
 
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping
+
     from flox.flock import NodeID
     from flox.nn.typing import Params
 

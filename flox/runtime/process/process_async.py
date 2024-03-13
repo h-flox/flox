@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from flox.data import FloxDataset
 from flox.flock import Flock, NodeID
-from flox.flock.states import AggrState, WorkerState, NodeState
+from flox.flock.states import AggrState, NodeState, WorkerState
 from flox.jobs import LocalTrainJob
 from flox.nn import FloxModule
 from flox.runtime.process.process import Process

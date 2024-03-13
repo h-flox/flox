@@ -3,7 +3,6 @@ from concurrent.futures import Future
 
 from flox.jobs import Job
 
-
 # @dataclass
 # class LauncherConfig:
 #     kind: LauncherKind
@@ -16,7 +15,7 @@ class Launcher(ABC):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
     @abstractmethod
     def submit(self, job: Job, /, **kwargs) -> Future:

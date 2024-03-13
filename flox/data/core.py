@@ -8,15 +8,15 @@ from torch.utils.data import Dataset, Subset
 from flox.flock import FlockNode
 
 if t.TYPE_CHECKING:
-    from flox.flock.states import NodeState
     from flox.flock import NodeID
+    from flox.flock.states import NodeState
 
     T_co = t.TypeVar("T_co", covariant=True)
 
 
 class FloxDataset(abc.ABC):
     def __init__(self):
-        pass
+        super().__init__()
 
     @abc.abstractmethod
     def load(self, node: FlockNode | NodeID):

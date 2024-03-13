@@ -1,7 +1,8 @@
 import functools
 import json
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 from uuid import UUID
 
 import matplotlib.pyplot as plt

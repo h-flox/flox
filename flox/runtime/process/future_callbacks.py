@@ -6,10 +6,10 @@ import typing
 from flox.runtime.utils import set_parent_future
 
 if typing.TYPE_CHECKING:
-    from flox.jobs import Job
     from concurrent.futures import Future
 
     from flox.flock import FlockNode
+    from flox.jobs import Job
     from flox.runtime.runtime import Runtime
     from flox.strategies import AggregatorStrategy
 

@@ -11,7 +11,7 @@ if t.TYPE_CHECKING:
     from flox.nn.typing import Params
     from flox.runtime import Result
     from flox.runtime.transfer import BaseTransfer
-    from flox.strategies import WorkerStrategy, TrainerStrategy
+    from flox.strategies import TrainerStrategy, WorkerStrategy
 
 
 class LocalTrainJob(TrainableJob):
@@ -44,9 +44,11 @@ class LocalTrainJob(TrainableJob):
             Local fitting results.
         """
         from copy import deepcopy
+
+        from torch.utils.data import DataLoader
+
         from flox.flock.states import WorkerState
         from flox.nn.model_trainer import Trainer
-        from torch.utils.data import DataLoader
         from flox.runtime import JobResult
 
         # global_state_dict = global_model.state_dict()
@@ -129,8 +131,10 @@ class DebugLocalTrainJob(TrainableJob):
 
         """
         import datetime
+
         import numpy as np
         import pandas
+
         from flox.flock.states import WorkerState
         from flox.runtime import JobResult
 

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from pandas import DataFrame
 
-from flox.data import FloxDataset, FederatedSubsets, LocalDataset
+from flox.data import FederatedSubsets, FloxDataset, LocalDataset
 from flox.flock import FlockNode
 from flox.nn.model import FloxModule
 

@@ -6,13 +6,13 @@ At a high level, this module defines the following jobs:
 - `aggregation_job()`: run by Aggregator nodes.
 - `local_training_job`: run by Worker nodes.
 
-In addition to these jobs, this module also provides 
+In addition to these jobs, this module also provides
 """
 import typing as t
 
 from flox.jobs.aggregation import AggregateJob, DebugAggregateJob
-from flox.jobs.local_training import LocalTrainJob, DebugLocalTrainJob
-from flox.jobs.protocols import LauncherFunction, AggregableJob, TrainableJob
+from flox.jobs.local_training import DebugLocalTrainJob, LocalTrainJob
+from flox.jobs.protocols import AggregableJob, LauncherFunction, TrainableJob
 
 # Job: t.TypeAlias = AggregableJob | TrainableJob | LauncherFunction
 Job: t.TypeAlias = AggregableJob | TrainableJob

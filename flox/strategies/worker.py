@@ -6,6 +6,7 @@ from flox.flock.states import WorkerState
 
 if t.TYPE_CHECKING:
     import torch
+
     from flox.runtime import JobResult
 
 

@@ -30,11 +30,7 @@ if t.TYPE_CHECKING:
     from flox.nn.typing import Params
     from flox.runtime import Result
     from flox.runtime.transfer import BaseTransfer
-    from flox.strategies import (
-        WorkerStrategy,
-        TrainerStrategy,
-        AggregatorStrategy,
-    )
+    from flox.strategies import AggregatorStrategy, TrainerStrategy, WorkerStrategy
 
 
 class LauncherFunction(t.Protocol):

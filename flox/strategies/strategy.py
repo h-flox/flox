@@ -5,8 +5,9 @@ from dataclasses import dataclass, field
 
 if t.TYPE_CHECKING:
     import torch
+
     from flox.flock import AggrState, NodeID, NodeState, WorkerState
-    from flox.nn.typing import Params, Loss
+    from flox.nn.typing import Loss, Params
     from flox.runtime import JobResult
     from flox.strategies.aggregator import AggregatorStrategy
     from flox.strategies.client import ClientStrategy
@@ -103,8 +104,7 @@ class Strategy:
             ("worker_strategy", self.worker_strategy),
             ("trainer_strategy", self.trainer_strategy),
         )
-        for strategy_key, strategy_value in strategies:
-            yield strategy_key, strategy_value
+        yield from strategies
 
 
 class DefaultStrategy(Strategy):

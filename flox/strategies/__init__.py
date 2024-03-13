@@ -11,7 +11,7 @@ class ClientStrategy {
 
 from flox.strategies.aggregator import AggregatorStrategy
 from flox.strategies.client import ClientStrategy
-from flox.strategies.strategy import Strategy, DefaultStrategy
+from flox.strategies.strategy import DefaultStrategy, Strategy
 from flox.strategies.trainer import TrainerStrategy
 from flox.strategies.worker import WorkerStrategy
 

@@ -7,11 +7,9 @@ from sklearn.datasets import make_classification
 # TODO: Get rid of `sklearn` as a dependency.
 from torch.utils.data import Dataset
 
-from flox.data import LocalDataset
-from flox.data import federated_split, FederatedSubsets
+from flox.data import FederatedSubsets, LocalDataset, federated_split
 from flox.flock import Flock
 from flox.flock.states import NodeState
-
 
 ##################################################################################################################
 

@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from uuid import UUID
 
-
 NodeID = int | str  # NewType("NodeID", int | str)
 
 

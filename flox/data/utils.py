@@ -1,10 +1,10 @@
 import warnings
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from flox.data import FederatedSubsets
 from flox.flock import Flock, NodeID
@@ -145,7 +145,7 @@ def fed_barplot(
         for label in range(num_labels)
     }
 
-    for idx, (worker, worker_subset) in enumerate(subsets):
+    for idx, (_worker, worker_subset) in enumerate(subsets):
         loader = DataLoader(worker_subset, batch_size=1)
         for batch in loader:
             _, y = batch

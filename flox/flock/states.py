@@ -4,7 +4,8 @@ import typing
 from dataclasses import dataclass, field
 
 if typing.TYPE_CHECKING:
-    from typing import Any, Iterable
+    from collections.abc import Iterable
+    from typing import Any
 
     from flox.flock import NodeID
     from flox.nn import FloxModule

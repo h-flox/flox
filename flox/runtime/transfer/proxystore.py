@@ -9,7 +9,9 @@ from flox.runtime.transfer.base import BaseTransfer
 
 if typing.TYPE_CHECKING:
     from uuid import UUID
+
     from proxystore.proxy import Proxy
+
     from flox.flock import Flock
 
 
