@@ -1,26 +1,20 @@
 from __future__ import annotations
 
 import abc
-import typing
+import typing as t
 
 from torch.utils.data import Dataset, Subset
 
 from flox.flock import FlockNode
 
-if typing.TYPE_CHECKING:
-    from typing import TypeVar, Iterator
-
+if t.TYPE_CHECKING:
     from flox.flock.states import NodeState
     from flox.flock import NodeID
 
-    T_co = TypeVar("T_co", covariant=True)
+    T_co = t.TypeVar("T_co", covariant=True)
 
 
 class FloxDataset(abc.ABC):
-    """
-    Abstract...
-    """
-
     def __init__(self):
         pass
 
@@ -55,7 +49,7 @@ class FederatedSubsets(FloxDataset):
     def __len__(self):
         return self._num_subsets
 
-    def __iter__(self) -> Iterator[tuple[NodeID, Subset[T_co]]]:
+    def __iter__(self) -> t.Iterator[tuple[NodeID, Subset[T_co]]]:
         for idx in self.indices:
             yield idx, self.load(idx)
 

@@ -12,9 +12,9 @@ import typing as t
 
 from flox.jobs.aggregation import AggregateJob, DebugAggregateJob
 from flox.jobs.local_training import LocalTrainJob, DebugLocalTrainJob
-from flox.jobs.protocols import NodeCallable, AggregableJob, TrainableJob
+from flox.jobs.protocols import LauncherFunction, AggregableJob, TrainableJob
 
-# Job: t.TypeAlias = AggregableJob | TrainableJob | NodeCallable
+# Job: t.TypeAlias = AggregableJob | TrainableJob | LauncherFunction
 Job: t.TypeAlias = AggregableJob | TrainableJob
 """
 An umbrella typing that encapsulates both ``AggregableJob`` and ``TrainableJob`` protocols
@@ -27,7 +27,7 @@ __all__ = [
     "Job",
     "AggregableJob",
     "TrainableJob",
-    "NodeCallable",
+    "LauncherFunction",
     # Job impl.
     "AggregateJob",
     "DebugAggregateJob",

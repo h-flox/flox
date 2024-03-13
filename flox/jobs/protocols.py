@@ -37,7 +37,7 @@ if t.TYPE_CHECKING:
     )
 
 
-class NodeCallable(t.Protocol):
+class LauncherFunction(t.Protocol):
     """
     Utility protocol that simply identifies any of callable that takes a ``FlockNode`` as its first argument.
     """

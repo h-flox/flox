@@ -1,8 +1,7 @@
 import typing as t
 from concurrent.futures import Future
 
-from flox.flock import FlockNode
-from flox.jobs import NodeCallable, Job
+from flox.jobs import Job
 from flox.runtime.launcher import Launcher
 from flox.runtime.transfer import BaseTransfer
 
