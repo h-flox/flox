@@ -44,13 +44,15 @@ class FedProxTrainer(DefaultTrainerStrategy):
         params = list(local_model.state_dict().values())
         params0 = list(global_model.state_dict().values())
 
-        norm = torch.sum(
-            torch.Tensor(
-                [torch.sum((params[i] - params0[i]) ** 2) for i in range(len(params))]
-            )
+        proximal_diff = torch.Tensor(
+            [
+                torch.sum(torch.pow(params[i] - params0[i], 2))
+                for i in range(len(params))
+            ]
         )
+        proximal_term = torch.sum(proximal_diff)
+        proximal_term = proximal_term * self.mu / 2
 
-        proximal_term = (self.mu / 2) * norm
         loss += proximal_term
         return loss
 
