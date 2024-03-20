@@ -1,10 +1,13 @@
+from abc import ABC, abstractmethod
+
 import torch
 
 
 class FloxModule(torch.nn.Module, ABC):
     """
     The ``FloxModule`` is a wrapper for the standard ``torch.nn.Module`` class from PyTorch, with
-    a lot of inspiration from the ``lightning.LightningModule`` class from PyTorch Lightning.
+    a lot of inspiration from the ``LightningModule`` class from
+    [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/common/lightning_module.html).
     """
 
     def __init__(self, *args, **kwargs):
@@ -45,6 +48,7 @@ class FloxModule(torch.nn.Module, ABC):
         Returns:
 
         """
+        raise NotImplementedError
 
     def test_step(self, batch: torch.Tensor | tuple[torch.Tensor, ...], batch_idx: int):
         """
@@ -56,6 +60,7 @@ class FloxModule(torch.nn.Module, ABC):
         Returns:
 
         """
+        raise NotImplementedError
 
     def predict_step(
         self,
@@ -73,3 +78,4 @@ class FloxModule(torch.nn.Module, ABC):
         Returns:
 
         """
+        raise NotImplementedError

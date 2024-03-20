@@ -7,7 +7,7 @@ import mkdocs_gen_files
 nav = mkdocs_gen_files.Nav()
 
 project_dir = "flox"
-reference_dir = "reference"
+reference_dir = "docs"
 
 for path in sorted(Path(project_dir).rglob("**/*.py")):
     # module_path = path.relative_to(project_dir).with_suffix("")

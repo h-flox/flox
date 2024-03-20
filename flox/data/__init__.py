@@ -65,7 +65,6 @@ simulated, decentralized dataset.
 from flox.data.core import FederatedSubsets, FloxDataset, LocalDataset
 from flox.data.utils import fed_barplot, federated_split
 
-
 __all__ = [
     "FloxDataset",
     "LocalDataset",

@@ -1,10 +1,11 @@
 from collections.abc import Iterable
 from typing import cast
 
+from numpy import array
 from numpy.random import RandomState
 from numpy.typing import NDArray
 
-from flox.flock import FlockNode, FlockNodeKind
+from flox.flock import FlockNode, NodeKind
 
 
 def random_worker_selection(
@@ -48,9 +49,9 @@ def fixed_random_worker_selection(
     Returns:
 
     """
-    children = np.array(children)
+    children = array(children)
     rand_state = RandomState(seed)
-    num_selected = min(1, int(participation) * len(list(children)))
+    num_selected = max(1, int(participation * len(list(children))))
     # numpy annotates RandomState.choice too narrowly; need this to satisfy mypy
     achildren = cast(NDArray, children)
     selected_children = rand_state.choice(achildren, size=num_selected, replace=False)
@@ -77,9 +78,9 @@ def prob_random_worker_selection(
     rand_state = RandomState(seed)
     selected_children = []
     for child in children:
-        if child.kind is FlockNodeKind.WORKER and always_include_child_aggregators:
+        if child.kind is NodeKind.WORKER and always_include_child_aggregators:
             selected_children.append(child)
-        elif rand_state.uniform() < participation:
+        elif rand_state.uniform() <= participation:
             selected_children.append(child)
 
     if len(selected_children) == 0:

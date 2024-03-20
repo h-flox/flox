@@ -15,12 +15,12 @@ class FedProx(FedAvg):
     """..."""
 
     def __init__(
-        self,
-        mu: float = 0.3,
-        participation: float = 1.0,
-        probabilistic: bool = False,
-        always_include_child_aggregators: bool = True,
-        seed: int = None,
+            self,
+            mu: float = 0.3,
+            participation: float = 1.0,
+            probabilistic: bool = False,
+            always_include_child_aggregators: bool = True,
+            seed: int = None,
     ):
         """..."""
         super().__init__(
@@ -32,17 +32,17 @@ class FedProx(FedAvg):
         self.mu = mu
 
     def wrk_after_train_step(
-        self,
-        state: FloxWorkerState,
-        loss: torch.Tensor,
-        **kwargs,
+            self,
+            state: FloxWorkerState,
+            loss: torch.Tensor,
+            **kwargs,
     ) -> torch.Tensor:
         """..."""
-        global_model = state.pre_local_train_model
-        local_model = state.post_local_train_model
+        global_model = state.global_model
+        local_model = state.local_model
 
-        params = list(local_model.state_dict().values())
-        params0 = list(global_model.state_dict().values())
+        params = list(local_model.params().values())
+        params0 = list(global_model.params().values())
 
         norm = torch.sum(
             torch.Tensor(
