@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import typing
 from concurrent.futures import Future
+from copy import deepcopy
 
 import pandas as pd
 from pandas import DataFrame
@@ -124,12 +125,13 @@ class SyncProcess(Process):
 
     def submit_aggr_job(self, node: FlockNode) -> Future[Result]:
         aggr_state = AggrState(node.idx)
-        self.strategy.client_strategy.select_worker_nodes(
+        selected_children = self.strategy.client_strategy.select_worker_nodes(
             aggr_state, list(self.flock.children(node)), None
         )
+        # print(f"The client selected {len(list(selected_children))} of its children.")
         # FIXME: This (^^^) shouldn't be run on the aggregator
         children_futures = [
-            self.step(node=child, parent=node) for child in self.flock.children(node)
+            self.step(node=child, parent=node) for child in selected_children
         ]
 
         # This partial function (`subtree_done_cbk`) will perform the aggregation only
@@ -163,7 +165,7 @@ class SyncProcess(Process):
             job,
             node=node,
             parent=parent,
-            global_model=self.global_module,
+            global_model=deepcopy(self.global_module),
             worker_strategy=self.strategy.worker_strategy,
             trainer_strategy=self.strategy.trainer_strategy,
             dataset=self.runtime.proxy(data),
@@ -178,6 +180,6 @@ class SyncProcess(Process):
             job,
             node=node,
             parent=parent,
-            global_model=self.global_module,
+            global_model=deepcopy(self.global_module),
             strategy=self.strategy,
         )

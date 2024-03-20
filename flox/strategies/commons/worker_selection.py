@@ -51,7 +51,7 @@ def fixed_random_worker_selection(
     """
     children = array(children)
     rand_state = RandomState(seed)
-    num_selected = min(1, int(participation) * len(list(children)))
+    num_selected = max(1, int(participation * len(list(children))))
     # numpy annotates RandomState.choice too narrowly; need this to satisfy mypy
     achildren = cast(NDArray, children)
     selected_children = rand_state.choice(achildren, size=num_selected, replace=False)
@@ -80,7 +80,7 @@ def prob_random_worker_selection(
     for child in children:
         if child.kind is NodeKind.WORKER and always_include_child_aggregators:
             selected_children.append(child)
-        elif rand_state.uniform() < participation:
+        elif rand_state.uniform() <= participation:
             selected_children.append(child)
 
     if len(selected_children) == 0:

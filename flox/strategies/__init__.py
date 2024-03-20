@@ -38,14 +38,22 @@ def load_strategy(strategy_name: str, **kwargs) -> Strategy:
     match strategy_name.lower():
         case "default":
             return DefaultStrategy()
+
         case "fedavg" | "fed-avg":
             from flox.strategies.impl.fedavg import FedAvg
 
             return FedAvg(**kwargs)
+
+        case "fedprox" | "fed-prox":
+            from flox.strategies.impl.fedprox import FedProx
+
+            return FedProx(**kwargs)
+
         case "fedsgd" | "fed-sgd":
             from flox.strategies.impl.fedsgd import FedSGD
 
             return FedSGD(**kwargs)
+
         case _:
             raise ValueError(f"Strategy '{strategy_name}' is not recognized.")
 

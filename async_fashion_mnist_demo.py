@@ -1,15 +1,21 @@
-import os
-from pathlib import Path
+# This is done to silence an annoying `UserWarning` being thrown by pydantic from `funcx_common` which assumes
+# you are using pydantic V1.
+import warnings
 
-import torch
-from torch import nn
-from torchvision.datasets import FashionMNIST
-from torchvision.transforms import ToTensor
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import os
+    from pathlib import Path
 
-from flox.data.utils import federated_split
-from flox.flock import Flock
-from flox.nn import FloxModule
-from flox.runtime import federated_fit
+    import torch
+    from torch import nn
+    from torchvision.datasets import FashionMNIST
+    from torchvision.transforms import ToTensor
+
+    from flox.data.utils import federated_split
+    from flox.flock import Flock
+    from flox.nn import FloxModule
+    from flox.runtime import federated_fit
 
 
 class MyModule(FloxModule):

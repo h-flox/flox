@@ -43,6 +43,8 @@ class LocalTrainJob(TrainableJob):
         Returns:
             Local fitting results.
         """
+        import torch
+
         from copy import deepcopy
 
         from torch.utils.data import DataLoader
@@ -53,6 +55,9 @@ class LocalTrainJob(TrainableJob):
 
         # global_state_dict = global_model.state_dict()
         local_model = deepcopy(global_model)
+
+        # local_model.to("mps")  # NOTE: Parameterize LATER
+
         global_model.load_state_dict(module_state_dict)
         local_model.load_state_dict(module_state_dict)
 

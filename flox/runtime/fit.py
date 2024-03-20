@@ -115,10 +115,14 @@ def federated_fit(
             raise ValueError("Illegal value for the strategy `kind` parameter.")
 
     start_time = datetime.datetime.now()
-    module, history = process.start(debug_mode)
-    history["train/rel_time"] = history["train/time"] - start_time
-    history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
-    return module, history
+    trained_module, history = process.start(debug_mode)
+    try:
+        history["train/rel_time"] = history["train/time"] - start_time
+        history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
+    except KeyError as err:
+        print(history.head())
+        raise err
+    return trained_module, history
 
 
 def parse_strategy_args(
