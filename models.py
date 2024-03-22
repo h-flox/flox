@@ -3,7 +3,7 @@ import torchmetrics
 from torch import nn
 from torch.nn import functional as F
 
-from const import DEVICE
+from flox.const import DEVICE
 from flox.nn import FloxModule
 
 DEFAULT_LR = 0.01

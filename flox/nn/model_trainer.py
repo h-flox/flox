@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-from const import DEVICE
+from flox.const import DEVICE
 from flox.flock.states import WorkerState
 from flox.nn import FloxModule
 from flox.nn.logger.csv import CSVLogger

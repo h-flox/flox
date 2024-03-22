@@ -4,7 +4,7 @@ import typing as t
 
 import torch
 
-from const import DEVICE
+from flox.const import DEVICE
 from flox.strategies import Strategy
 from flox.strategies.impl.fedavg import FedAvgWorker
 from flox.strategies.impl.fedsgd import FedSGDClient, FedSGDAggr
