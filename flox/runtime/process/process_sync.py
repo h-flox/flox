@@ -79,9 +79,10 @@ class SyncProcess(Process):
             step_result = self.step().result()
             step_result.history["round"] = round_num
 
-            test_acc, test_loss = test_model(self.global_module)
-            step_result.history["test/acc"] = test_acc
-            step_result.history["test/loss"] = test_loss
+            if not testing_mode:
+                test_acc, test_loss = test_model(self.global_module)
+                step_result.history["test/acc"] = test_acc
+                step_result.history["test/loss"] = test_loss
 
             histories.append(step_result.history)
             self.global_module.load_state_dict(step_result.params)
@@ -186,10 +187,14 @@ class SyncProcess(Process):
         self, node: FlockNode, parent: FlockNode
     ) -> Future[Result]:
         job = DebugLocalTrainJob()
+        data = self.dataset
         return self.runtime.submit(
             job,
             node=node,
             parent=parent,
             global_model=deepcopy(self.global_module),
-            strategy=self.strategy,
+            worker_strategy=self.strategy.worker_strategy,
+            trainer_strategy=self.strategy.trainer_strategy,
+            dataset=self.runtime.proxy(data),
+            module_state_dict=self.runtime.proxy(self.params),
         )

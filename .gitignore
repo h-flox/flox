@@ -1,6 +1,9 @@
 # macOS system
 .DS_Store
 
+# Parsl-related directories/files to ignore.
+runinfo/
+
 # Compressed data
 *.gz
 *-ubyte
