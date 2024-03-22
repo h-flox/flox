@@ -3,6 +3,7 @@
 
 # Parsl-related directories/files to ignore.
 runinfo/
+parsl*
 
 # Compressed data
 *.gz

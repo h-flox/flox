@@ -41,7 +41,9 @@ def main(args: argparse.Namespace):
         kind="sync",
         debug_mode=True,
         launcher_kind=args.executor,
-        launcher_cfg={"max_workers": args.max_workers},
+        launcher_cfg=dict(
+            label="Expanse_CPU_Multinode",
+        ),
     )
 
 

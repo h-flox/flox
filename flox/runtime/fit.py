@@ -34,7 +34,7 @@ def create_launcher(kind: str, **launcher_cfg) -> Launcher:
         case "globus-compute":
             return GlobusComputeLauncher()
         case "parsl":
-            return ParslLauncher()
+            return ParslLauncher(launcher_cfg)
         case _:
             raise ValueError("Illegal value for argument `kind`.")
 
@@ -122,6 +122,10 @@ def federated_fit(
     except KeyError as err:
         print(history.head())
         raise err
+
+    if isinstance(runtime.launcher, ParslLauncher):
+        runtime.launcher.executor.shutdown()
+
     return trained_module, history
 
 
