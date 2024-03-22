@@ -3,9 +3,9 @@ import datetime
 import json
 import logging
 import warnings
-
 from pathlib import Path
 
+import numpy as np
 
 logging.basicConfig(
     format="(%(levelname)s  - %(asctime)s) ❯ %(message)s", level=logging.INFO
@@ -16,50 +16,101 @@ with warnings.catch_warnings():
     import flox
     import os
     import pandas as pd
+    import torchvision.transforms as transforms
 
     from torchvision.datasets import FashionMNIST
-    from torchvision.transforms import ToTensor
 
     from flox.data.utils import federated_split
     from flox.flock.factory import create_standard_flock
     from flox.strategies import load_strategy
+    from flox import Flock
+    from flox.data import FloxDataset
     from models import *
+
+
+def train_experiment(
+    strategy_name: str,
+    flock: Flock,
+    fed_data: FloxDataset,
+    config: argparse.Namespace,
+    use_small_model: bool = False,
+) -> pd.DataFrame:
+    logging.info(f"Starting federated learning with strategy '{strategy_name}'.")
+
+    if "async" in strategy_name:
+        strategy = load_strategy(strategy_name, alpha=config.alpha)
+        kind = "async"
+    else:
+        strategy = load_strategy(strategy_name, participation=config.participation)
+        kind = "sync"
+
+    if use_small_model:
+        module = SmallModel()
+    else:
+        module = SmallConvModel()
+
+    _, result = flox.federated_fit(
+        flock,
+        module,
+        fed_data,
+        num_global_rounds=config.num_global_rounds,
+        strategy=strategy,
+        kind=kind,
+        launcher_cfg={"max_workers": config.max_workers},
+    )
+    result["strategy"] = strategy_name
+    logging.info(f"FINISHED learning with strategy '{strategy_name}'.")
+    return result
 
 
 def main(**kwargs):
     config = argparse.Namespace(**kwargs)
-    flock = create_standard_flock(num_workers=config.num_workers)
-    logging.info(f"Flock is created with {flock.number_of_workers} workers")
+    flock = create_standard_flock(num_workers=config.num_worker_nodes)
+    logging.info(f"Flock is created with {flock.number_of_workers} workers.")
+
     data = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
         train=True,
-        transform=ToTensor(),
+        transform=transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(0.5, 0.5),
+            ]
+        ),
     )
-    logging.info("FashionMNIST data is loaded")
-    fed_data = federated_split(
-        data,
-        flock,
-        num_classes=10,
-        labels_alpha=config.labels_alpha,
-        samples_alpha=config.samples_alpha,
-    )
-    logging.info("Data is federated")
+    logging.info("FashionMNIST data is loaded.")
+
+    # strategies = ["fedasync", "fedprox", "fedavg", "fedsgd"]
+    # strategies = ["fedavg"]
+    # strategies = ["fedprox", "fedavg", "fedsgd"]
+    strategies = ["fedprox", "fedavg"]
 
     results = []
-    for strategy in ["fedprox", "fedavg", "fedsgd"]:
-        logging.info(f"Starting federated learning with strategy '{strategy}'.")
-        _, res = flox.federated_fit(
-            flock,
-            SmallConvModel(),
-            # SmallModel(),
-            fed_data,
-            num_global_rounds=50,
-            strategy=load_strategy(strategy, participation=config.participation),
-            launcher_cfg={"max_workers": config.max_workers},
-        )
-        res["strategy"] = strategy
-        results.append(res)
+    # label_alpha_list = [1.0]  # [0.1, 1.0, 10.0]  # , 100.0]
+    # sample_alpha_list = [3.0]  # [1.0, 10.0, 100.0]
+
+    label_alpha_list = [0.01, 1000.0]
+    sample_alpha_list = [2.0, 1000.0]
+
+    for i, l_alpha in enumerate(label_alpha_list):
+        for j, s_alpha in enumerate(sample_alpha_list):
+            seed = 2**i
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            fed_data = federated_split(
+                data,
+                flock,
+                num_classes=10,
+                labels_alpha=l_alpha,
+                samples_alpha=s_alpha,
+            )
+            logging.info(f"Data is federated with {l_alpha=} and {s_alpha=}.")
+            for strategy in strategies:
+                res = train_experiment(strategy, flock, fed_data, config)
+                res["labels_alpha"] = l_alpha
+                res["samples_alpha"] = s_alpha
+                results.append(res)
 
     # Save data results and the config.
     timestamp = str(datetime.datetime.now())
@@ -78,11 +129,15 @@ if __name__ == "__main__":
     import caffeine
 
     caffeine.on(display=False)
+    worker_nodes = 1000
     main(
-        num_workers=50,
-        labels_alpha=0.1,
-        samples_alpha=2.0,
+        num_global_rounds=200,  # 200,
+        num_worker_nodes=worker_nodes,
+        # labels_alpha=0.1,
+        # samples_alpha=1000.0,  # 1.0,
         max_workers=10,
-        participation=1.0,
+        participation=0.01,
+        # participation=0.1,  # Param for sync Strategies
+        alpha=1 / worker_nodes,  # FedAsync Param
     )
     caffeine.off()

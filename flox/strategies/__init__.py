@@ -39,6 +39,11 @@ def load_strategy(strategy_name: str, **kwargs) -> Strategy:
         case "default":
             return DefaultStrategy()
 
+        case "fedasync" | "fed-async":
+            from flox.strategies.impl.fedasync import FedAsync
+
+            return FedAsync(**kwargs)
+
         case "fedavg" | "fed-avg":
             from flox.strategies.impl.fedavg import FedAvg
 

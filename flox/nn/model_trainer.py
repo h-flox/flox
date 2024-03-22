@@ -16,7 +16,7 @@ class Trainer:
     def __init__(
         self,
         trainer_strategy: TrainerStrategy,
-        log_every_n_batches: int = 10,
+        log_every_n_batches: int = 1,  # 10,
     ):
         """
         Note:
@@ -96,14 +96,14 @@ class Trainer:
         with torch.no_grad():
             for batch_idx, batch in enumerate(valid_dataloader):
                 loss = model.validation_step(batch, batch_idx)
-                self.logger.log_dict(
-                    {
-                        "valid/loss": loss.item(),
-                        "valid/epoch": epoch,
-                        "valid/batch_idx": batch_idx,
-                        "valid/time": datetime.datetime.now(),
-                    }
-                )
+                # self.logger.log_dict(
+                #     {
+                #         "valid/loss": loss.item(),
+                #         "valid/epoch": epoch,
+                #         "valid/batch_idx": batch_idx,
+                #         "valid/time": datetime.datetime.now(),
+                #     }
+                # )
 
     def _epoch(
         self,
@@ -115,6 +115,13 @@ class Trainer:
         valid_ckpt_path: Path | str | None = None,
         valid_dataloader: DataLoader | None = None,
     ):
+        def log_condition(batch_idx: int):
+            conditions = [
+                batch_idx % self.log_every_n_batches == self.log_every_n_batches - 1,
+                batch_idx == len(train_dataloader),
+            ]
+            return any(conditions)
+
         model.train(True)
         # model.to(self.device)
         running_acc = 0.0
@@ -136,26 +143,19 @@ class Trainer:
             loss = self.trainer_strategy.after_backprop(node_state, loss)
             optimizer.step()
 
-            # if self.log_every_n_batches is None:
-            #     continue
-
-            if (
-                batch_idx % self.log_every_n_batches == self.log_every_n_batches - 1
-            ) or (batch_idx == len(train_dataloader)):
-                last_loss = (
-                    running_loss / self.log_every_n_batches
-                )  # avg loss per batch
-                lact_accuracy = running_acc / self.log_every_n_batches
-                running_loss = 0.0
-                running_acc = 0.0
-                rec = {
-                    "train/acc": lact_accuracy,
-                    "train/loss": last_loss,
-                    "train/epoch": epoch_index,
-                    "train/batch_idx": batch_idx,
-                    "train/time": datetime.datetime.now(),
-                }
-                self.logger.log_dict(rec)
+            if log_condition(batch_idx):
+                running_loss /= self.log_every_n_batches
+                running_acc /= self.log_every_n_batches
+                self.logger.log_dict(
+                    {
+                        "train/acc": running_acc,
+                        "train/loss": running_loss,
+                        "train/epoch": epoch_index,
+                        "train/batch_idx": batch_idx,
+                        "train/time": datetime.datetime.now(),
+                    }
+                )
+                running_acc, running_loss = 0.0, 0.0
 
         if total_loss / len(train_dataloader) > last_loss:
             return total_loss / len(train_dataloader)

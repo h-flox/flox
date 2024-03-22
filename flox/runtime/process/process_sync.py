@@ -16,6 +16,7 @@ from flox.jobs import AggregateJob, DebugLocalTrainJob, LocalTrainJob
 from flox.nn import FloxModule
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
 from flox.runtime.process.process import Process
+from flox.runtime.process.testing import test_model
 from flox.runtime.result import Result
 from flox.runtime.runtime import Runtime
 from flox.strategies import Strategy
@@ -59,6 +60,7 @@ class SyncProcess(Process):
         self.params = None
         self.debug_mode = False
         self.pbar_desc = "federated_fit::sync"
+        self.seed = 0
 
         # TODO: Add description option for the progress bar when it's training.
         #  Also, add a configurable stop condition
@@ -76,6 +78,11 @@ class SyncProcess(Process):
             self.params = self.global_module.state_dict()
             step_result = self.step().result()
             step_result.history["round"] = round_num
+
+            test_acc, test_loss = test_model(self.global_module)
+            step_result.history["test/acc"] = test_acc
+            step_result.history["test/loss"] = test_loss
+
             histories.append(step_result.history)
             self.global_module.load_state_dict(step_result.params)
             progress_bar.update()
@@ -124,14 +131,15 @@ class SyncProcess(Process):
     ########################################################################################################
 
     def submit_aggr_job(self, node: FlockNode) -> Future[Result]:
-        aggr_state = AggrState(node.idx)
-        selected_children = self.strategy.client_strategy.select_worker_nodes(
-            aggr_state, list(self.flock.children(node)), None
+        children = list(self.flock.children(node.idx))
+        aggr_state = AggrState(node.idx, children, deepcopy(self.global_module))
+        selected_workers = self.strategy.client_strategy.select_worker_nodes(
+            aggr_state, children, self.seed
         )
-        # print(f"The client selected {len(list(selected_children))} of its children.")
-        # FIXME: This (^^^) shouldn't be run on the aggregator
-        children_futures = [
-            self.step(node=child, parent=node) for child in selected_children
+        self.seed += 1
+
+        selected_worker_futures = [
+            self.step(node=worker, parent=node) for worker in selected_workers
         ]
 
         # This partial function (`subtree_done_cbk`) will perform the aggregation only
@@ -145,12 +153,14 @@ class SyncProcess(Process):
             self.aggr_callback,
             job,
             future,
-            children_futures,
+            children,
+            selected_worker_futures,
+            deepcopy(self.global_module),
             node,
             self.runtime,
             self.strategy.aggr_strategy,
         )
-        for child_fut in children_futures:
+        for child_fut in selected_worker_futures:
             child_fut.add_done_callback(subtree_done_cbk)
 
         return future

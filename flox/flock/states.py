@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import typing
+import typing as t
 from dataclasses import dataclass, field
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import Any
 
-    from flox.flock import NodeID
+    from flox.flock import NodeID, FlockNode
     from flox.nn import FloxModule
 
 
@@ -69,9 +69,20 @@ class NodeState:
 class AggrState(NodeState):
     """State of an Aggregator node in a ``Flock``."""
 
+    children: t.Iterable[FlockNode]
+
+    global_model: FloxModule | None
+
     # TODO: If there is no difference between ``AggrState`` and ``NodeState``, then do we need the former at all?
-    def __init__(self, idx: NodeID):
+    def __init__(
+        self,
+        idx: NodeID,
+        children: t.Iterable[FlockNode],
+        global_model: FloxModule | None,
+    ) -> None:
         super().__init__(idx)
+        self.children = children
+        self.global_model = global_model
 
 
 class WorkerState(NodeState):

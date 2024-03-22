@@ -3,12 +3,14 @@ import torchmetrics
 from torch import nn
 from torch.nn import functional as F
 
-from flox.nn import FloxModule
 from const import DEVICE
+from flox.nn import FloxModule
+
+DEFAULT_LR = 0.01
 
 
 class SmallModel(FloxModule):
-    def __init__(self, lr: float = 0.001, device: str | None = None):
+    def __init__(self, lr: float = DEFAULT_LR, device: str | None = None):
         super().__init__()
         self.lr = lr
         self.flatten = torch.nn.Flatten()
@@ -54,7 +56,7 @@ class SmallModel(FloxModule):
 
 
 class SmallConvModel(FloxModule):
-    def __init__(self, lr: float = 0.001, device: str | None = None):
+    def __init__(self, lr: float = DEFAULT_LR, device: str | None = None):
         super().__init__()
         self.lr = lr
         self.conv1 = nn.Conv2d(1, 6, 5)

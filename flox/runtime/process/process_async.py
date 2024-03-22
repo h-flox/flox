@@ -13,6 +13,7 @@ from flox.flock.states import AggrState, NodeState, WorkerState
 from flox.jobs import LocalTrainJob
 from flox.nn import FloxModule
 from flox.runtime.process.process import Process
+from flox.runtime.process.testing import test_model
 from flox.runtime.runtime import Runtime
 from flox.strategies import Strategy
 
@@ -55,7 +56,9 @@ class AsyncProcess(Process):
         self.debug_mode = False
 
         assert self.flock.leader is not None
-        self.state = AggrState(self.flock.leader.idx)
+        self.state = AggrState(
+            self.flock.leader.idx, flock.children(flock.leader), module
+        )
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:
         if not self.flock.two_tier:
@@ -71,7 +74,10 @@ class AsyncProcess(Process):
             worker_state_dicts[worker.idx] = self.global_module.state_dict()
 
         futures = set()
-        progress_bar = tqdm(total=self.num_global_rounds * self.flock.number_of_workers)
+        progress_bar = tqdm(
+            total=self.num_global_rounds * self.flock.number_of_workers,
+            desc="federated_fit::async",
+        )
         for worker in self.flock.workers:
             # data = self.dataset[worker.idx]
             job = LocalTrainJob()
@@ -110,10 +116,18 @@ class AsyncProcess(Process):
                 result.history["round"] = worker_rounds[result.node_idx]
                 histories.append(result.history)
                 avg_state_dict = self.strategy.aggr_strategy.aggregate_params(
-                    self.state, worker_states, worker_state_dicts
+                    self.state,
+                    worker_states,
+                    worker_state_dicts,
+                    last_updated_node=worker.idx,
                 )
                 self.global_module.load_state_dict(avg_state_dict)
                 # data = self.dataset[worker.idx]
+
+                test_acc, test_loss = test_model(self.global_module)
+                result.history["test/acc"] = test_acc
+                result.history["test/loss"] = test_loss
+
                 job = LocalTrainJob()
                 data = self.dataset  # self.dataset.load(worker)
                 fut = self.runtime.submit(

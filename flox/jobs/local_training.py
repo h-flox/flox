@@ -43,7 +43,6 @@ class LocalTrainJob(TrainableJob):
         Returns:
             Local fitting results.
         """
-        import torch
 
         from copy import deepcopy
 
@@ -88,7 +87,7 @@ class LocalTrainJob(TrainableJob):
             train_dataloader,
             # TODO: Include `trainer_params` as an argument to
             #       this so users can easily customize Trainer.
-            num_epochs=train_hyper_params.get("num_epochs", 2),
+            num_epochs=train_hyper_params.get("num_epochs", 5),
             node_state=state,
         )
 

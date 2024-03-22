@@ -17,8 +17,10 @@ if t.TYPE_CHECKING:
 
 
 class DefaultClientStrategy:
-    def select_worker_nodes(self, state, children, seed):
-        return children
+    def select_worker_nodes(
+        self, state: NodeState, workers: t.Iterable[NodeID], seed: int | None = None
+    ) -> t.Iterable[NodeID]:
+        return workers
 
 
 class DefaultAggregatorStrategy:

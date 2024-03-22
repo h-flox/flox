@@ -4,12 +4,11 @@ import typing as t
 
 import torch
 
-from flox.strategies import Strategy
-from flox.strategies.impl.fedavg import FedAvgAggr, FedAvgWorker
-from flox.strategies.impl.fedsgd import FedSGDClient
-from flox.strategies.strategy import DefaultTrainerStrategy
-
 from const import DEVICE
+from flox.strategies import Strategy
+from flox.strategies.impl.fedavg import FedAvgWorker
+from flox.strategies.impl.fedsgd import FedSGDClient, FedSGDAggr
+from flox.strategies.strategy import DefaultTrainerStrategy
 
 if t.TYPE_CHECKING:
     from flox.flock import WorkerState
@@ -54,7 +53,7 @@ class FedProxTrainer(DefaultTrainerStrategy):
                 torch.sum(torch.pow(params[i] - params0[i], 2))
                 for i in range(len(params))
             ]
-            #, requires_grad=True
+            # , requires_grad=True
         )
         proximal_term = torch.sum(proximal_diff)
         proximal_term = proximal_term * self.mu / 2
@@ -101,7 +100,7 @@ class FedProx(Strategy):
                 probabilistic,
                 always_include_child_aggregators,
             ),
-            aggr_strategy=FedAvgAggr(),
+            aggr_strategy=FedSGDAggr(),
             worker_strategy=FedAvgWorker(),
             trainer_strategy=FedProxTrainer(mu=mu),
         )
