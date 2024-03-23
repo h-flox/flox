@@ -66,11 +66,14 @@ class SyncProcess(Process):
         #  Also, add a configurable stop condition
 
     def start(self, testing_mode: bool = False) -> tuple[FloxModule, DataFrame]:
-        if testing_mode:
+        if testing_mode and self.global_module is None:
             from flox.runtime.process.debug_utils import DebugModule
 
             self.debug_mode = True
             self.global_module = DebugModule()
+
+        print(self.global_module)
+        exit(0)
 
         histories = []
         progress_bar = tqdm(total=self.num_global_rounds, desc=self.pbar_desc)

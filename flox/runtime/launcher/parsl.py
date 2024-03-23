@@ -8,6 +8,12 @@ from flox.jobs import Job
 from flox.runtime.launcher.base import Launcher
 
 
+def _platform_info():
+    import platform
+
+    return platform.platform()
+
+
 class ParslLauncher(Launcher):
     """
     Class that launches tasks via Parsl.
@@ -23,7 +29,10 @@ class ParslLauncher(Launcher):
         self.executor.run_dir = "."
         self.executor.provider.script_dir = "."
         self.executor.start()
-        # self.spec = {} if resource_spec is None else resource_spec
+
+        # Run priming
+        fut = self.executor.submit(_platform_info, {})
+        fut.result()
 
     def submit(self, job: Job, /, **kwargs) -> Future:
         # print("Trying to submit....")
