@@ -72,9 +72,6 @@ class SyncProcess(Process):
             self.debug_mode = True
             self.global_module = DebugModule()
 
-        print(self.global_module)
-        exit(0)
-
         histories = []
         progress_bar = tqdm(total=self.num_global_rounds, desc=self.pbar_desc)
         for round_num in range(self.num_global_rounds):
