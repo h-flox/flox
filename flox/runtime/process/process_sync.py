@@ -80,7 +80,7 @@ class SyncProcess(Process):
             step_result = self.step().result()
             step_result.history["round"] = round_num
 
-            if testing_mode:
+            if not testing_mode:
                 test_acc, test_loss = test_model(self.global_module)
                 step_result.history["test/acc"] = test_acc
                 step_result.history["test/loss"] = test_loss
