@@ -120,6 +120,7 @@ class SyncProcess(Process):
                 assert parent is not None
                 # (^^^) avoids mypy issue which won't naturally occur with valid Flock topo
                 if self.debug_mode:
+                    print("Submitting worker job")
                     return self.submit_worker_debug_job(node, parent)
                 else:
                     return self.submit_worker_job(node, parent)
@@ -189,7 +190,7 @@ class SyncProcess(Process):
     ) -> Future[Result]:
         job = DebugLocalTrainJob()
         data = self.dataset
-        return self.runtime.submit(
+        future = self.runtime.submit(
             job,
             node=node,
             parent=parent,
@@ -199,3 +200,5 @@ class SyncProcess(Process):
             dataset=self.runtime.proxy(data),
             module_state_dict=self.runtime.proxy(self.params),
         )
+        print("Returning worker future")
+        return future

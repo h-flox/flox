@@ -44,6 +44,7 @@ class ParslLauncher(Launcher):
         # return future
 
         future = self.executor.submit(job, {}, **kwargs)
+        print("ParslLauncher - Got future")
         return future
 
     def collect(self):

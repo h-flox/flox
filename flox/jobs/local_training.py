@@ -134,13 +134,24 @@ class DebugLocalTrainJob(TrainableJob):
         Returns:
 
         """
-        import datetime
+
+        log_file = open("local_training.log", "a")
+
+        from datetime import datetime
+
+        ts = str(datetime.now()).split(".")[0]
+        log_file.write(
+            f"{ts} - local_training::DebugLocalTrainJob - start of function\n"
+        )
 
         import numpy as np
         import pandas
 
         from flox.flock.states import WorkerState
         from flox.runtime import JobResult
+
+        ts = str(datetime.now()).split(".")[0]
+        log_file.write(f"{ts} - local_training::DebugLocalTrainJob - after imports\n")
 
         local_module = global_model
         node_state = WorkerState(
@@ -156,11 +167,13 @@ class DebugLocalTrainJob(TrainableJob):
             "train/loss": [np.nan],
             "train/epoch": [np.nan],
             "train/batch_idx": [np.nan],
-            "train/time": [datetime.datetime.now()],
+            "train/time": [datetime.now()],
             "mode": "debug",
         }
         history_df = pandas.DataFrame.from_dict(history)
         result = JobResult(
             node_state, node.idx, node.kind, global_model.state_dict(), history_df
         )
+        ts = str(datetime.now()).split(".")[0]
+        log_file.write(f"{ts} - local_training::DebugLocalTrainJob - before return\n")
         return transfer.report(result)
