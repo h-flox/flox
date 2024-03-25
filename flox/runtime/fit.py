@@ -80,7 +80,10 @@ def federated_fit(
     """
     launcher_cfg = dict() if launcher_cfg is None else launcher_cfg
     launcher = create_launcher(launcher_kind, **launcher_cfg)
-    transfer = BaseTransfer()
+    if launcher_kind == "globus_compute":
+        transfer = ProxyStoreTransfer(flock)
+    else:
+        transfer = BaseTransfer()
     runtime = Runtime(launcher, transfer)
     parsed_strategy = parse_strategy_args(
         strategy=strategy,
