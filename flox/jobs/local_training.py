@@ -44,6 +44,8 @@ class LocalTrainJob(TrainableJob):
             Local fitting results.
         """
 
+        print("LocalTrainJob - starting now")
+
         from copy import deepcopy
 
         from torch.utils.data import DataLoader
@@ -81,6 +83,7 @@ class LocalTrainJob(TrainableJob):
 
         state, data = worker_strategy.before_training(state, data)
         # print(f"{state=} (after `before_training`)")
+
         history = trainer.fit(
             local_model,
             optimizer,
@@ -106,6 +109,7 @@ class LocalTrainJob(TrainableJob):
         result = JobResult(state, node.idx, node.kind, local_params, history)
 
         result = worker_strategy.work_end(result)  # NOTE: Double-check.
+        print("LocalTrainJob - returning result")
         return transfer.report(result)
 
 

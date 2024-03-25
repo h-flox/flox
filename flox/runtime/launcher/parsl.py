@@ -19,15 +19,17 @@ class ParslLauncher(Launcher):
     Class that launches tasks via Parsl.
     """
 
-    def __init__(self, config: dict[str, t.Any]):
+    def __init__(
+        self, config: dict[str, t.Any], run_dir: str = ".parsl", stript_dir=".parsl"
+    ):
         super().__init__()
         parsl.load()
 
         # self.executor = ParslPoolExecutor(config)
         self._config = config
         self.executor = HighThroughputExecutor(**self._config)
-        self.executor.run_dir = "."
-        self.executor.provider.script_dir = "."
+        self.executor.run_dir = run_dir
+        self.executor.provider.script_dir = stript_dir
         self.executor.start()
 
         # Run priming

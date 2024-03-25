@@ -27,6 +27,7 @@ class LocalLauncher(Launcher):
     def submit(self, job: Job, /, **kwargs) -> Future:
         # TODO: Adjust this typing (i.e., Future is not always returned in the case where `max_workers == 1`.
         #       Then clarify the logic behind this.
+        print(f"LocalLauncher - Submitting {job.__class__.__name__}")
         return self.pool.submit(job, **kwargs)  # type: ignore
         # if self.max_workers > 1:
         #     return self.pool.submit(fn, node, *args, **kwargs)

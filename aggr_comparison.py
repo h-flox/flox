@@ -56,6 +56,7 @@ def train_experiment(
         num_global_rounds=config.num_global_rounds,
         strategy=strategy,
         kind=kind,
+        launcher_kind="process",
         launcher_cfg={"max_workers": config.max_workers},
     )
     result["strategy"] = strategy_name
@@ -87,9 +88,6 @@ def main(**kwargs):
     strategies = ["fedprox", "fedavg"]
 
     results = []
-    # label_alpha_list = [1.0]  # [0.1, 1.0, 10.0]  # , 100.0]
-    # sample_alpha_list = [3.0]  # [1.0, 10.0, 100.0]
-
     label_alpha_list = [0.01, 1000.0]
     sample_alpha_list = [2.0, 1000.0]
 
@@ -129,9 +127,9 @@ if __name__ == "__main__":
     import caffeine
 
     caffeine.on(display=False)
-    worker_nodes = 1000
+    worker_nodes = 1  # 000
     main(
-        num_global_rounds=200,  # 200,
+        num_global_rounds=5,  # 200,
         num_worker_nodes=worker_nodes,
         # labels_alpha=0.1,
         # samples_alpha=1000.0,  # 1.0,

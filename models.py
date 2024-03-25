@@ -3,7 +3,6 @@ import torchmetrics
 from torch import nn
 from torch.nn import functional as F
 
-from flox.const import DEVICE
 from flox.nn import FloxModule
 
 DEFAULT_LR = 0.01
@@ -42,8 +41,8 @@ class SmallModel(FloxModule):
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
-        inputs = inputs.to(DEVICE)
-        targets = targets.to(DEVICE)
+        inputs = inputs.to("cpu")
+        targets = targets.to("cpu")
         preds = self(inputs)
         loss = F.cross_entropy(preds, targets)
 
@@ -92,9 +91,9 @@ class SmallConvModel(FloxModule):
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
         # print(f"{inputs.shape=}")
-        inputs = inputs.to(DEVICE)
-        targets = targets.to(DEVICE)
-        preds = self(inputs)
+        inputs = inputs.to("cpu")
+        targets = targets.to("cpu")
+        preds = self.forward(inputs)
         loss = F.cross_entropy(preds, targets)
 
         self.last_accuracy = self.accuracy(preds, targets)
