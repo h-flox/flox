@@ -62,6 +62,10 @@ class AggregateJob(AggregableJob):
         result = JobResult(node_state, node.idx, node.kind, avg_state_dict, history)
         return transfer.report(result)
 
+    @property
+    def __name__(self) -> str:
+        return "AggregateJob"
+
 
 class DebugAggregateJob(AggregableJob):
     @staticmethod

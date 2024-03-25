@@ -114,6 +114,10 @@ class LocalTrainJob(TrainableJob):
         result = worker_strategy.work_end(result)  # NOTE: Double-check.
         return transfer.report(result)
 
+    @property
+    def __name__(self) -> str:
+        return "LocalTrainJob"
+
 
 class DebugLocalTrainJob(TrainableJob):
     @staticmethod
@@ -172,3 +176,7 @@ class DebugLocalTrainJob(TrainableJob):
         )
         ts = str(datetime.now()).split(".")[0]
         return transfer.report(result)
+
+    @property
+    def __name__(self) -> str:
+        return "DebugLocalTrainJob"
