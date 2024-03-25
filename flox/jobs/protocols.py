@@ -58,7 +58,6 @@ class AggregableJob(t.Protocol):
     def __call__(
         node: FlockNode,
         children: t.Iterable[FlockNode],
-        global_model: FloxModule,
         transfer: BaseTransfer,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],

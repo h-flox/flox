@@ -17,6 +17,7 @@ from flox.runtime.launcher import (
 from flox.runtime.process.process import Process
 from flox.runtime.process.process_async import AsyncProcess
 from flox.runtime.process.process_sync import SyncProcess
+from flox.runtime.process.process_sync_v2 import SyncProcessV2
 from flox.runtime.runtime import Runtime
 from flox.runtime.transfer import BaseTransfer
 
@@ -102,6 +103,17 @@ def federated_fit(
                 dataset=datasets,
                 strategy=parsed_strategy,
             )
+
+        case "sync-v2":
+            process = SyncProcessV2(
+                runtime=runtime,
+                flock=flock,
+                global_rounds=num_global_rounds,
+                module=module,
+                dataset=datasets,
+                strategy=parsed_strategy,
+            )
+
         case "async":
             process = AsyncProcess(
                 runtime=runtime,
@@ -121,7 +133,6 @@ def federated_fit(
         history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
     except KeyError as err:
         print(history.head())
-        raise err
 
     if isinstance(runtime.launcher, ParslLauncher):
         runtime.launcher.executor.shutdown()

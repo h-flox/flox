@@ -21,7 +21,7 @@ with warnings.catch_warnings():
     from torchvision.datasets import FashionMNIST
 
     from flox.data.utils import federated_split
-    from flox.flock.factory import create_standard_flock
+    from flox.flock.factory import create_hierarchical_flock
     from flox.strategies import load_strategy
     from flox import Flock
     from flox.data import FloxDataset
@@ -33,7 +33,7 @@ def train_experiment(
     flock: Flock,
     fed_data: FloxDataset,
     config: argparse.Namespace,
-    use_small_model: bool = False,
+    use_small_model: bool = True,
 ) -> pd.DataFrame:
     logging.info(f"Starting federated learning with strategy '{strategy_name}'.")
 
@@ -55,8 +55,10 @@ def train_experiment(
         fed_data,
         num_global_rounds=config.num_global_rounds,
         strategy=strategy,
-        kind=kind,
+        kind="sync-v2",
+        debug_mode=False,
         launcher_kind="process",
+        # launcher_kind="thread",
         launcher_cfg={"max_workers": config.max_workers},
     )
     result["strategy"] = strategy_name
@@ -66,13 +68,17 @@ def train_experiment(
 
 def main(**kwargs):
     config = argparse.Namespace(**kwargs)
-    flock = create_standard_flock(num_workers=config.num_worker_nodes)
+    # flock = create_standard_flock(num_workers=config.num_worker_nodes)
+    flock = create_hierarchical_flock(config.num_worker_nodes, [2, 3])
+    # flock.draw()
+    # plt.show()
     logging.info(f"Flock is created with {flock.number_of_workers} workers.")
 
     data = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
-        train=True,
+        # train=True,
+        train=False,
         transform=transforms.Compose(
             [
                 transforms.ToTensor(),
@@ -85,11 +91,14 @@ def main(**kwargs):
     # strategies = ["fedasync", "fedprox", "fedavg", "fedsgd"]
     # strategies = ["fedavg"]
     # strategies = ["fedprox", "fedavg", "fedsgd"]
-    strategies = ["fedprox", "fedavg"]
+    # strategies = ["fedprox", "fedavg"]  # NOTE: This one.
+    strategies = ["fedavg"]
 
     results = []
     label_alpha_list = [0.01, 1000.0]
     sample_alpha_list = [2.0, 1000.0]
+    label_alpha_list = [1000.0]
+    sample_alpha_list = [1000.0]
 
     for i, l_alpha in enumerate(label_alpha_list):
         for j, s_alpha in enumerate(sample_alpha_list):
@@ -127,14 +136,15 @@ if __name__ == "__main__":
     import caffeine
 
     caffeine.on(display=False)
-    worker_nodes = 1  # 000
+    worker_nodes = 100  # 000
     main(
         num_global_rounds=5,  # 200,
         num_worker_nodes=worker_nodes,
         # labels_alpha=0.1,
         # samples_alpha=1000.0,  # 1.0,
         max_workers=10,
-        participation=0.01,
+        participation=0.1,
+        # participation=0.01,
         # participation=0.1,  # Param for sync Strategies
         alpha=1 / worker_nodes,  # FedAsync Param
     )

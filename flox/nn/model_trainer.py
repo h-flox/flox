@@ -29,14 +29,6 @@ class Trainer:
         self.log_every_n_batches = log_every_n_batches
         self.device = device
 
-        # self.device = "cpu"
-        # if torch.cuda.is_available():
-        #     self.device = torch.device("cuda")
-        # elif torch.backends.mps.is_available():
-        #     self.device = torch.device("mps")
-        # else:
-        #     self.device = torch.device("cpu")
-
     def fit(
         self,
         model: FloxModule,

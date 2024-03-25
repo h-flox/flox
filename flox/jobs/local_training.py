@@ -44,11 +44,8 @@ class LocalTrainJob(TrainableJob):
             Local fitting results.
         """
 
-        print("LocalTrainJob - starting now")
-
-        from copy import deepcopy
-
         from torch.utils.data import DataLoader
+        from copy import deepcopy
 
         from flox.flock.states import WorkerState
         from flox.nn.model_trainer import Trainer
@@ -78,12 +75,18 @@ class LocalTrainJob(TrainableJob):
             shuffle=train_hyper_params.get("shuffle", True),
         )
 
-        trainer = Trainer(trainer_strategy)
         optimizer = local_model.configure_optimizers()
 
         state, data = worker_strategy.before_training(state, data)
         # print(f"{state=} (after `before_training`)")
 
+        # inputs, targets = next(iter(train_dataloader))
+        # print(inputs)
+        # print(local_model)
+        # print(local_model(inputs))
+        # history = pd.DataFrame.from_dict({})
+
+        trainer = Trainer(trainer_strategy)
         history = trainer.fit(
             local_model,
             optimizer,
@@ -109,7 +112,6 @@ class LocalTrainJob(TrainableJob):
         result = JobResult(state, node.idx, node.kind, local_params, history)
 
         result = worker_strategy.work_end(result)  # NOTE: Double-check.
-        print("LocalTrainJob - returning result")
         return transfer.report(result)
 
 
@@ -139,23 +141,13 @@ class DebugLocalTrainJob(TrainableJob):
 
         """
 
-        log_file = open("local_training.log", "a")
-
         from datetime import datetime
-
-        ts = str(datetime.now()).split(".")[0]
-        log_file.write(
-            f"{ts} - local_training::DebugLocalTrainJob - start of function\n"
-        )
 
         import numpy as np
         import pandas
 
         from flox.flock.states import WorkerState
         from flox.runtime import JobResult
-
-        ts = str(datetime.now()).split(".")[0]
-        log_file.write(f"{ts} - local_training::DebugLocalTrainJob - after imports\n")
 
         local_module = global_model
         node_state = WorkerState(
@@ -179,5 +171,4 @@ class DebugLocalTrainJob(TrainableJob):
             node_state, node.idx, node.kind, global_model.state_dict(), history_df
         )
         ts = str(datetime.now()).split(".")[0]
-        log_file.write(f"{ts} - local_training::DebugLocalTrainJob - before return\n")
         return transfer.report(result)

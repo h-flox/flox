@@ -55,8 +55,6 @@ class SyncProcess(Process):
         self.global_module = module
         self.strategy = strategy
         self.dataset = dataset
-
-        self.aggr_callback = all_child_futures_finished_cbk
         self.params = None
         self.debug_mode = False
         self.pbar_desc = "federated_fit::sync"
@@ -111,16 +109,10 @@ class SyncProcess(Process):
         match flock.get_kind(node):
             case NodeKind.LEADER | NodeKind.AGGREGATOR:
                 return self.submit_aggr_job(node)
-                # if self.debug_mode:
-                #     return self.submit_aggr_debug_job(node) # FIXME
-                # else:
-                #     return self.submit_aggr_job(node)
 
             case NodeKind.WORKER:
-                assert parent is not None
-                # (^^^) avoids mypy issue which won't naturally occur with valid Flock topo
+                assert parent is not None  # nathaniel-hudson: makes `mypy` happy.
                 if self.debug_mode:
-                    print("Submitting worker job")
                     return self.submit_worker_debug_job(node, parent)
                 else:
                     return self.submit_worker_job(node, parent)
@@ -134,37 +126,34 @@ class SyncProcess(Process):
     ########################################################################################################
 
     def submit_aggr_job(self, node: FlockNode) -> Future[Result]:
+        # Select worker nodes.
         children = list(self.flock.children(node.idx))
-        aggr_state = AggrState(node.idx, children, deepcopy(self.global_module))
+        # aggr_state = AggrState(node.idx, children, deepcopy(self.global_module))
+        aggr_state = AggrState(node.idx, children, None)
         selected_workers = self.strategy.client_strategy.select_worker_nodes(
             aggr_state, children, self.seed
         )
         self.seed += 1
-
         selected_worker_futures = [
             self.step(node=worker, parent=node) for worker in selected_workers
         ]
 
-        # This partial function (`subtree_done_cbk`) will perform the aggregation only
-        # when all futures in `children_futures` has completed. This partial function
-        # will be added as a callback which is run after the completion of each child
-        # future. But, it will only perform aggregation once since only the last future
-        # to be completed will activate the conditional.
+        # Set callback for kick-starting the aggregation function when children nodes complete.
         future: Future[Result] = Future()
         job = AggregateJob()
-        subtree_done_cbk = functools.partial(
-            self.aggr_callback,
+        finished_children_callback = functools.partial(
+            all_child_futures_finished_cbk,
             job,
             future,
             children,
             selected_worker_futures,
-            deepcopy(self.global_module),
+            # self.global_module,
             node,
             self.runtime,
             self.strategy.aggr_strategy,
         )
         for child_fut in selected_worker_futures:
-            child_fut.add_done_callback(subtree_done_cbk)
+            child_fut.add_done_callback(finished_children_callback)
 
         return future
 
@@ -174,13 +163,15 @@ class SyncProcess(Process):
     def submit_worker_job(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
         job = LocalTrainJob()
         data = self.dataset
+        worker_strategy = self.strategy.worker_strategy
+        trainer_strategy = self.strategy.trainer_strategy
         return self.runtime.submit(
             job,
             node=node,
             parent=parent,
-            global_model=deepcopy(self.global_module),
-            worker_strategy=self.strategy.worker_strategy,
-            trainer_strategy=self.strategy.trainer_strategy,
+            global_model=self.runtime.proxy(deepcopy(self.global_module)),
+            worker_strategy=worker_strategy,
+            trainer_strategy=trainer_strategy,
             dataset=self.runtime.proxy(data),
             module_state_dict=self.runtime.proxy(self.params),
         )
@@ -194,11 +185,10 @@ class SyncProcess(Process):
             job,
             node=node,
             parent=parent,
-            global_model=deepcopy(self.global_module),
+            global_model=self.runtime.proxy(deepcopy(self.global_module)),
             worker_strategy=self.strategy.worker_strategy,
             trainer_strategy=self.strategy.trainer_strategy,
             dataset=self.runtime.proxy(data),
             module_state_dict=self.runtime.proxy(self.params),
         )
-        print("Returning worker future")
         return future
