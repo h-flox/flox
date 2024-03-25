@@ -41,7 +41,7 @@ def all_child_futures_finished_cbk(
             node=node,
             children=children,
             aggr_strategy=aggr_strategy,
-            results=children_results,
+            results=runtime.proxy(children_results),
         )
         callback = functools.partial(set_parent_future, parent_future)
         future.add_done_callback(callback)
