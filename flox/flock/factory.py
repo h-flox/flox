@@ -105,21 +105,23 @@ def create_hierarchical_flock(
     return Flock(flock)
 
 
-def balanced_tree(branching_factor: int, height: int, create_using=None):
-    tree = nx.balanced_tree(branching_factor, height, create_using)
+def created_balanced_hierarchical_flock(branching_factor: int, height: int):
+    tree = nx.balanced_tree(branching_factor, height, create_using=nx.DiGraph)
     gce = "globus_compute_endpoint"
     pse = "proxystore_endpoint"
-    for node in tree.nodes:
-        num_parents = len(list(tree.predecessors(node)))
-        num_children = len(list(tree.predecessors(node)))
+    for node_id, node_data in tree.nodes(data=True):
+        num_parents = len(list(tree.predecessors(node_id)))
+        num_children = len(list(tree.successors(node_id)))
+
         if num_parents == 0:
-            node["kind"] = NodeKind.LEADER
+            node_data["kind"] = NodeKind.LEADER
         elif num_children == 0:
-            node["kind"] = NodeKind.WORKER
+            node_data["kind"] = NodeKind.WORKER
         else:
-            node["kind"] = NodeKind.AGGREGATOR
-        node[gce] = None
-        node[pse] = None
+            node_data["kind"] = NodeKind.AGGREGATOR
+        node_data[gce] = None
+        node_data[pse] = None
+
     return Flock(tree)
 
 

@@ -199,8 +199,10 @@ class SyncProcessV2(Process):
 
         if self.debug_mode:
             job = DebugLocalTrainJob()
+            dataset = None
         else:
             job = LocalTrainJob()
+            dataset = self.runtime.proxy(self.dataset)
 
         return self.runtime.submit(
             job,
@@ -209,7 +211,7 @@ class SyncProcessV2(Process):
             global_model=self.runtime.proxy(deepcopy(self.global_model)),
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,
-            dataset=self.runtime.proxy(self.dataset),
+            dataset=dataset,
             module_state_dict=self.runtime.proxy(self.params),
         )
 
