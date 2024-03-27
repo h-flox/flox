@@ -19,7 +19,7 @@ from flox.runtime.process.process_async import AsyncProcess
 from flox.runtime.process.process_sync import SyncProcess
 from flox.runtime.process.process_sync_v2 import SyncProcessV2
 from flox.runtime.runtime import Runtime
-from flox.runtime.transfer import BaseTransfer
+from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
@@ -81,10 +81,11 @@ def federated_fit(
     """
     launcher_cfg = dict() if launcher_cfg is None else launcher_cfg
     launcher = create_launcher(launcher_kind, **launcher_cfg)
-    if launcher_kind == "globus_compute":
+    if isinstance(launcher, GlobusComputeLauncher):
         transfer = ProxyStoreTransfer(flock)
     else:
         transfer = BaseTransfer()
+
     runtime = Runtime(launcher, transfer)
     parsed_strategy = parse_strategy_args(
         strategy=strategy,
