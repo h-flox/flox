@@ -10,7 +10,8 @@ import pandas as pd
 from tqdm import tqdm
 
 from flox.flock import FlockNode, NodeKind, AggrState
-from flox.jobs import DebugLocalTrainJob, LocalTrainJob, AggregateJob
+from flox.jobs import LocalTrainJob, AggregateJob
+from flox.jobs.local_training import pure_debug_train_job
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
 from flox.runtime.process.process import Process
 from flox.runtime.process.testing import test_model
@@ -195,7 +196,9 @@ class SyncProcessV2(Process):
         self.log(f"Preparing to submit WORKER task on node {node.idx}.")
 
         if self.debug_mode:
-            job = DebugLocalTrainJob()
+            # job = DebugLocalTrainJob()
+            self.log("Using debug job, `pure_debug_train_job`.")
+            job = pure_debug_train_job
             dataset = None
         else:
             job = LocalTrainJob()
