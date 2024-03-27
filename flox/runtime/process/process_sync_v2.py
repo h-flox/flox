@@ -10,7 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from flox.flock import FlockNode, NodeKind, AggrState
-from flox.jobs import LocalTrainJob, AggregateJob
+from flox.jobs import LocalTrainJob, AggregateJob, DebugLocalTrainJob
 from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
 from flox.runtime.process.process import Process
 from flox.runtime.process.testing import test_model
