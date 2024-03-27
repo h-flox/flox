@@ -172,12 +172,13 @@ class SyncProcessV2(Process):
         if children is None:
             children = self.flock.children(node)
 
+        job = AggregateJob()
         state = AggrState(node.idx, children, None)
         children_futures = [self.step(child, node) for child in children]
         future: Future[Result] = Future()
         finished_children_cbk = functools.partial(
             all_child_futures_finished_cbk,
-            AggregateJob(),
+            job.__call__,
             future,
             children,
             children_futures,
@@ -201,7 +202,7 @@ class SyncProcessV2(Process):
             dataset = self.runtime.proxy(self.dataset)
 
         return self.runtime.submit(
-            job,
+            job.__call__,
             node=node,
             parent=parent,
             global_model=self.runtime.proxy(deepcopy(self.global_model)),
