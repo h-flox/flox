@@ -54,12 +54,7 @@ class SyncProcessV2(Process):
         self._selected_children = {}
         self.logging = logging
 
-    def start(
-        self,
-        node: FlockNode | None = None,
-        parent: FlockNode | None = None,
-        debug_mode: bool = False,
-    ) -> tuple[FloxModule, pd.DataFrame]:
+    def start(self, debug_mode: bool = False) -> tuple[FloxModule, pd.DataFrame]:
         if debug_mode:
             self.debug_mode = debug_mode
             if self.global_model is None:

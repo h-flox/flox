@@ -133,7 +133,7 @@ def federated_fit(
             raise ValueError("Illegal value for the strategy `kind` parameter.")
 
     start_time = datetime.datetime.now()
-    trained_module, history = process.start(debug_mode)
+    trained_module, history = process.start(debug_mode=debug_mode)
     try:
         history["train/rel_time"] = history["train/time"] - start_time
         history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
