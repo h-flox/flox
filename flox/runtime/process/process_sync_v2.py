@@ -53,6 +53,7 @@ class SyncProcessV2(Process):
         self.debug_mode = debug_mode
         self._selected_children = {}
         self.logging = logging
+        self.params = None
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, pd.DataFrame]:
         if debug_mode:
@@ -204,10 +205,10 @@ class SyncProcessV2(Process):
             node=node,
             parent=parent,
             global_model=self.runtime.proxy(deepcopy(self.global_model)),
+            module_state_dict=self.runtime.proxy(self.params),
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,
             dataset=dataset,
-            module_state_dict=self.runtime.proxy(self.params),
         )
 
     @property

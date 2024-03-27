@@ -171,10 +171,10 @@ class DebugLocalTrainJob(TrainableJob):
             "mode": "debug",
         }
         history_df = pandas.DataFrame.from_dict(history)
-        result = JobResult(
-            node_state, node.idx, node.kind, global_model.state_dict(), history_df
-        )
-        ts = str(datetime.now()).split(".")[0]
+        # result = JobResult(
+        #     node_state, node.idx, node.kind, global_model.state_dict(), history_df
+        # )
+        result = JobResult(node_state, node.idx, node.kind, np.array([0]), history_df)
         return transfer.report(result)
 
     @property
