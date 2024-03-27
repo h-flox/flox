@@ -56,6 +56,7 @@ def federated_fit(
     launcher_kind: str = "process",
     launcher_cfg: dict[str, t.Any] | None = None,
     debug_mode: bool = False,
+    logging: bool = False,
 ) -> tuple[FloxModule, DataFrame]:
     """
 
@@ -115,6 +116,7 @@ def federated_fit(
                 module=module,
                 dataset=datasets,
                 strategy=parsed_strategy,
+                logging=logging,
             )
 
         case "async":
