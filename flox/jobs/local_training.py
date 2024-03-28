@@ -171,10 +171,10 @@ class DebugLocalTrainJob(TrainableJob):
             "mode": "debug",
         }
         history_df = pandas.DataFrame.from_dict(history)
-        # result = JobResult(
-        #     node_state, node.idx, node.kind, global_model.state_dict(), history_df
-        # )
-        result = JobResult(node_state, node.idx, node.kind, np.array([0]), history_df)
+        result = JobResult(
+            node_state, node.idx, node.kind, global_model.state_dict(), history_df
+        )
+        # result = JobResult(node_state, node.idx, node.kind, np.array([0]), history_df)
         return transfer.report(result)
 
     @property
@@ -182,58 +182,61 @@ class DebugLocalTrainJob(TrainableJob):
         return "DebugLocalTrainJob"
 
 
-def pure_debug_train_job(
-    node: FlockNode,
-    parent: FlockNode,
-    global_model: FloxModule,
-    module_state_dict: Params,
-    dataset: FloxDataset,
-    transfer: BaseTransfer,
-    worker_strategy: WorkerStrategy,
-    trainer_strategy: TrainerStrategy,
-    **train_hyper_params,
-):  # -> Result:
-    """
-
-    Args:
-        node ():
-        transfer ():
-        parent ():
-        strategy ():
-        module (FloxModule): ...
-
-    Returns:
-
-    """
-
-    from datetime import datetime
-
-    import numpy as np
-    import pandas
-
-    from flox.flock.states import WorkerState
-    from flox.runtime import JobResult
-
-    local_module = global_model
-    node_state = WorkerState(
-        node.idx,
-        global_model=local_module,
-        local_model=local_module,
-    )
-    history = {
-        "node/idx": [node.idx],
-        "node/kind": [node.kind.to_str()],
-        "parent/idx": [parent.idx],
-        "parent/kind": [parent.kind.to_str()],
-        "train/loss": [np.nan],
-        "train/epoch": [np.nan],
-        "train/batch_idx": [np.nan],
-        "train/time": [datetime.now()],
-        "mode": "debug",
-    }
-    history_df = pandas.DataFrame.from_dict(history)
-    result = JobResult(
-        node_state, node.idx, node.kind, global_model.state_dict(), history_df
-    )
-    # result = JobResult(node_state, node.idx, node.kind, np.array([0]), history_df)
-    return transfer.report(result)
+# def pure_debug_train_job(
+#     node: FlockNode,
+#     parent: FlockNode,
+#     global_model: FloxModule,
+#     module_state_dict: Params,
+#     dataset: FloxDataset,
+#     transfer: BaseTransfer,
+#     worker_strategy: WorkerStrategy,
+#     trainer_strategy: TrainerStrategy,
+#     **train_hyper_params,
+# ):  # -> Result:
+#     """
+#
+#     Args:
+#         node ():
+#         transfer ():
+#         parent ():
+#         strategy ():
+#         module (FloxModule): ...
+#
+#     Returns:
+#
+#     """
+#
+#     from datetime import datetime
+#
+#     import numpy as np
+#     import pandas
+#
+#     from flox.flock.states import WorkerState
+#     from flox.runtime import JobResult
+#
+#     local_module = global_model
+#     node_state = WorkerState(
+#         node.idx,
+#         global_model=local_module,
+#         local_model=local_module,
+#     )
+#     history = {
+#         "node/idx": [node.idx],
+#         "node/kind": [node.kind.to_str()],
+#         "parent/idx": [parent.idx],
+#         "parent/kind": [parent.kind.to_str()],
+#         "train/loss": [np.nan],
+#         "train/epoch": [np.nan],
+#         "train/batch_idx": [np.nan],
+#         "train/time": [datetime.now()],
+#         "mode": "debug",
+#     }
+#     history_df = pandas.DataFrame.from_dict(history)
+#
+#     print(f"\n\nlocal_training: {global_model=}\n\n")
+#
+#     result = JobResult(
+#         node_state, node.idx, node.kind, global_model.state_dict(), history_df
+#     )
+#     # result = JobResult(node_state, node.idx, node.kind, np.array([0]), history_df)
+#     return transfer.report(result)

@@ -142,7 +142,7 @@ if __name__ == "__main__":
     caffeine.on(display=False)
     worker_nodes = 100  # 000
     main(
-        num_global_rounds=5,  # 200,
+        num_global_rounds=1,  # 200,
         num_worker_nodes=worker_nodes,
         # labels_alpha=0.1,
         # samples_alpha=1000.0,  # 1.0,

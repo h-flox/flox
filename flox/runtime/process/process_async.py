@@ -62,11 +62,11 @@ class AsyncProcess(Process):
         self.strategy = strategy
         self.state_dict = None
         self.debug_mode = False
-        self.params = None
+        self.params = self.global_model.state_dict()
 
         assert self.flock.leader is not None
         self.state = AggrState(
-            self.flock.leader.idx, flock.children(flock.leader), module
+            self.flock.leader.idx, flock.children(flock.leader), self.global_model
         )
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:
@@ -76,6 +76,7 @@ class AsyncProcess(Process):
                 from flox.runtime.process.debug_utils import DebugModule
 
                 self.global_model = DebugModule()
+                self.params = self.global_model.state_dict()
                 self.state.global_model = self.global_model
 
         if not self.flock.two_tier:
@@ -89,35 +90,22 @@ class AsyncProcess(Process):
         for worker in self.flock.workers:
             worker_rounds[worker.idx] = 0
             worker_states[worker.idx] = WorkerState(worker.idx)
-            worker_state_dicts[worker.idx] = self.global_model.state_dict()
+            worker_state_dicts[worker.idx] = deepcopy(self.global_model.state_dict())
 
-        futures = set()
         progress_bar = tqdm(
             total=self.num_global_rounds * self.flock.number_of_workers,
             desc="federated_fit::async",
         )
-
-        for worker in self.flock.workers:
-            # data = self.dataset[worker.idx]
-            job = LocalTrainJob()
-            data = self.dataset  # self.fetch_worker_data(worker)
-            fut = self.runtime.submit(
-                job,
-                node=worker,
-                parent=self.flock.leader,
-                dataset=self.runtime.proxy(data),
-                global_model=self.global_model,
-                module_state_dict=self.runtime.proxy(self.global_model.state_dict()),
-                worker_strategy=self.strategy.worker_strategy,
-                trainer_strategy=self.strategy.trainer_strategy,
-            )
-            futures.add(fut)
+        futures = {
+            self._worker_tasks(worker, self.flock.leader)
+            for worker in self.flock.workers
+        }
 
         while futures:
             dones, futures = wait(futures, return_when=FIRST_COMPLETED)
             if dones.intersection(futures):
                 raise ValueError(
-                    "Overlap between 'done' futures and 'to-be-done' futures."
+                    "Overlap between 'done' futures and 'to-be-done' Futures."
                 )
 
             if len(dones) == 1:
@@ -133,52 +121,30 @@ class AsyncProcess(Process):
                 worker_states[worker.idx] = result.node_state
                 worker_state_dicts[worker.idx] = result.params
 
-                print(result.params)
-
                 result.history["round"] = worker_rounds[result.node_idx]
                 histories.append(result.history)
-                avg_state_dict = self.strategy.aggr_strategy.aggregate_params(
+                avg_params = self.strategy.aggr_strategy.aggregate_params(
                     self.state,
                     worker_states,
                     worker_state_dicts,
                     last_updated_node=worker.idx,
                 )
-                self.global_model.load_state_dict(avg_state_dict)
-                self.params = avg_state_dict
+                self.global_model.load_state_dict(avg_params)
+                self.params = avg_params
                 # data = self.dataset[worker.idx]
 
-                if not debug_mode:
+                if not self.debug_mode:
                     test_acc, test_loss = test_model(self.global_model)
                     result.history["test/acc"] = test_acc
                     result.history["test/loss"] = test_loss
 
                 fut = self._worker_tasks(worker, self.flock.leader)
-
-                # job = LocalTrainJob()
-                # data = self.dataset  # self.dataset.load(worker)
-                # fut = self.runtime.submit(
-                #     job,
-                #     node=worker,
-                #     parent=self.flock.leader,
-                #     dataset=self.runtime.proxy(data),
-                #     global_model=self.global_model,
-                #     module_state_dict=self.runtime.proxy(
-                #         self.global_model.state_dict()
-                #     ),
-                #     worker_strategy=self.strategy.worker_strategy,
-                #     trainer_strategy=self.strategy.trainer_strategy,
-                # )
-                # futures.append(fut)
                 futures.add(fut)
                 worker_rounds[result.node_idx] += 1
                 progress_bar.update()
 
         # TODO: Obviously fix this.
         return self.global_model, pd.concat(histories)
-
-    def step(self):
-        # TODO
-        pass
 
     def _worker_tasks(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
         if self.debug_mode:

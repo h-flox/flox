@@ -29,10 +29,13 @@ class FedAsyncAggr(DefaultAggregatorStrategy):
         last_updated_params = children_state_dicts[last_updated]
 
         aggr_params = []
+        print(len(global_model_params), len(last_updated_params))
         for param in global_model_params:
-            # print(state.global_model)
-            # print(param)
-            w0, w = global_model_params[param], last_updated_params[param]
+            print(param)
+            w0, w = (
+                global_model_params[param].detach(),
+                last_updated_params[param].detach(),
+            )
             aggr_w = w0 * (1 - self.alpha) + w * self.alpha
             aggr_params.append((param, aggr_w))
 
