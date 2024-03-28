@@ -121,7 +121,7 @@ class SyncProcessV2(Process):
         cli_strategy = self.client_strategy
         children = list(self.flock.children(node.idx))
         workers = list(self.flock.workers)
-        state = AggrState(node.idx, children, None)  # self.global_module)
+        state = AggrState(node.idx, children, None)  # self.global_model)
 
         # STEP 1: Select worker nodes to train the neural network. Then trace parent nodes back to leader.
         self.log("Leader is selecting worker nodes.")

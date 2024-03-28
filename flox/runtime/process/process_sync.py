@@ -128,7 +128,7 @@ class SyncProcess(Process):
     def submit_aggr_job(self, node: FlockNode) -> Future[Result]:
         # Select worker nodes.
         children = list(self.flock.children(node.idx))
-        # aggr_state = AggrState(node.idx, children, deepcopy(self.global_module))
+        # aggr_state = AggrState(node.idx, children, deepcopy(self.global_model))
         aggr_state = AggrState(node.idx, children, None)
         selected_workers = self.strategy.client_strategy.select_worker_nodes(
             aggr_state, children, self.seed
@@ -147,7 +147,7 @@ class SyncProcess(Process):
             future,
             children,
             selected_worker_futures,
-            # self.global_module,
+            # self.global_model,
             node,
             self.runtime,
             self.strategy.aggr_strategy,
