@@ -30,7 +30,7 @@ class JobResult:
     """The kind of the ``Flock`` node."""
 
     params: Params
-    """The ``Params`` of the PyTorch global_module (either aggregated or trained locally)."""
+    """The ``Params`` of the PyTorch global_model (either aggregated or trained locally)."""
 
     history: DataFrame
     """The history of results."""
