@@ -189,6 +189,6 @@ class SyncProcess(Process):
             worker_strategy=self.strategy.worker_strategy,
             trainer_strategy=self.strategy.trainer_strategy,
             dataset=self.runtime.proxy(data),
-            module_state_dict=self.runtime.proxy(self.params),
+            module_state_dict=None,  # self.runtime.proxy(self.params),
         )
         return future

@@ -209,7 +209,7 @@ class SyncProcessV2(Process):
             node=node,
             parent=parent,
             global_model=self.runtime.proxy(deepcopy(self.global_model)),
-            module_state_dict=self.runtime.proxy(self.params),
+            module_state_dict=None,  # self.runtime.proxy(self.params),
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,
             dataset=dataset,
