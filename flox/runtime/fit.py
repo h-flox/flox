@@ -19,7 +19,7 @@ from flox.runtime.process.process_async import AsyncProcess
 from flox.runtime.process.process_sync import SyncProcess
 from flox.runtime.process.process_sync_v2 import SyncProcessV2
 from flox.runtime.runtime import Runtime
-from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer
+from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer, RedisTransfer
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
@@ -57,6 +57,7 @@ def federated_fit(
     launcher_cfg: dict[str, t.Any] | None = None,
     debug_mode: bool = False,
     logging: bool = False,
+    redis_ip_address: str = '127.0.0.1',
 ) -> tuple[FloxModule, DataFrame]:
     """
 
@@ -83,6 +84,9 @@ def federated_fit(
     launcher = create_launcher(launcher_kind, **launcher_cfg)
     if isinstance(launcher, GlobusComputeLauncher):
         transfer = ProxyStoreTransfer(flock)
+    elif isinstance(launcher, ParslLauncher):
+        print(f"Yadu : setting RedisTransfer to {redis_ip_address}")
+        transfer = RedisTransfer(ip_address=redis_ip_address)
     else:
         transfer = BaseTransfer()
 
