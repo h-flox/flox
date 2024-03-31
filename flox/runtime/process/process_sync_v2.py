@@ -115,7 +115,7 @@ class SyncProcessV2(Process):
         elif isinstance(node, FlockNode):
             return node
         else:
-            raise ValueError
+            raise ValueError("SyncProcessV2._handle_node(): Illegal value for {node=}")
 
     def _leader_tasks(self, node: FlockNode) -> Future[Result]:
         cli_strategy = self.client_strategy
@@ -199,17 +199,18 @@ class SyncProcessV2(Process):
             self.log("Using debug job, `pure_debug_train_job`.")
             # job = pure_debug_train_job
             dataset = None
+            model_state_dict = None
         else:
             job = LocalTrainJob()
             dataset = self.runtime.proxy(self.dataset)
+            model_state_dict = self.runtime.proxy(self.params)
 
         return self.runtime.submit(
-            # job.__call__,
             job,
             node=node,
             parent=parent,
             global_model=self.runtime.proxy(deepcopy(self.global_model)),
-            module_state_dict=None,  # self.runtime.proxy(self.params),
+            module_state_dict=model_state_dict,
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,
             dataset=dataset,

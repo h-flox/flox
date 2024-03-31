@@ -63,8 +63,8 @@ class SyncProcess(Process):
         # TODO: Add description option for the progress bar when it's training.
         #  Also, add a configurable stop condition
 
-    def start(self, testing_mode: bool = False) -> tuple[FloxModule, DataFrame]:
-        if testing_mode:
+    def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:
+        if debug_mode:
             from flox.runtime.process.debug_utils import DebugModule
 
             self.debug_mode = True
@@ -78,7 +78,7 @@ class SyncProcess(Process):
             step_result = self.step().result()
             step_result.history["round"] = round_num
 
-            if not testing_mode:
+            if not debug_mode:
                 test_acc, test_loss = test_model(self.global_module)
                 step_result.history["test/acc"] = test_acc
                 step_result.history["test/loss"] = test_loss

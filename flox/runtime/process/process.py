@@ -11,7 +11,7 @@ class Process(ABC):
     dataset: FloxDataset
 
     @abstractmethod
-    def start(self, testing_mode: bool = False) -> tuple[FloxModule, DataFrame]:
+    def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:
         """Starts the FL process.
 
         Returns:
