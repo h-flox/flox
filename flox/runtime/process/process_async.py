@@ -11,7 +11,6 @@ from tqdm import tqdm
 from flox.flock.states import AggrState, NodeState, WorkerState
 from flox.jobs import LocalTrainJob, DebugLocalTrainJob
 from flox.runtime.process.process import Process
-from flox.runtime.process.testing import test_model
 
 if typing.TYPE_CHECKING:
     from flox.data import FloxDataset
@@ -129,14 +128,17 @@ class AsyncProcess(Process):
                     worker_state_dicts,
                     last_updated_node=worker.idx,
                 )
+                # avg_params = (
+                #     self.global_model.state_dict()
+                # )  # FIXME: Undo since this is just for testing
+
                 self.global_model.load_state_dict(avg_params)
                 self.params = avg_params
-                # data = self.dataset[worker.idx]
 
-                if not self.debug_mode:
-                    test_acc, test_loss = test_model(self.global_model)
-                    result.history["test/acc"] = test_acc
-                    result.history["test/loss"] = test_loss
+                # if not self.debug_mode:
+                #     test_acc, test_loss = test_model(self.global_model)
+                #     result.history["test/acc"] = test_acc
+                #     result.history["test/loss"] = test_loss
 
                 fut = self._worker_tasks(worker, self.flock.leader)
                 futures.add(fut)

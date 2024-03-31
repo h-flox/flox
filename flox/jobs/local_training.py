@@ -46,10 +46,13 @@ class LocalTrainJob(TrainableJob):
 
         from torch.utils.data import DataLoader
         from copy import deepcopy
+        from datetime import datetime
 
         from flox.flock.states import WorkerState
         from flox.nn.model_trainer import Trainer
         from flox.runtime import JobResult
+
+        training_start = datetime.now()
 
         # global_state_dict = global_model.state_dict()
         local_model = deepcopy(global_model)
@@ -102,6 +105,8 @@ class LocalTrainJob(TrainableJob):
         ################################################################################
         # TRAINING DATA POST-PROCESSING
         ################################################################################
+        history["training_start"] = training_start
+        history["training_end"] = datetime.now()
         history["node/idx"] = node.idx
         history["node/kind"] = node.kind.to_str()
         history["parent/idx"] = parent.idx
