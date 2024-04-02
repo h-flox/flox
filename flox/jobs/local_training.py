@@ -52,12 +52,17 @@ class LocalTrainJob(TrainableJob):
         from flox.nn.model_trainer import Trainer
         from flox.runtime import JobResult
 
+        from proxystore.proxy import extract, Proxy
+
         training_start = datetime.now()
 
         # global_state_dict = global_model.state_dict()
         local_model = deepcopy(global_model)
 
         # local_model.to("mps")  # NOTE: Parameterize LATER
+
+        if isinstance(module_state_dict, Proxy):
+            model_state_dict = extract(module_state_dict)
 
         global_model.load_state_dict(module_state_dict)
         local_model.load_state_dict(module_state_dict)
