@@ -21,7 +21,6 @@ class RedisTransfer(BaseTransfer):
         self, ip_address, name: str = "default"
     ) -> None:  # , store: str = "endpoint",):
 
-
         self.connector = RedisConnector(hostname=ip_address, port=6379)
         store = Store(name=name, connector=self.connector)
         self.config = store.config()
@@ -31,4 +30,6 @@ class RedisTransfer(BaseTransfer):
         return Store.from_config(self.config).proxy(data)
 
     def proxy(self, data: typing.Any) -> Proxy[typing.Any]:
-        return Store.from_config(self.config).proxy(data)
+        return Store.from_config(self.config).proxy(
+            data, populate_target=True, evict=True
+        )
