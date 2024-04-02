@@ -62,7 +62,7 @@ class LocalTrainJob(TrainableJob):
         # local_model.to("mps")  # NOTE: Parameterize LATER
 
         if isinstance(module_state_dict, Proxy):
-            model_state_dict = extract(module_state_dict)
+            module_state_dict = extract(module_state_dict)
 
         global_model.load_state_dict(module_state_dict)
         local_model.load_state_dict(module_state_dict)
