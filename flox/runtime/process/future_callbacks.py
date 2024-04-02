@@ -26,11 +26,11 @@ def all_child_futures_finished_cbk(
     _: Future,
 ) -> None:
     """
-    This partial function (`subtree_done_cbk`) will perform the aggregation only
-    when all futures in `children_futures` has completed. This partial function
-    will be added as a callback which is run after the completion of each child
-    future. But, it will only perform aggregation once since only the last future
-    to be completed will activate the conditional.
+    This partial function (`all_child_futures_finished_cbk`) will perform the
+    aggregation only when all futures in `children_futures` has completed. This
+    partial function will be added as a callback which is run after the completion
+    of each child future. But, it will only perform aggregation once since only the
+    last future to be completed will activate the conditional.
     """
     if all([child_future.done() for child_future in selected_children_futures]):
         # TODO: We need to add error-handling for cases when the

@@ -178,7 +178,7 @@ class SyncProcessV2(Process):
         future: Future[Result] = Future()
         finished_children_cbk = functools.partial(
             all_child_futures_finished_cbk,
-            job.__call__,
+            job,
             future,
             children,
             children_futures,
