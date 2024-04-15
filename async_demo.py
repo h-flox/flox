@@ -7,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
+from flox.flock.factory import create_standard_flock
+
 logging.basicConfig(
     format="(%(levelname)s  - %(asctime)s) ❯ %(message)s", level=logging.INFO
 )
@@ -21,7 +23,6 @@ with warnings.catch_warnings():
     from torchvision.datasets import FashionMNIST
 
     from flox.data.utils import federated_split
-    from flox.flock.factory import create_hierarchical_flock
     from flox.strategies import load_strategy
     from flox import Flock
     from flox.data import FloxDataset
@@ -52,10 +53,12 @@ def train_experiment(
     _, result = flox.federated_fit(
         flock,
         module,
+        # None,
         fed_data,
         num_global_rounds=config.num_global_rounds,
         strategy=strategy,
-        kind="sync-v2",
+        # kind="sync-v2",
+        kind="async",
         debug_mode=False,
         launcher_kind="process",
         # launcher_kind="thread",
@@ -68,8 +71,8 @@ def train_experiment(
 
 def main(**kwargs):
     config = argparse.Namespace(**kwargs)
-    # flock = create_standard_flock(num_workers=config.num_worker_nodes)
-    flock = create_hierarchical_flock(config.num_worker_nodes, [2, 3])
+    flock = create_standard_flock(num_workers=config.num_worker_nodes)
+    # flock = create_hierarchical_flock(config.num_worker_nodes, [2, 3])
     # flock.draw()
     # plt.show()
     logging.info(f"Flock is created with {flock.number_of_workers} workers.")
@@ -92,7 +95,8 @@ def main(**kwargs):
     # strategies = ["fedavg"]
     # strategies = ["fedprox", "fedavg", "fedsgd"]
     # strategies = ["fedprox", "fedavg"]  # NOTE: This one.
-    strategies = ["fedavg"]
+    # strategies = ["fedavg"]
+    strategies = ["fedasync"]
 
     results = []
     label_alpha_list = [0.01, 1000.0]
@@ -122,7 +126,7 @@ def main(**kwargs):
     # Save data results and the config.
     timestamp = str(datetime.datetime.now())
     timestamp = timestamp.split(".")[0]
-    out_dir = Path(f"experiments/aggr_comparison/{timestamp}/")
+    out_dir = Path(f"experiments/async_demo/{timestamp}/")
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
 
@@ -138,7 +142,7 @@ if __name__ == "__main__":
     caffeine.on(display=False)
     worker_nodes = 100  # 000
     main(
-        num_global_rounds=5,  # 200,
+        num_global_rounds=1,  # 200,
         num_worker_nodes=worker_nodes,
         # labels_alpha=0.1,
         # samples_alpha=1000.0,  # 1.0,

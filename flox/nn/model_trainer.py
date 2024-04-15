@@ -5,7 +5,6 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-from flox.const import DEVICE
 from flox.flock.states import WorkerState
 from flox.nn import FloxModule
 from flox.nn.logger.csv import CSVLogger
@@ -17,6 +16,7 @@ class Trainer:
         self,
         trainer_strategy: TrainerStrategy,
         log_every_n_batches: int = 1,  # 10,
+        device=torch.device("cpu"),
     ):
         """
         Note:
@@ -27,14 +27,7 @@ class Trainer:
         self.trainer_strategy = trainer_strategy
         self.logger = CSVLogger()
         self.log_every_n_batches = log_every_n_batches
-
-        # self.device = "cpu"
-        # if torch.cuda.is_available():
-        #     self.device = torch.device("cuda")
-        # elif torch.backends.mps.is_available():
-        #     self.device = torch.device("mps")
-        # else:
-        #     self.device = torch.device("cpu")
+        self.device = device
 
     def fit(
         self,
@@ -47,7 +40,7 @@ class Trainer:
         valid_ckpt_path: Path | str | None = None,
     ) -> pd.DataFrame:
         self.logger.clear()
-        model.to(DEVICE)
+        model.to(self.device)
         with torch.set_grad_enabled(True):
             for epoch in range(num_epochs):
                 avg_loss = self._epoch(

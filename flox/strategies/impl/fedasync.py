@@ -30,7 +30,10 @@ class FedAsyncAggr(DefaultAggregatorStrategy):
 
         aggr_params = []
         for param in global_model_params:
-            w0, w = global_model_params[param], last_updated_params[param]
+            w0, w = (
+                global_model_params[param].detach(),
+                last_updated_params[param].detach(),
+            )
             aggr_w = w0 * (1 - self.alpha) + w * self.alpha
             aggr_params.append((param, aggr_w))
 

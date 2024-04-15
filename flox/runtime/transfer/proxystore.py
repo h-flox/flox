@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+import cloudpickle
 from proxystore.connectors.endpoint import EndpointConnector
 from proxystore.store import Store
 
@@ -32,7 +33,12 @@ class ProxyStoreTransfer(BaseTransfer):
             endpoints.append(node.proxystore_endpoint)
 
         self.connector = EndpointConnector(endpoints=endpoints)
-        store = Store(name=name, connector=self.connector)
+        store = Store(
+            name=name,
+            connector=self.connector,
+            serializer=cloudpickle.dumps,
+            deserializer=cloudpickle.loads,
+        )
         self.config = store.config()
 
     # TODO: Revisit this design to see if we need separate methods for `report` and `proxy`.

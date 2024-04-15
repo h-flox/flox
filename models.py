@@ -3,7 +3,6 @@ import torchmetrics
 from torch import nn
 from torch.nn import functional as F
 
-from flox.const import DEVICE
 from flox.nn import FloxModule
 
 DEFAULT_LR = 0.01
@@ -22,33 +21,21 @@ class SmallModel(FloxModule):
             nn.Linear(512, 10),
         )
 
-        # if device is not None:
-        #     self.device = torch.device(device)
-        # elif torch.cuda.is_available():
-        #     self.device = torch.device("cuda")
-        # elif torch.backends.mps.is_available():
-        #     self.device = torch.device("mps")
-        # else:
-        #     self.device = torch.device("cpu")
-
         self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
         self.last_accuracy = None
 
     def forward(self, x):
-        # x = x.to(self.device)
-        # x = x.to(DEVICE)
         x = self.flatten(x)
-        return self.linear_stack(x)
+        x = self.linear_stack(x)
+        return x
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
-        inputs = inputs.to(DEVICE)
-        targets = targets.to(DEVICE)
+        inputs = inputs.to("cpu")
+        targets = targets.to("cpu")
         preds = self(inputs)
         loss = F.cross_entropy(preds, targets)
-
         self.last_accuracy = self.accuracy(preds, targets)
-
         return loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
@@ -66,24 +53,13 @@ class SmallConvModel(FloxModule):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
-        # if device is not None:
-        #     self.device = torch.device(device)
-        # elif torch.cuda.is_available():
-        #     self.device = torch.device("cuda")
-        # elif torch.backends.mps.is_available():
-        #     self.device = torch.device("mps")
-        # else:
-        #     self.device = torch.device("cpu")
-
         self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=10)
         self.last_accuracy = None
 
     def forward(self, x):
-        # x = x.to(self.device))
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)  # flatten all dimensions except batch
-        # print(f"{x.shape=} (after flatten)")
+        x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -91,14 +67,9 @@ class SmallConvModel(FloxModule):
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
-        # print(f"{inputs.shape=}")
-        inputs = inputs.to(DEVICE)
-        targets = targets.to(DEVICE)
-        preds = self(inputs)
+        preds = self.forward(inputs)
         loss = F.cross_entropy(preds, targets)
-
         self.last_accuracy = self.accuracy(preds, targets)
-
         return loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:

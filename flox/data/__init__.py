@@ -1,7 +1,7 @@
 """
-This global_module implements several functions that can be used to create `FloxDataset` objects. These are used
+This global_model implements several functions that can be used to create `FloxDataset` objects. These are used
 to do local simulations (or remote simulations) with benchmark Machine Learning data (e.g., `MNIST`, `CIFAR-10`).
-More specifically, this global_module aims to make it easy to launch FL experiments with different statistical data
+More specifically, this global_model aims to make it easy to launch FL experiments with different statistical data
 distributions.
 
 ## Kinds of Datasets in FLoX
@@ -44,7 +44,7 @@ flowchart LR
 Real-world data refer to the data that are already located on decentralized devices. In this case, the data are
 naturally already decentralized. This means the only tasks necessary are to load them into memory and preprocess the
 data before using them to train the model. The standard PyTorch ``Dataset`` object included in the ``torch.utils.data``
-global_module already does this well. So these types of use cases for FLoX users will only require a standard PyTorch
+global_model already does this well. So these types of use cases for FLoX users will only require a standard PyTorch
 ``Dataset``.
 
 Standard PyTorch data can be written using an iter-style or a map-style implementation (read more on this

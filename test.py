@@ -67,15 +67,18 @@ def main(args: argparse.Namespace):
         flock=flock,
         module=Net(),  # nathaniel-hudson: this uses a reasonable model.
         # module=None, # nathaniel-hudson: this uses a VERY small debug model.
-        datasets=fed_data,
+        # datasets=fed_data,
+        datasets=None,
         num_global_rounds=args.rounds,
         strategy="fedsgd",
         kind="sync",
         debug_mode=True,
-        launcher_kind=args.executor,
-        launcher_cfg=dict(
-            label="Expanse_CPU_Multinode",
-        ),
+        launcher_kind="process",
+        launcher_cfg={"max_workers": 5},
+        # launcher_kind=args.executor,
+        # launcher_cfg=dict(
+        #     label="Expanse_CPU_Multinode",
+        # ),
     )
 
 
@@ -92,7 +95,7 @@ if __name__ == "__main__":
     args.add_argument("--workers_nodes", "-n", type=int, default=32)
     args.add_argument("--samples_alpha", "-s", type=float, default=1000.0)
     args.add_argument("--labels_alpha", "-l", type=float, default=1000.0)
-    args.add_argument("--rounds", "-r", type=int, default=1)
+    args.add_argument("--rounds", "-r", type=int, default=10)
     args.add_argument("--root_dir", "-d", type=str, default=".")
     parsed_args = args.parse_args()
     assert parsed_args.samples_alpha > 0.0
