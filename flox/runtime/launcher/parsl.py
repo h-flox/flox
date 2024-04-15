@@ -3,7 +3,7 @@ from concurrent.futures import Future
 
 from flox.jobs import Job
 from flox.runtime.launcher.base import Launcher
-
+import time
 
 class ParslLauncher(Launcher):
     """
@@ -29,6 +29,7 @@ class ParslLauncher(Launcher):
         # Run priming job to reduce initial startup costs.
         fut = self.executor.submit(_platform_info, {})
         fut.result()
+        print(f"priming_done:{time.perf_counter()}")
 
     def submit(self, job: Job, /, **kwargs) -> Future:
         future = self.executor.submit(job, {}, **kwargs)
