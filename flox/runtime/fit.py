@@ -1,43 +1,43 @@
 import datetime
-from typing import Any
+import typing as t
 
-import numpy as np
 from pandas import DataFrame
 
+import flox.strategies as strats
 from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
-
-# from flox.run.fit_sync import sync_federated_fit
-from flox.nn.types import Kind
+from flox.nn.typing import Kind
 from flox.runtime.launcher import (
     GlobusComputeLauncher,
     Launcher,
     LocalLauncher,
     ParslLauncher,
 )
-from flox.runtime.process.proc_async import AsyncProcess
-from flox.runtime.process.proc_sync import SyncProcess
+from flox.runtime.process.process import Process
+from flox.runtime.process.process_async import AsyncProcess
+from flox.runtime.process.process_sync import SyncProcess
+from flox.runtime.process.process_sync_v2 import SyncProcessV2
 from flox.runtime.runtime import Runtime
-from flox.runtime.transfer import BaseTransfer
-from flox.strategies import Strategy
+from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer, RedisTransfer
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
-    if kind == "thread":
-        return LocalLauncher(
-            pool="thread", n_workers=launcher_cfg.get("max_workers", 3)
-        )
-    elif kind == "process":
-        return LocalLauncher(
-            pool="process", n_workers=launcher_cfg.get("max_workers", 3)
-        )
-    elif kind == "globus-compute":
-        return GlobusComputeLauncher()
-    elif kind == "parsl":
-        return ParslLauncher()
-    else:
-        raise ValueError("Illegal value for argument `kind`.")
+    match kind:
+        case "thread":
+            return LocalLauncher(
+                pool="thread", n_workers=launcher_cfg.get("max_workers", 3)
+            )
+        case "process":
+            return LocalLauncher(
+                pool="process", n_workers=launcher_cfg.get("max_workers", 3)
+            )
+        case "globus-compute":
+            return GlobusComputeLauncher()
+        case "parsl":
+            return ParslLauncher(launcher_cfg)
+        case _:
+            raise ValueError("Illegal value for argument `kind`.")
 
 
 def federated_fit(
@@ -45,11 +45,19 @@ def federated_fit(
     module: FloxModule,
     datasets: FloxDataset,
     num_global_rounds: int,
-    strategy: Strategy | str | None = None,
+    # Strategy arguments.
+    strategy: strats.Strategy | str | None = None,
+    client_strategy: strats.ClientStrategy | None = None,
+    aggr_strategy: strats.AggregatorStrategy | None = None,
+    worker_strategy: strats.WorkerStrategy | None = None,
+    trainer_strategy: strats.TrainerStrategy | None = None,
+    # Process arguments.
     kind: Kind = "sync",
-    launcher: str = "process",
-    launcher_cfg: dict[str, Any] | None = None,
+    launcher_kind: str = "process",
+    launcher_cfg: dict[str, t.Any] | None = None,
     debug_mode: bool = False,
+    logging: bool = False,
+    redis_ip_address: str = '127.0.0.1',
 ) -> tuple[FloxModule, DataFrame]:
     """
 
@@ -59,9 +67,13 @@ def federated_fit(
         datasets (FloxDataset):
         num_global_rounds (int):
         strategy (Strategy | str | None):
+        client_strategy (strats.ClientStrategy): ...
+        aggr_strategy (strats.AggregatorStrategy): ...
+        worker_strategy (strats.WorkerStrategy): ...
+        trainer_strategy (strats.TrainerStrategy): ...
         kind (Kind):
-        launcher (Where):
-        launcher_cfg (dict[str, Any] | None):
+        launcher_kind (str):
+        launcher_cfg (dict[str, t.Any] | None):
         debug_mode (bool): ...
 
     Returns:
@@ -69,36 +81,116 @@ def federated_fit(
         The history metrics from training.
     """
     launcher_cfg = dict() if launcher_cfg is None else launcher_cfg
-    launcher = create_launcher(launcher, **launcher_cfg)
-    transfer = BaseTransfer()
+    launcher = create_launcher(launcher_kind, **launcher_cfg)
+    if isinstance(launcher, GlobusComputeLauncher):
+        transfer = ProxyStoreTransfer(flock)
+    elif isinstance(launcher, ParslLauncher):
+        print(f"Yadu : setting RedisTransfer to {redis_ip_address}")
+        transfer = RedisTransfer(ip_address=redis_ip_address)
+    else:
+        transfer = BaseTransfer()
 
-    if strategy is None:
-        strategy = "fedsgd"
-    if isinstance(strategy, str):
-        strategy = Strategy.get_strategy(strategy)()
+    runtime = Runtime(launcher, transfer)
+    parsed_strategy = parse_strategy_args(
+        strategy=strategy,
+        client_strategy=client_strategy,
+        aggr_strategy=aggr_strategy,
+        worker_strategy=worker_strategy,
+        trainer_strategy=trainer_strategy,
+    )
 
     # runner = runner_factory.build(kind, ...)
     # runner.start()
-
-    common_kwargs = {
-        "flock": flock,
-        "num_global_rounds": num_global_rounds,
-        "runtime": Runtime(launcher, transfer),
-        "module": module,
-        "dataset": datasets,
-        "strategy": strategy,
-    }
-
+    process: Process
     match kind:
         case "sync":
-            process = SyncProcess(**common_kwargs)
+            process = SyncProcess(
+                runtime=runtime,
+                flock=flock,
+                num_global_rounds=num_global_rounds,
+                module=module,
+                dataset=datasets,
+                strategy=parsed_strategy,
+            )
+
+        case "sync-v2":
+            process = SyncProcessV2(
+                runtime=runtime,
+                flock=flock,
+                global_rounds=num_global_rounds,
+                module=module,
+                dataset=datasets,
+                strategy=parsed_strategy,
+                logging=logging,
+            )
+
         case "async":
-            process = AsyncProcess(**common_kwargs)
+            process = AsyncProcess(
+                runtime=runtime,
+                flock=flock,
+                num_global_rounds=num_global_rounds,
+                module=module,
+                dataset=datasets,
+                strategy=parsed_strategy,
+            )
         case _:
-            raise ValueError
+            raise ValueError("Illegal value for the strategy `kind` parameter.")
 
     start_time = datetime.datetime.now()
-    module, history = process.start(debug_mode)
-    history["train/rel_time"] = history["train/time"] - start_time
-    history["train/rel_time"] /= np.timedelta64(1, "s")
-    return module, history
+    trained_module, history = process.start(debug_mode=debug_mode)
+    try:
+        history["train/rel_time"] = history["train/time"] - start_time
+        history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
+    except KeyError as err:
+        print(history.head())
+
+    if isinstance(runtime.launcher, ParslLauncher):
+        runtime.launcher.executor.shutdown()
+
+    return trained_module, history
+
+
+def parse_strategy_args(
+    strategy: strats.Strategy | str | None,
+    client_strategy: strats.ClientStrategy | None,
+    aggr_strategy: strats.AggregatorStrategy | None,
+    worker_strategy: strats.WorkerStrategy | None,
+    trainer_strategy: strats.TrainerStrategy | None,
+    **kwargs,
+) -> strats.Strategy:
+    if isinstance(strategy, strats.Strategy):
+        return strategy
+
+    if isinstance(strategy, str):
+        return strats.load_strategy(strategy, **kwargs)
+
+    if strategy is not None:
+        raise ValueError(
+            "Argument ``strategy`` is not a legal value. Must be either a ``Strategy``, "
+            "a supported string value, or ``None``. "
+        )
+
+    # If the user provided each individual strategy implementations, then we must first check and confirm
+    # that none of those arguments are ``None``. If they are not, then we can package them as a single
+    # ``Strategy`` and return that.
+    strategies = [client_strategy, aggr_strategy, worker_strategy, trainer_strategy]
+    for _name, _strategy in zip(["client", "aggr", "worker", "trainer"], strategies):
+        if _strategy is None:
+            cls_name = "aggregator" if _name == "aggr" else _name
+            cls_name = cls_name.title()
+            raise ValueError(
+                f"Argument `{_name}_strategy` must be a class that implements protocol ``{cls_name}``."
+            )
+
+    # Explicit asserts to satisfy `mypy`.
+    assert client_strategy is not None
+    assert aggr_strategy is not None
+    assert worker_strategy is not None
+    assert trainer_strategy is not None
+
+    return strats.Strategy(
+        client_strategy=client_strategy,
+        aggr_strategy=aggr_strategy,
+        worker_strategy=worker_strategy,
+        trainer_strategy=trainer_strategy,
+    )

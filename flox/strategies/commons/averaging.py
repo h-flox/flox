@@ -1,28 +1,33 @@
-from collections.abc import Mapping
+from __future__ import annotations
 
-import numpy as np
+import typing
+
+import numpy
 import torch
 
-from flox.flock import FlockNodeID
-from flox.typing import StateDict
+if typing.TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from flox.flock import NodeID
+    from flox.nn.typing import Params
 
 
 def average_state_dicts(
-    state_dicts: Mapping[FlockNodeID, StateDict],
-    weights: Mapping[FlockNodeID, float] | None = None,
-) -> StateDict:
-    """Averages the parameters given by ``global_module.state_dict()`` from a set of ``FlockNodes``.
+    state_dicts: Mapping[NodeID, Params],
+    weights: Mapping[NodeID, float] | None = None,
+) -> Params:
+    """Averages the parameters given by ``global_model.params()`` from a set of ``FlockNodes``.
 
     Args:
-        state_dicts (dict[FlockNodeID, StateDict]): The global_module state dicts of each FlockNode to average.
-        weights (dict[FlockNodeID, float] | None): The weights for each ``FlockNode`` used do weighted averaging. If
+        state_dicts (dict[NodeID, Params]): The global_model state dicts of each FlockNode to average.
+        weights (dict[NodeID, float] | None): The weights for each ``FlockNode`` used do weighted averaging. If
             no weights are provided (i.e., `weights=None`), then standard averaging is done.
 
     Returns:
-        Averaged weights as a ``StateDict``.
+        Averaged weights as a ``Params``.
     """
     num_nodes = len(state_dicts)
-    weight_sum = None if weights is None else np.sum(list(weights.values()))
+    weight_sum = None if weights is None else numpy.sum(list(weights.values()))
 
     with torch.no_grad():
         avg_weights = {}

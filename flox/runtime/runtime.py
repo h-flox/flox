@@ -1,24 +1,23 @@
+import typing as t
 from concurrent.futures import Future
-from typing import Any, NewType
-from typing import Callable
 
-from flox.flock import FlockNode
+from flox.jobs import Job
 from flox.runtime.launcher import Launcher
 from flox.runtime.transfer import BaseTransfer
 
-Config = NewType("Config", dict[str, Any])
+Config = t.NewType("Config", dict[str, t.Any])
 
 
 class Borg:
-    _shared_state = {}
+    _shared_state: dict[str, t.Any] = {}
 
     def __init__(self):
         self.__dict__ = self._shared_state
 
 
 class Runtime(Borg):
-    launcher: Launcher | None = None
-    transfer: BaseTransfer | None = None
+    launcher: Launcher
+    transfer: BaseTransfer
 
     def __init__(self, launcher: Launcher, transfer: BaseTransfer):
         Borg.__init__(self)
@@ -26,10 +25,10 @@ class Runtime(Borg):
         self.transfer = transfer
 
     # TODO: Come up with typing for `Job = NewType("Job", Callable[[...], ...])`
-    def submit(self, fn: Callable, node: FlockNode, /, *args, **kwargs) -> Future:
-        return self.launcher.submit(fn, node, *args, **kwargs, transfer=self.transfer)
+    def submit(self, job: Job, /, **kwargs) -> Future:
+        return self.launcher.submit(job, **kwargs, transfer=self.transfer)
 
-    def proxy(self, data: Any):
+    def proxy(self, data: t.Any):
         return self.transfer.proxy(data)
 
     # @classmethod

@@ -5,7 +5,6 @@ repo_url: https://github.com/nathaniel-hudson/FLoX
 
 
 ########################################################################################################################
-########################################################################################################################
 # NAVIGATION
 ########################################################################################################################
 
@@ -20,14 +19,13 @@ nav:
       - getting_started/index.md
       - getting_started/flock.md
       - Strategies:
-          - getting_started/strategies/index.md
-          - getting_started/strategies/what.md
-          - getting_started/strategies/callbacks.md
-          - getting_started/strategies/custom.md
-  - API Reference: reference/
-  - Publications:
-      - publications/index.md
+          - getting_started/strategies_depr/index.md
+          - getting_started/strategies_depr/what.md
+          - getting_started/strategies_depr/callbacks.md
+          - getting_started/strategies_depr/custom.md
   - FAQ: faq.md
+  - Publications: publications/index.md
+  - Docs: docs/
 
 
 ########################################################################################################################
@@ -42,6 +40,8 @@ extra:
     - icon: fontawesome/brands/slack
       link: https://join.slack.com/t/funcx/shared_invite/zt-gfeclqkz-RuKjkZkvj1t~eWvlnZV0KA
       name: Join the funcX Slack!
+    - icon: fontawesome/brands/github
+      link: https://github.com/nathaniel-hudson/FLoX
 
 extra_css:
   - stylesheets/extra.css
@@ -55,6 +55,7 @@ theme:
   icon: #assets/logos/favicon-dark.svg
     logo: material/bird
     favicon: material/bird
+    repo: fontawesome/brands/github-alt
   #  favicon: ...
   font:
     text: Open Sans
