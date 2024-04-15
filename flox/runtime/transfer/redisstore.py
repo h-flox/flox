@@ -20,7 +20,6 @@ class RedisTransfer(BaseTransfer):
     def __init__(
         self, ip_address, name: str = "default"
     ) -> None:  # , store: str = "endpoint",):
-
         self.connector = RedisConnector(hostname=ip_address, port=6379)
         store = Store(name=name, connector=self.connector)
         self.config = store.config()

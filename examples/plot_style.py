@@ -26,4 +26,3 @@ sns.set_style(
         "grid.color": "#D8D8D8",
     },
 )
-

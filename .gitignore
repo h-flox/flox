@@ -1,3 +1,6 @@
+experiments/
+runinfo/
+
 # macOS system
 .DS_Store
 experiments/
