@@ -1,3 +1,5 @@
+import typing as t
+
 from flox.flock import FlockNode, NodeID
 from flox.jobs.protocols import AggregableJob
 from flox.runtime.result import Result
@@ -9,6 +11,7 @@ class AggregateJob(AggregableJob):
     @staticmethod
     def __call__(
         node: FlockNode,
+        children: t.Iterable[FlockNode],
         transfer: BaseTransfer,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],
@@ -36,7 +39,7 @@ class AggregateJob(AggregableJob):
             child_states[idx] = result.node_state
             child_state_dicts[idx] = result.params
 
-        node_state = AggrState(node.idx)
+        node_state = AggrState(node.idx, children, None)  # FIXME
         avg_state_dict = aggr_strategy.aggregate_params(
             node_state, child_states, child_state_dicts
         )
@@ -59,11 +62,16 @@ class AggregateJob(AggregableJob):
         result = JobResult(node_state, node.idx, node.kind, avg_state_dict, history)
         return transfer.report(result)
 
+    @property
+    def __name__(self) -> str:
+        return "AggregateJob"
+
 
 class DebugAggregateJob(AggregableJob):
     @staticmethod
     def __call__(
         node: FlockNode,
+        children: t.Iterable[FlockNode],
         transfer: BaseTransfer,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],
@@ -90,7 +98,7 @@ class DebugAggregateJob(AggregableJob):
         result = next(iter(results))
         state_dict = result.params
         state_dict = {} if state_dict is None else state_dict
-        node_state = AggrState(node.idx)
+        node_state = AggrState(node.idx, children, None)
         history = {
             "node/idx": [node.idx],
             "node/kind": [node.kind.to_str()],

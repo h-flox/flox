@@ -4,9 +4,10 @@ import typing as t
 
 import torch
 
+from flox.const import DEVICE
 from flox.strategies import Strategy
-from flox.strategies.impl.fedavg import FedAvgAggr, FedAvgWorker
-from flox.strategies.impl.fedsgd import FedSGDClient
+from flox.strategies.impl.fedavg import FedAvgWorker
+from flox.strategies.impl.fedsgd import FedSGDClient, FedSGDAggr
 from flox.strategies.strategy import DefaultTrainerStrategy
 
 if t.TYPE_CHECKING:
@@ -41,16 +42,30 @@ class FedProxTrainer(DefaultTrainerStrategy):
         assert global_model is not None
         assert local_model is not None
 
+        global_model = global_model.to(DEVICE)
+        local_model = local_model.to(DEVICE)
+
         params = list(local_model.state_dict().values())
         params0 = list(global_model.state_dict().values())
 
-        norm = torch.sum(
-            torch.Tensor(
-                [torch.sum((params[i] - params0[i]) ** 2) for i in range(len(params))]
-            )
+        proximal_diff = torch.tensor(
+            [
+                torch.sum(torch.pow(params[i] - params0[i], 2))
+                for i in range(len(params))
+            ]
+            # , requires_grad=True
         )
+        proximal_term = torch.sum(proximal_diff)
+        proximal_term = proximal_term * self.mu / 2
 
-        proximal_term = (self.mu / 2) * norm
+        # proximal_term = sum([
+        #     torch.sum(torch.pow(params[i] - params0[i], 2))
+        #     for i in range(len(params))
+        # ])
+
+        # Ensure they're on the same device.
+        proximal_term = proximal_term.to(DEVICE)
+
         loss += proximal_term
         return loss
 
@@ -85,7 +100,7 @@ class FedProx(Strategy):
                 probabilistic,
                 always_include_child_aggregators,
             ),
-            aggr_strategy=FedAvgAggr(),
+            aggr_strategy=FedSGDAggr(),
             worker_strategy=FedAvgWorker(),
             trainer_strategy=FedProxTrainer(mu=mu),
         )

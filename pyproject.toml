@@ -25,9 +25,6 @@ maintainers = [
 requires-python = ">=3.8"
 dependencies = [
     "globus-compute-sdk",
-    "mkdocs",
-    "mkdocs-material",
-    "mkdocstrings[python]",
     "torch",
     "pandas",
     #    "pygraphviz",
@@ -39,6 +36,7 @@ dependencies = [
 dev = ["black", "coverage", "jupyterlab", "matplotlib", "numpy", "pytest", "seaborn", "tensorboard", "torchvision", "matplotlib-stubs", "pandas-stubs", "networkx-stubs"]
 monitoring = ["tensorboard"]
 proxystore = ["proxystore"]
+docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]"]
 all = ["flox[dev,monitoring,proxystore]"]
 
 [tool.pytest.ini_options]

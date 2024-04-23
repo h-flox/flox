@@ -4,7 +4,7 @@ import typing as t
 
 import torch
 
-Kind: t.TypeAlias = t.Literal["async", "sync"]
+Kind: t.TypeAlias = t.Literal["async", "sync", "sync-v2"]
 
 Where: t.TypeAlias = t.Literal["local", "globus_compute"]
 

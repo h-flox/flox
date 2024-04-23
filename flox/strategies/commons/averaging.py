@@ -16,10 +16,10 @@ def average_state_dicts(
     state_dicts: Mapping[NodeID, Params],
     weights: Mapping[NodeID, float] | None = None,
 ) -> Params:
-    """Averages the parameters given by ``global_module.params()`` from a set of ``FlockNodes``.
+    """Averages the parameters given by ``global_model.params()`` from a set of ``FlockNodes``.
 
     Args:
-        state_dicts (dict[NodeID, Params]): The global_module state dicts of each FlockNode to average.
+        state_dicts (dict[NodeID, Params]): The global_model state dicts of each FlockNode to average.
         weights (dict[NodeID, float] | None): The weights for each ``FlockNode`` used do weighted averaging. If
             no weights are provided (i.e., `weights=None`), then standard averaging is done.
 

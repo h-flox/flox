@@ -170,7 +170,7 @@ class Flock:
         # TODO: We may want to remove this as a requirement. It produces nice "tree" positions
         # of the nodes. But it introduces a pretty restrictive dependency.
         if prog in PROGS:
-            pos = nx.nx_agraph.graphviz_layout(self.topo, prog=prog)
+            pos = nx.nx_pydot.pydot_layout(self.topo, prog=prog)
         else:
             pos = nx.spring_layout(self.topo)
 
@@ -232,6 +232,22 @@ class Flock:
 
         return True
 
+    def parent(self, node: FlockNode | NodeID | int) -> FlockNode:
+        if isinstance(node, FlockNode):
+            idx = node.idx
+        else:
+            idx = node.idx
+
+        if idx == self.leader.idx:
+            raise ValueError("Leader node has no parent.")
+
+        parent_idx = list(self.topo.predecessors(idx))
+        if len(parent_idx) != 1:
+            raise ValueError(
+                f"A node must have exactly 1 parent (except client); illegal topology -- {parent_idx=}"
+            )
+        return self[parent_idx[0]]
+
     def children(self, node: FlockNode | NodeID | int) -> Iterator[FlockNode]:
         if isinstance(node, FlockNode):
             idx = node.idx
@@ -240,12 +256,7 @@ class Flock:
         gce = "globus_compute_endpoint"
         pse = "proxystore_endpoint"
         for child_idx in self.topo.successors(idx):
-            yield FlockNode(
-                idx=child_idx,
-                kind=self.topo.nodes[child_idx]["kind"],
-                globus_compute_endpoint=self.topo.nodes[child_idx][gce],
-                proxystore_endpoint=self.topo.nodes[child_idx][pse],
-            )
+            yield self[child_idx]
 
     def get_kind(self, node: FlockNode | NodeID | int) -> NodeKind:
         if isinstance(node, FlockNode):

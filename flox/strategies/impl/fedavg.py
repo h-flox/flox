@@ -46,6 +46,17 @@ class FedAvgAggr(DefaultAggregatorStrategy):
         for node, child_state in children_states.items():
             weights[node] = child_state["num_data_samples"]
         state["num_data_samples"] = sum(weights.values())
+
+        # avg_samples = state["num_data_samples"] / len(children_states)
+        # remaining_children = len(list(state.children)) - len(children_states)
+        # state["_num_data_samples"] = (
+        #     state["num_data_samples"] + avg_samples * remaining_children
+        # )
+        # for node in state.children:
+        #     if node not in children_states:
+        #         weights[node.idx] = avg_samples
+        #         children_state_dicts[node.idx] = state.global_model.state_dict()
+
         return average_state_dicts(children_state_dicts, weights=weights)
 
 

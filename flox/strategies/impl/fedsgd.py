@@ -23,14 +23,18 @@ class FedSGDClient(DefaultClientStrategy):
         self.probabilistic = probabilistic
         self.always_include_child_aggregators = always_include_child_aggregators
 
-    def select_worker_nodes(self, state, children, seed):
-        return random_worker_selection(
-            children,
+    def select_worker_nodes(
+        self, state: NodeState, workers: t.Iterable[NodeID], seed: int | None = None
+    ):
+        # print(f"FedSGDClient.select_worker_nodes() :: {workers=}")
+        selected_workers = random_worker_selection(
+            workers,
             participation=self.participation,
             probabilistic=self.probabilistic,
             always_include_child_aggregators=self.always_include_child_aggregators,
             seed=seed,
         )
+        return selected_workers
 
 
 class FedSGDAggr(DefaultAggregatorStrategy):

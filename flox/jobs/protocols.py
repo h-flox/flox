@@ -57,6 +57,7 @@ class AggregableJob(t.Protocol):
     @staticmethod
     def __call__(
         node: FlockNode,
+        children: t.Iterable[FlockNode],
         transfer: BaseTransfer,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],

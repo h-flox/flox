@@ -21,8 +21,8 @@ class GlobusComputeLauncher(Launcher):
 
     def __init__(self):
         super().__init__()
-        # if self._globus_compute_executor is None:
-        #     self._globus_compute_executor = globus_compute_sdk.Executor()
+        if self._globus_compute_executor is None:
+            self._globus_compute_executor = globus_compute_sdk.Executor()
 
     def submit(
         self,

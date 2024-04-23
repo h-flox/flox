@@ -12,6 +12,7 @@ if typing.TYPE_CHECKING:
     from flox.flock.states import NodeState
     from flox.nn.typing import Params
 
+import random
 
 @dataclass
 class JobResult:
@@ -30,13 +31,16 @@ class JobResult:
     """The kind of the ``Flock`` node."""
 
     params: Params
-    """The ``Params`` of the PyTorch global_module (either aggregated or trained locally)."""
+    """The ``Params`` of the PyTorch global_model (either aggregated or trained locally)."""
 
     history: DataFrame
     """The history of results."""
 
     cache: dict[str, typing.Any] = field(default_factory=dict)
     """Miscellaneous data to be returned as part of the ``JobResult``."""
+
+    def __hash__(self):
+        return random.randint(0, 1000000) 
 
 
 Result: typing.TypeAlias = JobResult | Proxy[JobResult]

@@ -17,8 +17,9 @@ from flox.runtime.launcher import (
 from flox.runtime.process.process import Process
 from flox.runtime.process.process_async import AsyncProcess
 from flox.runtime.process.process_sync import SyncProcess
+from flox.runtime.process.process_sync_v2 import SyncProcessV2
 from flox.runtime.runtime import Runtime
-from flox.runtime.transfer import BaseTransfer
+from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer, RedisTransfer
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
@@ -34,7 +35,7 @@ def create_launcher(kind: str, **launcher_cfg) -> Launcher:
         case "globus-compute":
             return GlobusComputeLauncher()
         case "parsl":
-            return ParslLauncher()
+            return ParslLauncher(launcher_cfg)
         case _:
             raise ValueError("Illegal value for argument `kind`.")
 
@@ -55,6 +56,8 @@ def federated_fit(
     launcher_kind: str = "process",
     launcher_cfg: dict[str, t.Any] | None = None,
     debug_mode: bool = False,
+    logging: bool = False,
+    redis_ip_address: str = '127.0.0.1',
 ) -> tuple[FloxModule, DataFrame]:
     """
 
@@ -79,7 +82,14 @@ def federated_fit(
     """
     launcher_cfg = dict() if launcher_cfg is None else launcher_cfg
     launcher = create_launcher(launcher_kind, **launcher_cfg)
-    transfer = BaseTransfer()
+    if isinstance(launcher, GlobusComputeLauncher):
+        transfer = ProxyStoreTransfer(flock)
+    elif isinstance(launcher, ParslLauncher):
+        print(f"Yadu : setting RedisTransfer to {redis_ip_address}")
+        transfer = RedisTransfer(ip_address=redis_ip_address)
+    else:
+        transfer = BaseTransfer()
+
     runtime = Runtime(launcher, transfer)
     parsed_strategy = parse_strategy_args(
         strategy=strategy,
@@ -102,6 +112,18 @@ def federated_fit(
                 dataset=datasets,
                 strategy=parsed_strategy,
             )
+
+        case "sync-v2":
+            process = SyncProcessV2(
+                runtime=runtime,
+                flock=flock,
+                global_rounds=num_global_rounds,
+                module=module,
+                dataset=datasets,
+                strategy=parsed_strategy,
+                logging=logging,
+            )
+
         case "async":
             process = AsyncProcess(
                 runtime=runtime,
@@ -115,10 +137,17 @@ def federated_fit(
             raise ValueError("Illegal value for the strategy `kind` parameter.")
 
     start_time = datetime.datetime.now()
-    module, history = process.start(debug_mode)
-    history["train/rel_time"] = history["train/time"] - start_time
-    history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
-    return module, history
+    trained_module, history = process.start(debug_mode=debug_mode)
+    try:
+        history["train/rel_time"] = history["train/time"] - start_time
+        history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
+    except KeyError as err:
+        print(history.head())
+
+    if isinstance(runtime.launcher, ParslLauncher):
+        runtime.launcher.executor.shutdown()
+
+    return trained_module, history
 
 
 def parse_strategy_args(

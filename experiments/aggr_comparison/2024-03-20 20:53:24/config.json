@@ -1,0 +1,1 @@
+{"num_global_rounds": 50, "num_worker_nodes": 50, "labels_alpha": 0.1, "samples_alpha": 2.0, "max_workers": 10, "participation": 0.8, "alpha": 0.02}
