@@ -14,6 +14,7 @@ if typing.TYPE_CHECKING:
 
 import random
 
+
 @dataclass
 class JobResult:
     """A simple dataclass that is returned by jobs executed on Aggregator and Worker nodes in a ``Flock``.
@@ -40,7 +41,7 @@ class JobResult:
     """Miscellaneous data to be returned as part of the ``JobResult``."""
 
     def __hash__(self):
-        return random.randint(0, 1000000) 
+        return random.randint(0, 1000000)
 
 
 Result: typing.TypeAlias = JobResult | Proxy[JobResult]

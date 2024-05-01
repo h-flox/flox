@@ -57,7 +57,7 @@ def federated_fit(
     launcher_cfg: dict[str, t.Any] | None = None,
     debug_mode: bool = False,
     logging: bool = False,
-    redis_ip_address: str = '127.0.0.1',
+    redis_ip_address: str = "127.0.0.1",
 ) -> tuple[FloxModule, DataFrame]:
     """
 
