@@ -9,6 +9,7 @@ if t.TYPE_CHECKING:
 
 class AggregatorStrategy(t.Protocol):
     def round_start(self):
+        """Callback to run at the *start* of a round."""
         pass
 
     def aggregate_params(
@@ -18,7 +19,19 @@ class AggregatorStrategy(t.Protocol):
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
+        """Callback that handles the model parameter aggregation step.
+
+        Args:
+            state (AggrState): This aggregator node's current state.
+            children_states (t.Mapping[NodeID, NodeState]): The states of children nodes.
+            children_state_dicts (t.Mapping[NodeID, Params]): The model parameters of models owned by children nodes.
+            **kwargs: Keyword arguments provided by users.
+
+        Returns:
+            The aggregated parameters to update the model at the respective aggregator.
+        """
         pass
 
     def round_end(self):
+        """Callback to run at the *end* of a round."""
         pass

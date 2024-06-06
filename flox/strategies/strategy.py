@@ -85,7 +85,7 @@ class Strategy:
     trainer_strategy: TrainerStrategy = field(default_factory=DefaultTrainerStrategy)
     """Implementation of callbacks specific to the execution of the training loop on the worker nodes."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
     def __str__(self) -> str:
@@ -110,7 +110,7 @@ class Strategy:
 
 
 class DefaultStrategy(Strategy):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             DefaultClientStrategy(),
             DefaultAggregatorStrategy(),
