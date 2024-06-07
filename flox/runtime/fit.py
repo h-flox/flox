@@ -16,7 +16,6 @@ from flox.runtime.launcher import (
 )
 from flox.runtime.process.process import Process
 from flox.runtime.process.process_async import AsyncProcess
-from flox.runtime.process.process_sync import SyncProcess
 from flox.runtime.process.process_sync_v2 import SyncProcessV2
 from flox.runtime.runtime import Runtime
 from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer, RedisTransfer
@@ -85,7 +84,6 @@ def federated_fit(
     if isinstance(launcher, GlobusComputeLauncher):
         transfer = ProxyStoreTransfer(flock)
     elif isinstance(launcher, ParslLauncher):
-        print(f"Yadu : setting RedisTransfer to {redis_ip_address}")
         transfer = RedisTransfer(ip_address=redis_ip_address)
     else:
         transfer = BaseTransfer()
@@ -103,17 +101,7 @@ def federated_fit(
     # runner.start()
     process: Process
     match kind:
-        case "sync":
-            process = SyncProcess(
-                runtime=runtime,
-                flock=flock,
-                num_global_rounds=num_global_rounds,
-                module=module,
-                dataset=datasets,
-                strategy=parsed_strategy,
-            )
-
-        case "sync-v2":
+        case "sync" | "sync-v2":
             process = SyncProcessV2(
                 runtime=runtime,
                 flock=flock,
@@ -133,6 +121,7 @@ def federated_fit(
                 dataset=datasets,
                 strategy=parsed_strategy,
             )
+
         case _:
             raise ValueError("Illegal value for the strategy `kind` parameter.")
 

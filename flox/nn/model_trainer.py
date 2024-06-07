@@ -1,8 +1,7 @@
 import datetime
-from pathlib import Path
-
 import pandas as pd
 import torch
+from pathlib import Path
 from torch.utils.data import DataLoader
 
 from flox.flock.states import WorkerState

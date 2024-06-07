@@ -1,5 +1,7 @@
 experiments/
 runinfo/
+notebooks/
+examples/
 
 # macOS system
 .DS_Store
