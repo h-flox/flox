@@ -1,7 +1,8 @@
 import datetime
+from pathlib import Path
+
 import pandas as pd
 import torch
-from pathlib import Path
 from torch.utils.data import DataLoader
 
 from flox.flock.states import WorkerState
@@ -19,9 +20,10 @@ class Trainer:
     ):
         """
         Note:
-            The `log_every_n_batches` parameter is very sensitive. If you set it too large, you may not record any
-            data from fitting and result in errors when trying to merge the different histories across workers.
-            Also, if the value is too small (e.g., `log_every_n_batches=1`), then your output files will become very large.
+            The `log_every_n_batches` parameter is very sensitive. If you set it too large,
+            you may not record any data from fitting and result in errors when trying to merge
+            the different histories across workers. Also, if the value is too small (e.g.,
+            `log_every_n_batches=1`), then your output files will become very large.
         """
         self.trainer_strategy = trainer_strategy
         self.logger = CSVLogger()

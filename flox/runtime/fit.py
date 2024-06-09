@@ -8,15 +8,13 @@ from flox.data import FloxDataset
 from flox.flock import Flock
 from flox.nn import FloxModule
 from flox.nn.typing import Kind
+from flox.process import Process, AsyncProcess, SyncProcess
 from flox.runtime.launcher import (
     GlobusComputeLauncher,
     Launcher,
     LocalLauncher,
     ParslLauncher,
 )
-from flox.runtime.process.process import Process
-from flox.runtime.process.process_async import AsyncProcess
-from flox.runtime.process.process_sync_v2 import SyncProcessV2
 from flox.runtime.runtime import Runtime
 from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer, RedisTransfer
 
@@ -102,7 +100,7 @@ def federated_fit(
     process: Process
     match kind:
         case "sync" | "sync-v2":
-            process = SyncProcessV2(
+            process = SyncProcess(
                 runtime=runtime,
                 flock=flock,
                 global_rounds=num_global_rounds,

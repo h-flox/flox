@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import typing
+import typing as t
 
 import cloudpickle
 from proxystore.connectors.endpoint import EndpointConnector
@@ -8,7 +8,7 @@ from proxystore.store import Store
 
 from flox.runtime.transfer.base import BaseTransfer
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from uuid import UUID
 
     from proxystore.proxy import Proxy
@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 class ProxyStoreTransfer(BaseTransfer):
     def __init__(
         self, flock: Flock, name: str = "default"
-    ) -> None:  # , store: str = "endpoint",):
+    ) -> None:
         if not flock.proxystore_ready:
             raise ValueError(
                 "Flock is not ready to use ProxyStore (i.e., `flock.proxystore_ready` "
@@ -42,8 +42,6 @@ class ProxyStoreTransfer(BaseTransfer):
         self.config = store.config()
 
     # TODO: Revisit this design to see if we need separate methods for `report` and `proxy`.
-    def report(self, data: typing.Any) -> Proxy[typing.Any]:
+    def report(self, data: t.Any) -> Proxy[t.Any]:
         return Store.from_config(self.config).proxy(data)
 
-    def proxy(self, data: typing.Any) -> Proxy[typing.Any]:
-        return Store.from_config(self.config).proxy(data)

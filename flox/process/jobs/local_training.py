@@ -25,7 +25,6 @@ class LocalTrainJob(TrainableJob):
         transfer: BaseTransfer,
         worker_strategy: WorkerStrategy,
         trainer_strategy: TrainerStrategy,
-        # TODO: Get extra cached content from
         **train_hyper_params,
     ) -> Result:
         """Perform local training on a worker node.

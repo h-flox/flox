@@ -24,7 +24,6 @@ class Runtime(Borg):
         self.launcher = launcher
         self.transfer = transfer
 
-    # TODO: Come up with typing for `Job = NewType("Job", Callable[[...], ...])`
     def submit(self, job: Job, /, **kwargs) -> Future:
         return self.launcher.submit(job, **kwargs, transfer=self.transfer)
 

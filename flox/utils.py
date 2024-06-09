@@ -10,8 +10,8 @@ def extend_dicts(
 
     Args:
         *dicts (dict[Any, Any]): A variable number of `dict` objects.
-        pure_dict (bool): If ``True``, then return a standard Python dict; otherwise return the ``defaultdict`` used
-            during execution.
+        pure_dict (bool): If ``True``, then return a standard Python dict; otherwise
+            return the ``defaultdict`` used during execution.
 
     Examples:
         >>> d1: dict[str, list] = {"name": ["Alice", "Bob"], "age": [18, 19]}

@@ -8,7 +8,6 @@ The former breed of FL Process (namely, synchronous) is the most widely-studied 
 one of the two that (currently) supports hierarchical execution.
 """
 
-from flox.runtime.process.process_async import AsyncProcess
-from flox.runtime.process.process_sync import SyncProcess
+from flox.process.process_async import AsyncProcess
 
-__all__ = ["AsyncProcess", "SyncProcess"]
+__all__ = ["AsyncProcess", "Process", "SyncProcess"]

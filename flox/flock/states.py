@@ -73,7 +73,6 @@ class AggrState(NodeState):
 
     global_model: FloxModule | None
 
-    # TODO: If there is no difference between ``AggrState`` and ``NodeState``, then do we need the former at all?
     def __init__(
         self,
         idx: NodeID,

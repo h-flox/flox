@@ -5,14 +5,15 @@ from concurrent.futures import FIRST_COMPLETED, wait, Future
 from copy import deepcopy
 
 import pandas as pd
-from pandas import DataFrame
+from flox.jobs import LocalTrainJob, DebugLocalTrainJob
 from tqdm import tqdm
 
 from flox.flock.states import AggrState, NodeState, WorkerState
-from flox.jobs import LocalTrainJob, DebugLocalTrainJob
-from flox.runtime.process.process import Process
+from flox.process.process import Process
 
 if typing.TYPE_CHECKING:
+    from pandas import DataFrame
+
     from flox.data import FloxDataset
     from flox.flock import Flock, NodeID, FlockNode
     from flox.nn.typing import Params
@@ -72,7 +73,7 @@ class AsyncProcess(Process):
         if debug_mode:
             self.debug_mode = debug_mode
             if self.global_model is None:
-                from flox.runtime.process.debug_utils import DebugModule
+                from flox.process.debug_utils import DebugModule
 
                 self.global_model = DebugModule()
                 self.params = self.global_model.state_dict()

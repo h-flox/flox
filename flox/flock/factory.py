@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import random
 import typing as t
 
@@ -34,7 +35,7 @@ def _choose_parents(tree: nx.DiGraph, children, parents):
 
 
 def create_hierarchical_flock(
-    workers: int, aggr_shape: t.Collection[int] | None = None, return_nx: bool = False
+    workers: int, aggr_shape: t.List[int] | None = None, return_nx: bool = False
 ) -> Flock | nx.DiGraph:
     client_idx = 0
     flock = nx.DiGraph()
@@ -121,6 +122,71 @@ def created_balanced_hierarchical_flock(branching_factor: int, height: int):
             node_data["kind"] = NodeKind.AGGREGATOR
         node_data[gce] = None
         node_data[pse] = None
+
+    return Flock(tree)
+
+
+def created_balanced_hierarchical_flock_by_leaves(
+    leaves: int,
+    height: int,
+    rounding: t.Literal["round", "floor", "ceil"] = "round",
+) -> Flock:
+    r"""
+    Creates a Flock with a balanced tree topology with a (roughly) fixed number of leaves.
+
+    By default, `networkx` provides the `balanced_tree` function which generates a balanced
+    tree using the branching factor and the height of the tree. This function wraps that function
+    and computes the branching factor using $b = \lfloor l^{1/h} \rfloor where $l$ is the number
+    of leaves and $h$ is the height.
+
+    Notes:
+        Because the calculation for $b$ (described above) is not always going to result in an
+        integer, this function will use the floor of $l^{1/h}$. Unless you are wise about your
+        parameters for `leaves` and `height`, you will have more leaves than originally specified.
+        So, be mindful of this.
+
+    Args:
+        leaves (int): Approximate number of leaves in the resulting tree (see note).
+        height (int): Height of the tree.
+        rounding (t.Literal): How to round the branching factor.
+
+    Notes:
+        It is worth being mindful of the values used for the `height` and `leaves` arguments.
+        Multiples of two are more reliable. It is common to result in having many more leaves than
+        you might specify. So be mindful of this when using this function.
+
+    Returns:
+        The Flock instance with the constructed, balanced tree.
+    """
+    if leaves < 1:
+        raise ValueError("Value for arg `leaves` must be at least 1.")
+
+    branching_factor = leaves ** (1 / height)
+    match rounding:
+        case "round":
+            r = round(branching_factor)
+        case "floor":
+            r = math.floor(branching_factor)
+        case "ceil":
+            r = math.ceil(branching_factor)
+        case _:
+            raise ValueError(f"Illegal value for arg `rounding`.")
+
+    tree = nx.balanced_tree(r, height, create_using=nx.DiGraph)
+
+    for idx in tree.nodes():
+        parents = list(tree.predecessors(idx))
+        children = list(tree.successors(idx))
+
+        if len(parents) == 0:
+            tree.nodes[idx]["kind"] = NodeKind.LEADER
+        elif len(children) == 0:
+            tree.nodes[idx]["kind"] = NodeKind.WORKER
+        else:
+            tree.nodes[idx]["kind"] = NodeKind.AGGREGATOR
+
+        tree.nodes[idx]["globus_compute_endpoint"] = None
+        tree.nodes[idx]["proxystore_endpoint"] = None
 
     return Flock(tree)
 

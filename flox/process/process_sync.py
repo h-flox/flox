@@ -7,13 +7,13 @@ from copy import deepcopy
 from datetime import datetime
 
 import pandas as pd
+from flox.jobs import LocalTrainJob, AggregateJob, DebugLocalTrainJob
 from tqdm import tqdm
 
 from flox.flock import FlockNode, NodeKind, AggrState
-from flox.jobs import LocalTrainJob, AggregateJob, DebugLocalTrainJob
-from flox.runtime.process.future_callbacks import all_child_futures_finished_cbk
-from flox.runtime.process.process import Process
-from flox.runtime.process.testing import test_model
+from flox.process.future_callbacks import all_child_futures_finished_cbk
+from flox.process.process import Process
+from flox.process.testing import test_model
 
 if t.TYPE_CHECKING:
     from flox import Flock
@@ -30,7 +30,7 @@ if t.TYPE_CHECKING:
     )
 
 
-class SyncProcessV2(Process):
+class SyncProcess(Process):
     pbar_desc = "federated_fit::sync"
 
     def __init__(
@@ -59,7 +59,7 @@ class SyncProcessV2(Process):
         if debug_mode:
             self.debug_mode = debug_mode
             if self.global_model is None:
-                from flox.runtime.process.debug_utils import DebugModule
+                from flox.process.debug_utils import DebugModule
 
                 self.global_model = DebugModule()
 
@@ -121,7 +121,7 @@ class SyncProcessV2(Process):
         cli_strategy = self.client_strategy
         children = list(self.flock.children(node.idx))
         workers = list(self.flock.workers)
-        state = AggrState(node.idx, children, None)  # self.global_model)
+        state = AggrState(node.idx, children, None)
 
         # STEP 1: Select worker nodes to train the neural network. Then trace parent nodes back to leader.
         self.log("Leader is selecting worker nodes.")
@@ -195,9 +195,8 @@ class SyncProcessV2(Process):
         self.log(f"Preparing to submit WORKER task on node {node.idx}.")
 
         if self.debug_mode:
-            job = DebugLocalTrainJob()
             self.log("Using debug job, `pure_debug_train_job`.")
-            # job = pure_debug_train_job
+            job = DebugLocalTrainJob()
             dataset = None
             model_state_dict = None
         else:
