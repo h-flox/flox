@@ -45,12 +45,12 @@ def draw(
         nx.draw(self.topo, pos, with_labels=with_labels, ax=ax)
         return ax
 
-    if self.leader is None:
+    if self.coordinator is None:
         raise ValueError(
             "There is no leader in the Flock. This is likely because no topology "
             "has been created via interactive mode."
         )
-    leader = [self.leader.idx]
+    leader = [self.coordinator.idx]
     aggregators = list(aggr.idx for aggr in self.aggregators)
     workers = list(worker.idx for worker in self.workers)
 

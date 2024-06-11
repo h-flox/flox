@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import typing
+import random
+import typing as t
 from dataclasses import dataclass, field
 
 from proxystore.proxy import Proxy
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from pandas import DataFrame
 
-    from flox.topos import NodeID, NodeKind
-    from flox.topos.states import NodeState
+    from flox.topos import NodeID, NodeKind, NodeState
     from flox.learn.typing import Params
-
-import random
 
 
 @dataclass
@@ -37,11 +35,12 @@ class JobResult:
     history: DataFrame
     """The history of results."""
 
-    cache: dict[str, typing.Any] = field(default_factory=dict)
+    cache: dict[str, t.Any] = field(init=False, default_factory=dict)
     """Miscellaneous data to be returned as part of the ``JobResult``."""
 
     def __hash__(self):
+        """TODO: Resolve this hacky fix related to ProxyStore."""
         return random.randint(0, 1000000)
 
 
-Result: typing.TypeAlias = JobResult | Proxy[JobResult]
+Result: t.TypeAlias = JobResult | Proxy[JobResult]

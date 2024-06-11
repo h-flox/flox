@@ -6,7 +6,7 @@ import cloudpickle
 from proxystore.connectors.endpoint import EndpointConnector
 from proxystore.store import Store
 
-from flox.runtime.transfer.base import BaseTransfer
+from flox.runtime.transfer.base import TransferProtocol
 
 if t.TYPE_CHECKING:
     from uuid import UUID
@@ -16,7 +16,7 @@ if t.TYPE_CHECKING:
     from flox.topos import Topology
 
 
-class ProxyStoreTransfer(BaseTransfer):
+class ProxyStoreTransfer(TransferProtocol):
     def __init__(self, flock: Topology, name: str = "default") -> None:
         if not flock.proxystore_ready:
             raise ValueError(
@@ -39,6 +39,5 @@ class ProxyStoreTransfer(BaseTransfer):
         )
         self.config = store.config()
 
-    # TODO: Revisit this design to see if we need separate methods for `report` and `proxy`.
-    def report(self, data: t.Any) -> Proxy[t.Any]:
+    def transfer(self, data: t.Any) -> Proxy[t.Any]:
         return Store.from_config(self.config).proxy(data)

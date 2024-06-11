@@ -3,8 +3,7 @@ import typing as t
 
 from pandas import DataFrame
 
-import flox.strategies as strats
-from flox.topos import Topology
+from flox import strategies as fl_strategies
 from flox.learn import FloxModule
 from flox.learn.data import FloxDataset
 from flox.learn.typing import Kind
@@ -16,7 +15,8 @@ from flox.runtime.launcher import (
     ParslLauncher,
 )
 from flox.runtime.runtime import Runtime
-from flox.runtime.transfer import BaseTransfer, ProxyStoreTransfer, RedisTransfer
+from flox.runtime.transfer import TransferProtocol, ProxyStoreTransfer, RedisTransfer
+from flox.topos import Topology
 
 
 def create_launcher(kind: str, **launcher_cfg) -> Launcher:
@@ -43,11 +43,11 @@ def federated_fit(
     datasets: FloxDataset,
     num_global_rounds: int,
     # Strategy arguments.
-    strategy: strats.Strategy | str | None = None,
-    client_strategy: strats.ClientStrategy | None = None,
-    aggr_strategy: strats.AggregatorStrategy | None = None,
-    worker_strategy: strats.WorkerStrategy | None = None,
-    trainer_strategy: strats.TrainerStrategy | None = None,
+    strategy: t.Optional[fl_strategies.Strategy | str] = None,
+    client_strategy: t.Optional[fl_strategies.ClientStrategy] = None,
+    aggr_strategy: t.Optional[fl_strategies.AggregatorStrategy] = None,
+    worker_strategy: t.Optional[fl_strategies.WorkerStrategy] = None,
+    trainer_strategy: t.Optional[fl_strategies.TrainerStrategy] = None,
     # Process arguments.
     kind: Kind = "sync",
     launcher_kind: str = "process",
@@ -59,19 +59,21 @@ def federated_fit(
     """
 
     Args:
-        flock (Topology):
-        module (FloxModule):
-        datasets (FloxDataset):
-        num_global_rounds (int):
-        strategy (Strategy | str | None):
+        flock (Topology): ...
+        module (FloxModule): ...
+        datasets (FloxDataset): ...
+        num_global_rounds (int): ...
+        strategy (Strategy | str | None): ...
         client_strategy (strats.ClientStrategy): ...
         aggr_strategy (strats.AggregatorStrategy): ...
         worker_strategy (strats.WorkerStrategy): ...
         trainer_strategy (strats.TrainerStrategy): ...
-        kind (Kind):
-        launcher_kind (str):
-        launcher_cfg (dict[str, t.Any] | None):
+        kind (Kind): ...
+        launcher_kind (str): ...
+        launcher_cfg (dict[str, t.Any] | None): ...
         debug_mode (bool): ...
+        logging (bool): ...
+        redis_ip_address (str): ...
 
     Returns:
         The trained global module hosted on the leader of `topos`.
@@ -84,7 +86,7 @@ def federated_fit(
     elif isinstance(launcher, ParslLauncher):
         transfer = RedisTransfer(ip_address=redis_ip_address)
     else:
-        transfer = BaseTransfer()
+        transfer = TransferProtocol()
 
     runtime = Runtime(launcher, transfer)
     parsed_strategy = parse_strategy_args(
@@ -138,18 +140,18 @@ def federated_fit(
 
 
 def parse_strategy_args(
-    strategy: strats.Strategy | str | None,
-    client_strategy: strats.ClientStrategy | None,
-    aggr_strategy: strats.AggregatorStrategy | None,
-    worker_strategy: strats.WorkerStrategy | None,
-    trainer_strategy: strats.TrainerStrategy | None,
+    strategy: strategies.Strategy | str | None,
+    client_strategy: strategies.ClientStrategy | None,
+    aggr_strategy: strategies.AggregatorStrategy | None,
+    worker_strategy: strategies.WorkerStrategy | None,
+    trainer_strategy: strategies.TrainerStrategy | None,
     **kwargs,
-) -> strats.Strategy:
-    if isinstance(strategy, strats.Strategy):
+) -> strategies.Strategy:
+    if isinstance(strategy, fl_strategies.Strategy):
         return strategy
 
     if isinstance(strategy, str):
-        return strats.load_strategy(strategy, **kwargs)
+        return fl_strategies.load_strategy(strategy, **kwargs)
 
     if strategy is not None:
         raise ValueError(
@@ -175,7 +177,7 @@ def parse_strategy_args(
     assert worker_strategy is not None
     assert trainer_strategy is not None
 
-    return strats.Strategy(
+    return fl_strategies.Strategy(
         client_strategy=client_strategy,
         aggr_strategy=aggr_strategy,
         worker_strategy=worker_strategy,

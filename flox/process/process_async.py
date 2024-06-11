@@ -9,13 +9,12 @@ from tqdm import tqdm
 
 from flox.process.jobs import LocalTrainJob, DebugLocalTrainJob
 from flox.process.process import Process
-from flox.topos.states import AggrState, NodeState, WorkerState
 
 if typing.TYPE_CHECKING:
     from pandas import DataFrame
 
     from flox.learn.data import FloxDataset
-    from flox.topos import Topology, NodeID, Node
+    from flox.topos import Topology, NodeID, Node, NodeState, AggrState, WorkerState
     from flox.learn.typing import Params
     from flox.learn import FloxModule
     from flox.runtime import Result
@@ -64,9 +63,11 @@ class AsyncProcess(Process):
         self.debug_mode = False
         self.params = self.global_model.state_dict()
 
-        assert self.flock.leader is not None
+        assert self.flock.coordinator is not None
         self.state = AggrState(
-            self.flock.leader.idx, flock.children(flock.leader), self.global_model
+            self.flock.coordinator.idx,
+            flock.children(flock.coordinator),
+            self.global_model,
         )
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, DataFrame]:
@@ -97,7 +98,7 @@ class AsyncProcess(Process):
             desc="federated_fit::async",
         )
         futures = {
-            self._worker_tasks(worker, self.flock.leader)
+            self._worker_tasks(worker, self.flock.coordinator)
             for worker in self.flock.workers
         }
 
@@ -141,7 +142,7 @@ class AsyncProcess(Process):
                 #     result.history["test/acc"] = test_acc
                 #     result.history["test/loss"] = test_loss
 
-                fut = self._worker_tasks(worker, self.flock.leader)
+                fut = self._worker_tasks(worker, self.flock.coordinator)
                 futures.add(fut)
                 worker_rounds[result.node_idx] += 1
                 progress_bar.update()
@@ -155,14 +156,14 @@ class AsyncProcess(Process):
             dataset = None
         else:
             job = LocalTrainJob()
-            dataset = self.runtime.proxy(self.dataset)
+            dataset = self.runtime.transfer(self.dataset)
 
         return self.runtime.submit(
             job,
             node=node,
             parent=parent,
-            global_model=self.runtime.proxy(deepcopy(self.global_model)),
-            module_state_dict=self.runtime.proxy(self.params),
+            global_model=self.runtime.transfer(deepcopy(self.global_model)),
+            module_state_dict=self.runtime.transfer(self.params),
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,
             dataset=dataset,

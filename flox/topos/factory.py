@@ -6,22 +6,22 @@ import typing as t
 
 import networkx as nx
 
-from flox.topos import Topology, NodeKind
+from flox.topos import Topology, NodeKind, Node
 
 if t.TYPE_CHECKING:
-    from flox.topos import Node
+    from flox.topos.typing import NodeID
 
 
 def create_standard_flock(num_workers: int, **edge_attrs) -> Topology:
     flock = Topology()
-    flock.leader = flock.add_node("coordinator")
+    flock.coordinator = flock.add_node("coordinator")
     for _ in range(num_workers):
         worker = flock.add_node("worker")
-        flock.add_edge(flock.leader.idx, worker.idx, **edge_attrs)
+        flock.add_edge(flock.coordinator.idx, worker.idx, **edge_attrs)
     return flock
 
 
-def _choose_parents(tree: nx.DiGraph, children, parents):
+def _choose_parents(tree: nx.DiGraph, children: list[NodeID], parents: list[NodeID]):
     children_without_parents = [child for child in children]
 
     for parent in parents:

@@ -11,9 +11,9 @@ In addition to these jobs, this module also provides
 
 import typing as t
 
-from flox.jobs.protocols import AggregableJob, TrainableJob
-
+from flox.process.jobs.aggregation import AggregateJob, DebugAggregateJob
 from flox.process.jobs.local_training import DebugLocalTrainJob, LocalTrainJob
+from flox.process.jobs.protocols import AggregableJob, TrainableJob, LauncherFunction
 
 # Job: t.TypeAlias = AggregableJob | TrainableJob | LauncherFunction
 Job: t.TypeAlias = AggregableJob | TrainableJob

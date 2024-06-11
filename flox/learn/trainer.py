@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 from flox.learn import FloxModule
 from flox.learn.logger import ModelLogger
-from flox.topos.states import WorkerState
+from flox.topos import WorkerState
 
 if t.TYPE_CHECKING:
     from flox.strategies import TrainerStrategy
@@ -21,7 +21,7 @@ class Trainer:
         self,
         trainer_strategy: TrainerStrategy,
         log_every_n_batches: int = 1,  # 10,
-        device=torch.device("cpu"),
+        device: torch.device = torch.device("cpu"),
     ):
         """
         Note:

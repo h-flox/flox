@@ -10,10 +10,10 @@ import pandas as pd
 from flox.jobs import LocalTrainJob, AggregateJob, DebugLocalTrainJob
 from tqdm import tqdm
 
-from flox.topos import Node, NodeKind, AggrState
 from flox.process.future_callbacks import all_child_futures_finished_cbk
 from flox.process.process import Process
 from flox.process.testing import test_model
+from flox.topos import Node, NodeKind, AggrState
 
 if t.TYPE_CHECKING:
     from flox import Topology
@@ -110,8 +110,8 @@ class SyncProcess(Process):
 
     def _handle_node(self, node: Node | None) -> Node:
         if node is None:
-            assert self.flock.leader is not None
-            return self.flock.leader
+            assert self.flock.coordinator is not None
+            return self.flock.coordinator
         elif isinstance(node, Node):
             return node
         else:
@@ -125,7 +125,7 @@ class SyncProcess(Process):
 
         # STEP 1: Select worker nodes to train the neural network. Then trace parent nodes back to leader.
         self.log("Leader is selecting worker nodes.")
-        client_node = self.flock[self.flock.leader.idx]
+        client_node = self.flock[self.flock.coordinator.idx]
         selected_workers = cli_strategy.select_worker_nodes(state, workers, seed=None)
         intermediate_aggrs = set()
         for worker in selected_workers:
@@ -201,14 +201,14 @@ class SyncProcess(Process):
             model_state_dict = None
         else:
             job = LocalTrainJob()
-            dataset = self.runtime.proxy(self.dataset)
-            model_state_dict = self.runtime.proxy(self.params)
+            dataset = self.runtime.transfer(self.dataset)
+            model_state_dict = self.runtime.transfer(self.params)
 
         return self.runtime.submit(
             job,
             node=node,
             parent=parent,
-            global_model=self.runtime.proxy(deepcopy(self.global_model)),
+            global_model=self.runtime.transfer(deepcopy(self.global_model)),
             module_state_dict=model_state_dict,
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,

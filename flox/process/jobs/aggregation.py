@@ -1,10 +1,10 @@
 import typing as t
 
-from flox.topos import Node, NodeID
-from flox.jobs.protocols import AggregableJob
+from flox.process.jobs.protocols import AggregableJob
 from flox.runtime.result import Result
-from flox.runtime.transfer import BaseTransfer
+from flox.runtime.transfer import TransferProtocol
 from flox.strategies import AggregatorStrategy
+from flox.topos import Node, NodeID, NodeState, AggrState
 
 
 class AggregateJob(AggregableJob):
@@ -12,7 +12,7 @@ class AggregateJob(AggregableJob):
     def __call__(
         node: Node,
         children: t.Iterable[Node],
-        transfer: BaseTransfer,
+        transfer: TransferProtocol,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],
     ) -> Result:
@@ -29,7 +29,6 @@ class AggregateJob(AggregableJob):
         """
         import pandas
 
-        from flox.topos.states import AggrState, NodeState
         from flox.runtime import JobResult
 
         child_states: dict[NodeID, NodeState] = {}
@@ -44,8 +43,8 @@ class AggregateJob(AggregableJob):
             node_state, child_states, child_state_dicts
         )
 
-        # As a note, this list comprehension is done to allow for `debug_mode` which uses a job on
-        # worker nodes that returns empty dictionaries for its history object.
+        # As a note, this list comprehension is done to allow for `debug_mode` which uses
+        # a job on worker nodes that returns empty dictionaries for its history object.
         histories = []
         for res in results:
             match res.history:
@@ -60,7 +59,7 @@ class AggregateJob(AggregableJob):
 
         history = pandas.concat(histories)
         result = JobResult(node_state, node.idx, node.kind, avg_state_dict, history)
-        return transfer.report(result)
+        return transfer.transfer(result)
 
     @property
     def __name__(self) -> str:
@@ -72,7 +71,7 @@ class DebugAggregateJob(AggregableJob):
     def __call__(
         node: Node,
         children: t.Iterable[Node],
-        transfer: BaseTransfer,
+        transfer: TransferProtocol,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],
     ) -> Result:
@@ -92,7 +91,7 @@ class DebugAggregateJob(AggregableJob):
         import numpy
         import pandas
 
-        from flox.topos.states import AggrState
+        from flox.topos import AggrState
         from flox.runtime import JobResult
 
         result = next(iter(results))
@@ -110,4 +109,4 @@ class DebugAggregateJob(AggregableJob):
         }
         history_df = pandas.DataFrame.from_dict(history)
         result = JobResult(node_state, node.idx, node.kind, state_dict, history_df)
-        return transfer.report(result)
+        return transfer.transfer(result)

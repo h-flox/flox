@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import typing as t
 
-from flox.jobs.protocols import TrainableJob
+from flox.process.jobs.protocols import TrainableJob
 
 if t.TYPE_CHECKING:
-    from flox.data import FloxDataset
-    from flox.topos import Node
+    from flox.learn.data import FloxDataset
+    from flox.topos import Node, WorkerState
     from flox.learn import FloxModule
     from flox.learn.typing import Params
     from flox.runtime import Result
-    from flox.runtime.transfer import BaseTransfer
+    from flox.runtime.transfer import TransferProtocol
     from flox.strategies import TrainerStrategy, WorkerStrategy
 
 
@@ -22,7 +22,7 @@ class LocalTrainJob(TrainableJob):
         global_model: FloxModule,
         module_state_dict: Params,
         dataset: FloxDataset,
-        transfer: BaseTransfer,
+        transfer: TransferProtocol,
         worker_strategy: WorkerStrategy,
         trainer_strategy: TrainerStrategy,
         **train_hyper_params,
@@ -31,7 +31,7 @@ class LocalTrainJob(TrainableJob):
 
         Args:
             node (Node):
-            transfer (BaseTransfer): ...
+            transfer (TransferProtocol): ...
             parent (Node):
             strategy (Strategy):
             module (FloxModule):
@@ -47,34 +47,26 @@ class LocalTrainJob(TrainableJob):
         from copy import deepcopy
         from datetime import datetime
 
-        from flox.topos.states import WorkerState
         from flox.learn.trainer import Trainer
         from flox.runtime import JobResult
 
         from proxystore.proxy import extract, Proxy
 
         training_start = datetime.now()
-
-        # global_state_dict = global_model.state_dict()
         local_model = deepcopy(global_model)
-
-        # local_model.to("mps")  # NOTE: Parameterize LATER
 
         if isinstance(module_state_dict, Proxy):
             module_state_dict = extract(module_state_dict)
 
         global_model.load_state_dict(module_state_dict)
         local_model.load_state_dict(module_state_dict)
-
         state = WorkerState(
             node.idx,
             global_model=global_model,
             local_model=local_model,
         )
-        # print(f"{state=} (after state init)")
-        state = worker_strategy.work_start(state)  # NOTE: Double-check.
-        # print(f"{state=} (after `work_start`)")
 
+        state = worker_strategy.work_start(state)
         data = dataset.load(node)
         train_dataloader = DataLoader(
             data,
@@ -83,28 +75,17 @@ class LocalTrainJob(TrainableJob):
         )
 
         optimizer = local_model.configure_optimizers()
-
         state, data = worker_strategy.before_training(state, data)
-        # print(f"{state=} (after `before_training`)")
-
-        # inputs, targets = next(iter(train_dataloader))
-        # print(inputs)
-        # print(local_model)
-        # print(local_model(inputs))
-        # history = pd.DataFrame.from_dict({})
-
         trainer = Trainer(trainer_strategy)
         history = trainer.fit(
             local_model,
             optimizer,
             train_dataloader,
-            # TODO: Include `trainer_params` as an argument to
-            #       this so users can easily customize Trainer.
             num_epochs=train_hyper_params.get("num_epochs", 5),
             node_state=state,
         )
 
-        state = worker_strategy.after_training(state, optimizer)  # NOTE: Double-check.
+        state = worker_strategy.after_training(state, optimizer)
 
         ################################################################################
         # TRAINING DATA POST-PROCESSING
@@ -121,7 +102,7 @@ class LocalTrainJob(TrainableJob):
         result = JobResult(state, node.idx, node.kind, local_params, history)
 
         result = worker_strategy.work_end(result)  # NOTE: Double-check.
-        return transfer.report(result)
+        return transfer.transfer(result)
 
     @property
     def __name__(self) -> str:
@@ -136,11 +117,11 @@ class DebugLocalTrainJob(TrainableJob):
         global_model: FloxModule,
         module_state_dict: Params,
         dataset: FloxDataset,
-        transfer: BaseTransfer,
+        transfer: TransferProtocol,
         worker_strategy: WorkerStrategy,
         trainer_strategy: TrainerStrategy,
         **train_hyper_params,
-    ):  # -> Result:
+    ) -> Result:
         """
 
         Args:
@@ -159,7 +140,7 @@ class DebugLocalTrainJob(TrainableJob):
         import numpy as np
         import pandas
 
-        from flox.topos.states import WorkerState
+        from flox.topos import WorkerState
         from flox.runtime import JobResult
 
         local_module = global_model
@@ -183,69 +164,8 @@ class DebugLocalTrainJob(TrainableJob):
         result = JobResult(
             node_state, node.idx, node.kind, global_model.state_dict(), history_df
         )
-        # result = JobResult(node_state, node.idx, node.kind, np.array([0]), history_df)
-        return transfer.report(result)
+        return transfer.transfer(result)
 
     @property
     def __name__(self) -> str:
         return "DebugLocalTrainJob"
-
-
-# def pure_debug_train_job(
-#     node: FlockNode,
-#     parent: FlockNode,
-#     global_model: FloxModule,
-#     module_state_dict: Params,
-#     dataset: FloxDataset,
-#     transfer: BaseTransfer,
-#     worker_strategy: WorkerStrategy,
-#     trainer_strategy: TrainerStrategy,
-#     **train_hyper_params,
-# ):  # -> Result:
-#     """
-#
-#     Args:
-#         node ():
-#         transfer ():
-#         parent ():
-#         strategy ():
-#         module (FloxModule): ...
-#
-#     Returns:
-#
-#     """
-#
-#     from datetime import datetime
-#
-#     import numpy as np
-#     import pandas
-#
-#     from flox.topos.states import WorkerState
-#     from flox.runtime import JobResult
-#
-#     local_module = global_model
-#     node_state = WorkerState(
-#         node.idx,
-#         global_model=local_module,
-#         local_model=local_module,
-#     )
-#     history = {
-#         "node/idx": [node.idx],
-#         "node/kind": [node.kind.to_str()],
-#         "parent/idx": [parent.idx],
-#         "parent/kind": [parent.kind.to_str()],
-#         "train/loss": [np.nan],
-#         "train/epoch": [np.nan],
-#         "train/batch_idx": [np.nan],
-#         "train/time": [datetime.now()],
-#         "mode": "debug",
-#     }
-#     history_df = pandas.DataFrame.from_dict(history)
-#
-#     print(f"\n\nlocal_training: {global_model=}\n\n")
-#
-#     result = JobResult(
-#         node_state, node.idx, node.kind, global_model.state_dict(), history_df
-#     )
-#     # result = JobResult(node_state, node.idx, node.kind, np.array([0]), history_df)
-#     return transfer.report(result)

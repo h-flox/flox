@@ -7,9 +7,10 @@ from uuid import UUID
 
 import networkx as nx
 import yaml
+from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
-from flox.topos.node import Node, NodeID, NodeKind
+from flox.topos import Node, NodeKind, NodeID
 
 REQUIRED_ATTRS: set[str] = {
     "kind",
@@ -36,19 +37,19 @@ PROGS = [
 class Topology:
     topo: nx.DiGraph
     node_counter: int
-    leader: Node | None
+    coordinator: Node | None
 
     def __init__(self, topo: nx.DiGraph | None = None, src: Path | str | None = None):
         """
 
         Args:
             topo (nx.DiGraph | None): The topology (defined as a NetworkX ``nx.DiGraph``) of the
-                Flock network. If none is provided, then the Flock is initialized in "interactive"
-                mode. This means you can iteratively add nodes and edges to the Flock using
-                 ``Flock.add_node()`` and ``Flock.add_edge()``. This is *not* recommended.
+                Topology network. If none is provided, then the Topology is initialized in "interactive"
+                mode. This means you can iteratively add nodes and edges to the Topology using
+                 ``Topology.add_node()`` and ``Topology.add_edge()``. This is *not* recommended.
                  Defaults to ``None``.
             src (Path | str | None): This identifies the source file that was used to
-                define the Flock network. This should only be used by the file constructor functions
+                define the Topology network. This should only be used by the file constructor functions
                 (e.g., `from_yaml()`) and should not be used by the user. Defaults to ``None``.
         """
         self.node_counter: int = 0
@@ -56,10 +57,9 @@ class Topology:
         self.mode = "interactive" if src is None else "networkx"
 
         if topo is None:
-            # By default (i.e., `topo is None`),
             self.topo = nx.DiGraph()
             self.node_counter += self.topo.number_of_nodes()
-            self.leader = None
+            self.coordinator = None
         else:
             self.topo = topo
             if not self.validate_topo():
@@ -71,7 +71,7 @@ class Topology:
             for idx, data in self.topo.nodes(data=True):
                 if data["kind"] is NodeKind.COORDINATOR:
                     if not found_leader:
-                        self.leader = Node(
+                        self.coordinator = Node(
                             idx=idx,
                             kind=data["kind"],
                             globus_compute_endpoint=data["globus_compute_endpoint"],
@@ -81,10 +81,10 @@ class Topology:
                         found_leader = True
                     else:
                         raise ValueError(
-                            "A legal Flock cannot have more than one leader."
+                            "A legal Topology cannot have more than one leader."
                         )
             if not found_leader:
-                raise ValueError("A legal Flock must have a leader.")
+                raise ValueError("A legal Topology must have a leader.")
 
     def add_node(
         self,
@@ -95,7 +95,7 @@ class Topology:
         if isinstance(kind, str):
             kind = NodeKind.from_str(kind)
 
-        if kind is NodeKind.COORDINATOR and self.leader is not None:
+        if kind is NodeKind.COORDINATOR and self.coordinator is not None:
             raise ValueError("A leader node has already been established.")
 
         idx = self.node_counter
@@ -117,17 +117,17 @@ class Topology:
             **attrs ():
 
         Throws:
-            ValueError - Cannot add edges between nodes that do not already exist in the ``Flock`` instance.
+            ValueError - Cannot add edges between nodes that do not already exist in the ``Topology`` instance.
         """
         if any([u not in self.topo.nodes, v not in self.topo.nodes]):
             raise ValueError(
-                "`Flock` does not support adding edges between nodes that do not already exist. "
+                "`Topology` does not support adding edges between nodes that do not already exist. "
                 "Try adding each node first."
             )
         self.topo.add_edge(u, v, **attrs)
 
     def validate_topo(self) -> bool:
-        # STEP 1: Confirm that there only exists ONE leader in the Flock.
+        # STEP 1: Confirm that there only exists ONE leader in the Topology.
         leaders = []
         for idx, data in self.topo.nodes(data=True):
             if data["kind"] is NodeKind.COORDINATOR:
@@ -135,7 +135,7 @@ class Topology:
         if len(leaders) != 1:
             return False
 
-        # STEP 2: Confirm that the Flock has a tree topology.
+        # STEP 2: Confirm that the Topology has a tree topology.
         if not nx.is_tree(self.topo):
             return False
 
@@ -150,7 +150,7 @@ class Topology:
         else:
             idx = node.idx
 
-        if idx == self.leader.idx:
+        if idx == self.coordinator.idx:
             raise ValueError("Leader node has no parent.")
 
         parent_idx = list(self.topo.predecessors(idx))
@@ -180,16 +180,18 @@ class Topology:
     # ================================================================================= #
 
     @staticmethod
-    def from_dict(content: dict[str, Any], src: Path | str | None = None) -> "Topology":
+    def from_dict(
+        content: dict[NodeID, Any], src: Path | str | None = None
+    ) -> "Topology":
         """
-        Imports a ``dict`` object to create a Flock network.
+        Imports a ``dict`` object to create a Topology network.
 
         Args:
-            content (dict[str, Any]): Dictionary that defines the Flock network.
+            content (dict[str, Any]): Dictionary that defines the Topology network.
             src (Path | str | None): Identifies the source file used to define
-                the Flock network. This should **not** be used by users. It is used by
-                ``Flock`` class methods that are built on top of this method
-                (e.g., ``Flock.from_yaml()``).
+                the Topology network. This should **not** be used by users. It is used by
+                ``Topology`` class methods that are built on top of this method
+                (e.g., ``Topology.from_yaml()``).
 
         Examples:
             >>> topo = {
@@ -216,7 +218,7 @@ class Topology:
             >>> print(topos.number_of_workers) # outputs 2
 
         Returns:
-            An instance of a Flock.
+            An instance of a Topology.
         """
         topo = nx.DiGraph()
 
@@ -246,16 +248,16 @@ class Topology:
 
     @staticmethod
     def from_json(path: Path | str) -> "Topology":
-        """Imports a .json file as a Flock.
+        """Imports a .json file as a Topology.
 
         Examples:
             >>> topos = Topology.from_json("my_flock.json")
 
         Args:
-            path (Path | str): Must be a .json file defining a Flock topology.
+            path (Path | str): Must be a .json file defining a Topology topology.
 
         Returns:
-            An instance of a Flock.
+            An instance of a Topology.
         """
         # TODO: Figure out how to address the issue of JSON requiring string keys for `from_json()`.
         with open(path) as f:
@@ -264,16 +266,16 @@ class Topology:
 
     @staticmethod
     def from_yaml(path: Path | str) -> "Topology":
-        """Imports a `.yaml` file as a Flock.
+        """Imports a `.yaml` file as a Topology.
 
         Examples:
             >>> topos = Topology.from_yaml("my_flock.yaml")
 
         Args:
-            path (Path | str): Must be a .yaml file defining a Flock topology.
+            path (Path | str): Must be a .yaml file defining a Topology topology.
 
         Returns:
-            An instance of a Flock.
+            An instance of a Topology.
         """
         with open(path) as f:
             content = yaml.safe_load(f)
@@ -284,7 +286,7 @@ class Topology:
     @property
     def globus_compute_ready(self) -> bool:
         """
-        True if the Flock instance has all necessary endpoints to be run across
+        True if the Topology instance has all necessary endpoints to be run across
         Globus Compute; False otherwise.
         """
         # TODO: The leader does NOT need a Globus Compute endpoint.
@@ -298,9 +300,9 @@ class Topology:
     @property
     def proxystore_ready(self) -> bool:
         """
-        This property informs users of whether their `Flock` has all the necessary information to support
+        This property informs users of whether their `Topology` has all the necessary information to support
         data transmission over Proxystore (`True`) or not (`False`). Proxystore just requires that each
-        node in the Flock has its own `proxystore_endpoint`.
+        node in the Topology has its own `proxystore_endpoint`.
 
         It is worth noting that Proxystore is necessary to transmit mid-to-large size model (roughly > 5MB
         in size) with Globus Compute.
@@ -317,13 +319,13 @@ class Topology:
         return True
 
     # @property
-    # def leader(self):
-    #     return self.nodes(by_kind=NodeKind.LEADER)
+    # def coordinator(self):
+    #     return self.nodes(by_kind=NodeKind.COORDINATOR)
 
     @property
     def aggregators(self) -> Iterator[Node]:
         """
-        The aggregator nodes of the Flock.
+        The aggregator nodes of the Topology.
 
         Returns:
             Generator[FlockNode]
@@ -333,7 +335,7 @@ class Topology:
     @property
     def workers(self) -> Iterator[Node]:
         """
-        The worker nodes of the Flock.
+        The worker nodes of the Topology.
 
         Returns:
             Generator[FlockNode]
@@ -351,27 +353,29 @@ class Topology:
         Returns:
             ``True`` if the topology is two-tier, ``False`` otherwise.
         """
-        assert self.leader is not None, "There must be a leader node in the topology."
-        leader_id = self.leader.idx
+        assert (
+            self.coordinator is not None
+        ), "There must be a leader node in the topology."
+        leader_id = self.coordinator.idx
         assert leader_id is not None, "Leader ID cannot be `None`."
         tree = nx.bfs_tree(self.topo, leader_id, depth_limit=1)
         return tree.number_of_nodes() == self.topo.number_of_nodes()
 
     @functools.cached_property
     def number_of_aggregators(self) -> int:
-        """The number of aggregator nodes in the Flock."""
+        """The number of aggregator nodes in the Topology."""
         return len(list(self.aggregators))
 
     @functools.cached_property
     def number_of_workers(self) -> int:
-        """The number of worker nodes in the Flock."""
+        """The number of worker nodes in the Topology."""
         return len(list(self.workers))
 
     @functools.cached_property
     def two_tier(self) -> bool:
-        assert self.leader is not None
+        assert self.coordinator is not None
         for worker in self.workers:
-            if not self.topo.has_edge(self.leader.idx, worker.idx):
+            if not self.topo.has_edge(self.coordinator.idx, worker.idx):
                 return False
         return True
 
@@ -434,12 +438,13 @@ class Topology:
             nx.draw(self.topo, pos, with_labels=with_labels, ax=ax)
             return ax
 
-        if self.leader is None:
+        if self.coordinator is None:
             raise ValueError(
-                "There is no leader in the Flock. This is likely because no topology "
+                "There is no leader in the Topology. This is likely because no topology "
                 "has been created via interactive mode."
             )
-        leader = [self.leader.idx]
+
+        leader = [self.coordinator.idx]
         aggregators = list(aggr.idx for aggr in self.aggregators)
         workers = list(worker.idx for worker in self.workers)
 

@@ -5,12 +5,9 @@ import typing as t
 
 from torch.utils.data import Dataset, Subset
 
-from flox.topos import Node
+from flox.topos import Node, NodeID, NodeState
 
 if t.TYPE_CHECKING:
-    from flox.topos import NodeID
-    from flox.topos.states import NodeState
-
     T_co = t.TypeVar("T_co", covariant=True)
 
 

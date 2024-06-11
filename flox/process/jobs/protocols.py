@@ -24,12 +24,12 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flox.data import FloxDataset
+    from flox.learn.data import FloxDataset
     from flox.topos import Node
     from flox.learn import FloxModule
     from flox.learn.typing import Params
     from flox.runtime import Result
-    from flox.runtime.transfer import BaseTransfer
+    from flox.runtime.transfer import TransferProtocol
     from flox.strategies import AggregatorStrategy, TrainerStrategy, WorkerStrategy
 
 
@@ -58,7 +58,7 @@ class AggregableJob(t.Protocol):
     def __call__(
         node: Node,
         children: t.Iterable[Node],
-        transfer: BaseTransfer,
+        transfer: TransferProtocol,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],
     ) -> Result:
@@ -67,7 +67,7 @@ class AggregableJob(t.Protocol):
 
         Args:
             node (Node):
-            transfer (BaseTransfer):
+            transfer (TransferProtocol):
             aggr_strategy (AggregatorStrategy):
             results (list[Result]):
 
@@ -95,7 +95,7 @@ class TrainableJob(t.Protocol):
         global_model: FloxModule,
         module_state_dict: Params,
         dataset: FloxDataset,
-        transfer: BaseTransfer,
+        transfer: TransferProtocol,
         worker_strategy: WorkerStrategy,
         trainer_strategy: TrainerStrategy,
         **train_hyper_params,

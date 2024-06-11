@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from flox.topos.states import WorkerState
+from flox.topos import WorkerState
 
 if t.TYPE_CHECKING:
     import torch
