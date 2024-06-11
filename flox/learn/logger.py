@@ -1,11 +1,12 @@
 from typing import Any
 
-from flox.nn.logger.base import BaseLogger
+from pandas import DataFrame
 
 
-class CSVLogger(BaseLogger):
+class ModelLogger:
+    """Class that logs metrics for results."""
+
     def __init__(self):
-        super().__init__()
         self.records = []
 
     def log(self, name: str, value: Any) -> None:
@@ -13,3 +14,9 @@ class CSVLogger(BaseLogger):
 
     def log_dict(self, record: dict[str, Any]):
         self.records.append(record)
+
+    def clear(self):
+        self.records = []
+
+    def dataframe(self) -> DataFrame:
+        return DataFrame.from_records(self.records)

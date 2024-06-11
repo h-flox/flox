@@ -7,13 +7,13 @@ from matplotlib.axes import Axes
 from torch.utils.data import DataLoader, Dataset
 
 from flox.data import FederatedSubsets
-from flox.flock import Flock, NodeID
+from flox.topos import Topology, NodeID
 
 
 # TODO: Implement something similar for regression-based data.
 def federated_split(
     data: Dataset,
-    flock: Flock,
+    flock: Topology,
     num_classes: int,
     samples_alpha: float = 1.0,
     labels_alpha: float = 1.0,
@@ -32,20 +32,20 @@ def federated_split(
 
     Args:
         data (Dataset): The original centralized data object that needs to be split into subsets.
-        flock (Flock): The network to split data across.
+        flock (Topology): The network to split data across.
         num_classes (int): Number of classes available in ``data``.
         samples_alpha (float): The $\alpha>0$ parameter under the Dirichlet distribution for *the number of
-            data samples* each worker node in ``flock`` will have. The number of data samples across all worker
+            data samples* each worker node in ``topos`` will have. The number of data samples across all worker
             nodes become increasingly heterogeneous as $\alpha$ gets larger.
         labels_alpha (float): The $\alpha>0$ parameter under the Dirichlet distribution for the class distributions
-            across worker nodes in ``flock``. The number of data samples across all worker nodes become increasingly
+            across worker nodes in ``topos``. The number of data samples across all worker nodes become increasingly
             heterogeneous as $\alpha$ gets larger.
 
     Examples:
         >>> from torchvision.datasets import MNIST
-        >>> flock = Flock.from_yaml("my_flock.yml")
+        >>> topos = Topology.from_yaml("my_flock.yml")
         >>> data = MNIST()
-        >>> subsets = federated_split(data, flock, num_classes=10, samples_alpha=1., labels_alpha=1.)
+        >>> subsets = federated_split(data, topos, num_classes=10, samples_alpha=1., labels_alpha=1.)
         >>> next(iter(subsets.items()))
         >>> # (NodeID(1), Subset(...)) # TODO: Run a real example and paste it here.
 
@@ -112,7 +112,7 @@ def federated_split(
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
-    # mapping = {w.idx: Subset(data, indices[w.idx]) for w in flock.workers}
+    # mapping = {w.idx: Subset(data, indices[w.idx]) for w in topos.workers}
     return FederatedSubsets(data, indices)
 
 

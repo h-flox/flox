@@ -13,16 +13,14 @@ if t.TYPE_CHECKING:
 
     from proxystore.proxy import Proxy
 
-    from flox.flock import Flock
+    from flox.topos import Topology
 
 
 class ProxyStoreTransfer(BaseTransfer):
-    def __init__(
-        self, flock: Flock, name: str = "default"
-    ) -> None:
+    def __init__(self, flock: Topology, name: str = "default") -> None:
         if not flock.proxystore_ready:
             raise ValueError(
-                "Flock is not ready to use ProxyStore (i.e., `flock.proxystore_ready` "
+                "Flock is not ready to use ProxyStore (i.e., `topos.proxystore_ready` "
                 "returns `False`). You need each node should have a valid ProxyStore "
                 "Endpoint UUID."
             )
@@ -44,4 +42,3 @@ class ProxyStoreTransfer(BaseTransfer):
     # TODO: Revisit this design to see if we need separate methods for `report` and `proxy`.
     def report(self, data: t.Any) -> Proxy[t.Any]:
         return Store.from_config(self.config).proxy(data)
-

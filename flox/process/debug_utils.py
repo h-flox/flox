@@ -1,6 +1,6 @@
 import torch
 
-from flox.nn import FloxModule
+from flox.learn import FloxModule
 
 
 class DebugModule(FloxModule):

@@ -1,4 +1,4 @@
-from flox.flock.flock import Flock
+from flox.topos.topo import Topology
 from flox.runtime.fit import federated_fit
 
-__all__ = ["Flock", "federated_fit"]
+__all__ = ["Topology", "federated_fit"]

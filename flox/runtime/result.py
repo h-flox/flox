@@ -8,9 +8,9 @@ from proxystore.proxy import Proxy
 if typing.TYPE_CHECKING:
     from pandas import DataFrame
 
-    from flox.flock import NodeID, NodeKind
-    from flox.flock.states import NodeState
-    from flox.nn.typing import Params
+    from flox.topos import NodeID, NodeKind
+    from flox.topos.states import NodeState
+    from flox.learn.typing import Params
 
 import random
 

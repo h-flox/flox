@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flox.flock import FlockNode, NodeID, NodeState
+    from flox.topos import Node, NodeID, NodeState
 
 
 class ClientStrategy(t.Protocol):
@@ -11,13 +11,13 @@ class ClientStrategy(t.Protocol):
     #     pass
 
     def select_worker_nodes(
-        self, state: NodeState, children: t.Iterable[FlockNode], seed: int
+        self, state: NodeState, children: t.Iterable[Node], seed: int
     ) -> t.Iterable[NodeID]:
         """Callback that is responsible with selecting a subset of worker nodes to do local training.
 
         Args:
             state (NodeState): The state of the client node.
-            children (t.Iterable[FlockNode]): The worker nodes in the topology.
+            children (t.Iterable[Node]): The worker nodes in the topology.
             seed (int): The seed to use for reproducibility.
 
         Returns:

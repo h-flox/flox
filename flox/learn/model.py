@@ -5,7 +5,7 @@ import torch
 
 class FloxModule(torch.nn.Module, ABC):
     """
-    The ``FloxModule`` is a wrapper for the standard ``torch.nn.Module`` class from PyTorch, with
+    The ``FloxModule`` is a wrapper for the standard ``torch.learn.Module`` class from PyTorch, with
     a lot of inspiration from the ``LightningModule`` class from
     [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/common/lightning_module.html).
     """

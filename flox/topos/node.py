@@ -10,7 +10,7 @@ class NodeKind(Enum):
     The different kinds of nodes that can exist in a Flock topology.
     """
 
-    LEADER = auto()  # root
+    COORDINATOR = auto()  # root
     AGGREGATOR = auto()  # middle
     WORKER = auto()  # leaf
 
@@ -33,7 +33,7 @@ class NodeKind(Enum):
         """
         s = s.lower().strip()
         matches = {
-            "leader": NodeKind.LEADER,
+            "leader": NodeKind.COORDINATOR,
             "aggregator": NodeKind.AGGREGATOR,
             "worker": NodeKind.WORKER,
         }
@@ -52,7 +52,7 @@ class NodeKind(Enum):
             String corresponding to the NodeKind.
         """
         matches = {
-            NodeKind.LEADER: "leader",
+            NodeKind.COORDINATOR: "leader",
             NodeKind.AGGREGATOR: "aggregator",
             NodeKind.WORKER: "worker",
         }
@@ -60,12 +60,12 @@ class NodeKind(Enum):
 
 
 @dataclass(frozen=True)
-class FlockNode:
+class Node:
     """
     A node in a Flock.
 
     Args:
-        idx (NodeID): The index of the node within the Flock as a whole (this is assigned by its `Flock`).
+        idx (NodeID): The index of the node within the Topology as a whole (this is assigned by its `Topology`).
         kind (NodeKind): The kind of node.
         globus_compute_endpoint (UUID | None): Required if you want to run fitting on Globus Compute;
             defaults to None.

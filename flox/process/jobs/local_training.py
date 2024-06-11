@@ -6,9 +6,9 @@ from flox.jobs.protocols import TrainableJob
 
 if t.TYPE_CHECKING:
     from flox.data import FloxDataset
-    from flox.flock import FlockNode
-    from flox.nn import FloxModule
-    from flox.nn.typing import Params
+    from flox.topos import Node
+    from flox.learn import FloxModule
+    from flox.learn.typing import Params
     from flox.runtime import Result
     from flox.runtime.transfer import BaseTransfer
     from flox.strategies import TrainerStrategy, WorkerStrategy
@@ -17,8 +17,8 @@ if t.TYPE_CHECKING:
 class LocalTrainJob(TrainableJob):
     @staticmethod
     def __call__(
-        node: FlockNode,
-        parent: FlockNode,
+        node: Node,
+        parent: Node,
         global_model: FloxModule,
         module_state_dict: Params,
         dataset: FloxDataset,
@@ -30,9 +30,9 @@ class LocalTrainJob(TrainableJob):
         """Perform local training on a worker node.
 
         Args:
-            node (FlockNode):
+            node (Node):
             transfer (BaseTransfer): ...
-            parent (FlockNode):
+            parent (Node):
             strategy (Strategy):
             module (FloxModule):
             module_state_dict (Params):
@@ -47,8 +47,8 @@ class LocalTrainJob(TrainableJob):
         from copy import deepcopy
         from datetime import datetime
 
-        from flox.flock.states import WorkerState
-        from flox.nn.model_trainer import Trainer
+        from flox.topos.states import WorkerState
+        from flox.learn.trainer import Trainer
         from flox.runtime import JobResult
 
         from proxystore.proxy import extract, Proxy
@@ -131,8 +131,8 @@ class LocalTrainJob(TrainableJob):
 class DebugLocalTrainJob(TrainableJob):
     @staticmethod
     def __call__(
-        node: FlockNode,
-        parent: FlockNode,
+        node: Node,
+        parent: Node,
         global_model: FloxModule,
         module_state_dict: Params,
         dataset: FloxDataset,
@@ -159,7 +159,7 @@ class DebugLocalTrainJob(TrainableJob):
         import numpy as np
         import pandas
 
-        from flox.flock.states import WorkerState
+        from flox.topos.states import WorkerState
         from flox.runtime import JobResult
 
         local_module = global_model
@@ -220,7 +220,7 @@ class DebugLocalTrainJob(TrainableJob):
 #     import numpy as np
 #     import pandas
 #
-#     from flox.flock.states import WorkerState
+#     from flox.topos.states import WorkerState
 #     from flox.runtime import JobResult
 #
 #     local_module = global_model

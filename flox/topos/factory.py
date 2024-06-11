@@ -6,15 +6,15 @@ import typing as t
 
 import networkx as nx
 
-from flox.flock import Flock, NodeKind
+from flox.topos import Topology, NodeKind
 
 if t.TYPE_CHECKING:
-    from flox.flock import FlockNode
+    from flox.topos import Node
 
 
-def create_standard_flock(num_workers: int, **edge_attrs) -> Flock:
-    flock = Flock()
-    flock.leader = flock.add_node("leader")
+def create_standard_flock(num_workers: int, **edge_attrs) -> Topology:
+    flock = Topology()
+    flock.leader = flock.add_node("coordinator")
     for _ in range(num_workers):
         worker = flock.add_node("worker")
         flock.add_edge(flock.leader.idx, worker.idx, **edge_attrs)
@@ -36,12 +36,12 @@ def _choose_parents(tree: nx.DiGraph, children, parents):
 
 def create_hierarchical_flock(
     workers: int, aggr_shape: t.List[int] | None = None, return_nx: bool = False
-) -> Flock | nx.DiGraph:
+) -> Topology | nx.DiGraph:
     client_idx = 0
     flock = nx.DiGraph()
     flock.add_node(
         client_idx,
-        kind=NodeKind.LEADER,
+        kind=NodeKind.COORDINATOR,
         proxystore_endpoint=None,
         globus_compute_endpoint=None,
     )
@@ -61,7 +61,7 @@ def create_hierarchical_flock(
             flock.add_edge(client_idx, worker)
         if return_nx:
             return flock
-        return Flock(flock)
+        return Topology(flock)
 
     # Validate the values of the `aggr_shape` argument.
     for i in range(len(aggr_shape) - 1):
@@ -103,7 +103,7 @@ def create_hierarchical_flock(
 
     if return_nx:
         return flock
-    return Flock(flock)
+    return Topology(flock)
 
 
 def created_balanced_hierarchical_flock(branching_factor: int, height: int):
@@ -115,7 +115,7 @@ def created_balanced_hierarchical_flock(branching_factor: int, height: int):
         num_children = len(list(tree.successors(node_id)))
 
         if num_parents == 0:
-            node_data["kind"] = NodeKind.LEADER
+            node_data["kind"] = NodeKind.COORDINATOR
         elif num_children == 0:
             node_data["kind"] = NodeKind.WORKER
         else:
@@ -123,14 +123,14 @@ def created_balanced_hierarchical_flock(branching_factor: int, height: int):
         node_data[gce] = None
         node_data[pse] = None
 
-    return Flock(tree)
+    return Topology(tree)
 
 
 def created_balanced_hierarchical_flock_by_leaves(
     leaves: int,
     height: int,
     rounding: t.Literal["round", "floor", "ceil"] = "round",
-) -> Flock:
+) -> Topology:
     r"""
     Creates a Flock with a balanced tree topology with a (roughly) fixed number of leaves.
 
@@ -179,7 +179,7 @@ def created_balanced_hierarchical_flock_by_leaves(
         children = list(tree.successors(idx))
 
         if len(parents) == 0:
-            tree.nodes[idx]["kind"] = NodeKind.LEADER
+            tree.nodes[idx]["kind"] = NodeKind.COORDINATOR
         elif len(children) == 0:
             tree.nodes[idx]["kind"] = NodeKind.WORKER
         else:
@@ -188,7 +188,7 @@ def created_balanced_hierarchical_flock_by_leaves(
         tree.nodes[idx]["globus_compute_endpoint"] = None
         tree.nodes[idx]["proxystore_endpoint"] = None
 
-    return Flock(tree)
+    return Topology(tree)
 
 
 def from_yaml():
@@ -199,7 +199,7 @@ def from_dict(topo: dict[str, t.Any]):
     pass
 
 
-def from_list(topo: list[FlockNode | dict[str, t.Any]]):
+def from_list(topo: list[Node | dict[str, t.Any]]):
     pass
 
 

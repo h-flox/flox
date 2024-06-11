@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flox.nn import FloxModule
+    from flox.learn import FloxModule
 
 
 def test_model(module: FloxModule) -> tuple[float, float]:

@@ -5,19 +5,19 @@ from concurrent.futures import FIRST_COMPLETED, wait, Future
 from copy import deepcopy
 
 import pandas as pd
-from flox.jobs import LocalTrainJob, DebugLocalTrainJob
 from tqdm import tqdm
 
-from flox.flock.states import AggrState, NodeState, WorkerState
+from flox.process.jobs import LocalTrainJob, DebugLocalTrainJob
 from flox.process.process import Process
+from flox.topos.states import AggrState, NodeState, WorkerState
 
 if typing.TYPE_CHECKING:
     from pandas import DataFrame
 
-    from flox.data import FloxDataset
-    from flox.flock import Flock, NodeID, FlockNode
-    from flox.nn.typing import Params
-    from flox.nn import FloxModule
+    from flox.learn.data import FloxDataset
+    from flox.topos import Topology, NodeID, Node
+    from flox.learn.typing import Params
+    from flox.learn import FloxModule
     from flox.runtime import Result
     from flox.runtime.runtime import Runtime
     from flox.strategies import (
@@ -35,23 +35,23 @@ class AsyncProcess(Process):
     [synchronous FL process][flox.runtime.process.process_sync.SyncProcess].
 
     Notes:
-        Currently, this process is only compatible with two-tier ``Flock`` topologies.
+        Currently, this process is only compatible with two-tier ``Flock`` topos.
     """
 
     def __init__(
         self,
         runtime: Runtime,
-        flock: Flock,
+        flock: Topology,
         num_global_rounds: int,
         module: FloxModule,
         dataset: FloxDataset,
         strategy: Strategy,
         *args,
     ):
-        # assert that the flock is 2-tier
+        # assert that the topos is 2-tier
         if not flock.is_two_tier:
             raise ValueError(
-                "Currently, FLoX only supports two-tier topologies for ``AsyncProcess`` execution."
+                "Currently, FLoX only supports two-tier topos for ``AsyncProcess`` execution."
             )
 
         self.runtime = runtime
@@ -149,7 +149,7 @@ class AsyncProcess(Process):
         # TODO: Obviously fix this.
         return self.global_model, pd.concat(histories)
 
-    def _worker_tasks(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
+    def _worker_tasks(self, node: Node, parent: Node) -> Future[Result]:
         if self.debug_mode:
             job = DebugLocalTrainJob()
             dataset = None

@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
 
     from proxystore.proxy import Proxy
 
-    from flox.flock import Flock
+    from flox.topos import Topology
 
 
 class RedisTransfer(BaseTransfer):

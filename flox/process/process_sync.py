@@ -10,15 +10,15 @@ import pandas as pd
 from flox.jobs import LocalTrainJob, AggregateJob, DebugLocalTrainJob
 from tqdm import tqdm
 
-from flox.flock import FlockNode, NodeKind, AggrState
+from flox.topos import Node, NodeKind, AggrState
 from flox.process.future_callbacks import all_child_futures_finished_cbk
 from flox.process.process import Process
 from flox.process.testing import test_model
 
 if t.TYPE_CHECKING:
-    from flox import Flock
+    from flox import Topology
     from flox.data import FloxDataset
-    from flox.nn import FloxModule
+    from flox.learn import FloxModule
     from flox.runtime.runtime import Runtime
     from flox.runtime import Result
     from flox.strategies import (
@@ -36,7 +36,7 @@ class SyncProcess(Process):
     def __init__(
         self,
         runtime: Runtime,
-        flock: Flock,
+        flock: Topology,
         strategy: Strategy,
         module: FloxModule | None,
         dataset: FloxDataset,
@@ -89,11 +89,11 @@ class SyncProcess(Process):
         return self.global_model, history
 
     def step(
-        self, node: FlockNode | None = None, parent: FlockNode | None = None
+        self, node: Node | None = None, parent: Node | None = None
     ) -> Future[Result]:
         node = self._handle_node(node)
         match self.flock.get_kind(node):
-            case NodeKind.LEADER:
+            case NodeKind.COORDINATOR:
                 self.log("Launching task on the leader.")
                 return self._leader_tasks(node)
             case NodeKind.AGGREGATOR:
@@ -108,16 +108,16 @@ class SyncProcess(Process):
                     f"Illegal kind ({k}) of `FlockNode` (ID=`{node.idx}`)."
                 )
 
-    def _handle_node(self, node: FlockNode | None) -> FlockNode:
+    def _handle_node(self, node: Node | None) -> Node:
         if node is None:
             assert self.flock.leader is not None
             return self.flock.leader
-        elif isinstance(node, FlockNode):
+        elif isinstance(node, Node):
             return node
         else:
             raise ValueError("SyncProcessV2._handle_node(): Illegal value for {node=}")
 
-    def _leader_tasks(self, node: FlockNode) -> Future[Result]:
+    def _leader_tasks(self, node: Node) -> Future[Result]:
         cli_strategy = self.client_strategy
         children = list(self.flock.children(node.idx))
         workers = list(self.flock.workers)
@@ -166,7 +166,7 @@ class SyncProcess(Process):
         return self._aggregator_tasks(node, self._selected_children[client_node])
 
     def _aggregator_tasks(
-        self, node: FlockNode, children: t.Iterable[FlockNode] | None = None
+        self, node: Node, children: t.Iterable[Node] | None = None
     ) -> Future[Result]:
         self.log(f"Preparing to submit AGGREGATION task on node {node.idx}.")
         if children is None:
@@ -191,7 +191,7 @@ class SyncProcess(Process):
 
         return future
 
-    def _worker_tasks(self, node: FlockNode, parent: FlockNode) -> Future[Result]:
+    def _worker_tasks(self, node: Node, parent: Node) -> Future[Result]:
         self.log(f"Preparing to submit WORKER task on node {node.idx}.")
 
         if self.debug_mode:

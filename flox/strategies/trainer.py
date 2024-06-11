@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flox.flock import WorkerState
-    from flox.nn.typing import Loss
+    from flox.topos import WorkerState
+    from flox.learn.typing import Loss
 
 
 class TrainerStrategy(t.Protocol):

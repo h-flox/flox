@@ -8,7 +8,7 @@ from flox.runtime.utils import set_parent_future
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from flox.flock import FlockNode
+    from flox.topos import Node
     from flox.jobs import AggregableJob
     from flox.runtime.runtime import Runtime
     from flox.strategies import AggregatorStrategy
@@ -17,10 +17,10 @@ if t.TYPE_CHECKING:
 def all_child_futures_finished_cbk(
     job: AggregableJob,
     parent_future: Future,
-    children: t.Iterable[FlockNode],
+    children: t.Iterable[Node],
     selected_children_futures: t.Iterable[Future],
     # global_model: FloxModule,
-    node: FlockNode,
+    node: Node,
     runtime: Runtime,
     aggr_strategy: AggregatorStrategy,
     _: Future,

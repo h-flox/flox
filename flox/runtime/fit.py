@@ -4,10 +4,10 @@ import typing as t
 from pandas import DataFrame
 
 import flox.strategies as strats
-from flox.data import FloxDataset
-from flox.flock import Flock
-from flox.nn import FloxModule
-from flox.nn.typing import Kind
+from flox.topos import Topology
+from flox.learn import FloxModule
+from flox.learn.data import FloxDataset
+from flox.learn.typing import Kind
 from flox.process import Process, AsyncProcess, SyncProcess
 from flox.runtime.launcher import (
     GlobusComputeLauncher,
@@ -38,7 +38,7 @@ def create_launcher(kind: str, **launcher_cfg) -> Launcher:
 
 
 def federated_fit(
-    flock: Flock,
+    flock: Topology,
     module: FloxModule,
     datasets: FloxDataset,
     num_global_rounds: int,
@@ -59,7 +59,7 @@ def federated_fit(
     """
 
     Args:
-        flock (Flock):
+        flock (Topology):
         module (FloxModule):
         datasets (FloxDataset):
         num_global_rounds (int):
@@ -74,7 +74,7 @@ def federated_fit(
         debug_mode (bool): ...
 
     Returns:
-        The trained global module hosted on the leader of `flock`.
+        The trained global module hosted on the leader of `topos`.
         The history metrics from training.
     """
     launcher_cfg = dict() if launcher_cfg is None else launcher_cfg

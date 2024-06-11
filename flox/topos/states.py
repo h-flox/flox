@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import typing as t
-from dataclasses import dataclass, field
+
+from pydantic import Field
+from pydantic.dataclasses import dataclass
 
 if t.TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import Any
 
-    from flox.flock import NodeID, FlockNode
-    from flox.nn import FloxModule
+    from flox.topos import NodeID, Node
+    from flox.learn import FloxModule
 
 
 @dataclass
@@ -16,9 +18,9 @@ class NodeState:
     idx: NodeID
     """The ID of the ``FlockNode`` that the ``NodeState`` corresponds with."""
 
-    cache: dict[str, Any] = field(default_factory=dict)
-    """A dictionary containing extra data. This can be used as a temporary "store" to pass data between
-    callbacks for custom ``Strategy`` objects."""
+    cache: dict[str, Any] = Field(init=False, default_factory=dict)
+    """A dictionary containing extra data. This can be used as a temporary 
+    "store" to pass data between callbacks for custom ``Strategy`` objects."""
 
     def __post_init__(self):
         if type(self) is NodeState:
@@ -69,14 +71,16 @@ class NodeState:
 class AggrState(NodeState):
     """State of an Aggregator node in a ``Flock``."""
 
-    children: t.Iterable[FlockNode]
+    children: t.Iterable[Node]
+    """..."""
 
     global_model: FloxModule | None
+    """..."""
 
     def __init__(
         self,
         idx: NodeID,
-        children: t.Iterable[FlockNode],
+        children: t.Iterable[Node],
         global_model: FloxModule | None,
     ) -> None:
         super().__init__(idx)

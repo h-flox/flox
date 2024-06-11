@@ -11,8 +11,8 @@ from torchvision.transforms import ToTensor
 try:
     sys.path.append("..")
     from flox.data.utils import federated_split
-    from flox.flock import Flock
-    from flox.nn import FloxModule
+    from flox.topos import Topology
+    from flox.learn import FloxModule
     from flox.run import federated_fit
     from flox.strategies_depr import FedProx
 except Exception as e:
@@ -47,8 +47,8 @@ class MyModule(FloxModule):
 
 
 def main():
-    flock = Flock.from_yaml("../examples/flocks/complex.yaml")
-    # flock = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
+    flock = Topology.from_yaml("../examples/flocks/complex.yaml")
+    # topos = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,

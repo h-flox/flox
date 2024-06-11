@@ -25,9 +25,9 @@ import typing as t
 
 if t.TYPE_CHECKING:
     from flox.data import FloxDataset
-    from flox.flock import FlockNode
-    from flox.nn import FloxModule
-    from flox.nn.typing import Params
+    from flox.topos import Node
+    from flox.learn import FloxModule
+    from flox.learn.typing import Params
     from flox.runtime import Result
     from flox.runtime.transfer import BaseTransfer
     from flox.strategies import AggregatorStrategy, TrainerStrategy, WorkerStrategy
@@ -38,7 +38,7 @@ class LauncherFunction(t.Protocol):
     Utility protocol that simply identifies any of callable that takes a ``FlockNode`` as its first argument.
     """
 
-    def __call__(self, node: FlockNode, *args, **kwargs) -> t.Any:
+    def __call__(self, node: Node, *args, **kwargs) -> t.Any:
         pass
 
 
@@ -56,8 +56,8 @@ class AggregableJob(t.Protocol):
 
     @staticmethod
     def __call__(
-        node: FlockNode,
-        children: t.Iterable[FlockNode],
+        node: Node,
+        children: t.Iterable[Node],
         transfer: BaseTransfer,
         aggr_strategy: AggregatorStrategy,
         results: list[Result],
@@ -66,7 +66,7 @@ class AggregableJob(t.Protocol):
         AggrCallable
 
         Args:
-            node (FlockNode):
+            node (Node):
             transfer (BaseTransfer):
             aggr_strategy (AggregatorStrategy):
             results (list[Result]):
@@ -90,8 +90,8 @@ class TrainableJob(t.Protocol):
 
     @staticmethod
     def __call__(
-        node: FlockNode,
-        parent: FlockNode,
+        node: Node,
+        parent: Node,
         global_model: FloxModule,
         module_state_dict: Params,
         dataset: FloxDataset,

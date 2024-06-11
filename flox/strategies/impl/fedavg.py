@@ -8,8 +8,8 @@ from flox.strategies.impl.fedsgd import FedSGDClient
 from flox.strategies.strategy import DefaultAggregatorStrategy, DefaultWorkerStrategy
 
 if t.TYPE_CHECKING:
-    from flox.flock import AggrState, NodeID, NodeState, WorkerState
-    from flox.nn.typing import Params
+    from flox.topos import AggrState, NodeID, NodeState, WorkerState
+    from flox.learn.typing import Params
 
 
 class FedAvgAggr(DefaultAggregatorStrategy):

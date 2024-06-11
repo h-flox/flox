@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import datetime
+import typing as t
 from pathlib import Path
 
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-from flox.flock.states import WorkerState
-from flox.nn import FloxModule
-from flox.nn.logger.csv import CSVLogger
-from flox.strategies import TrainerStrategy
+from flox.learn import FloxModule
+from flox.learn.logger import ModelLogger
+from flox.topos.states import WorkerState
+
+if t.TYPE_CHECKING:
+    from flox.strategies import TrainerStrategy
 
 
 class Trainer:
@@ -26,7 +31,7 @@ class Trainer:
             `log_every_n_batches=1`), then your output files will become very large.
         """
         self.trainer_strategy = trainer_strategy
-        self.logger = CSVLogger()
+        self.logger = ModelLogger()
         self.log_every_n_batches = log_every_n_batches
         self.device = device
 

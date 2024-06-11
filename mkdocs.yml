@@ -17,7 +17,7 @@ nav:
       - home/proxystore.md
   - Getting Started:
       - getting_started/index.md
-      - getting_started/flock.md
+      - getting_started/topos.md
       - Strategies:
           - getting_started/strategies_depr/index.md
           - getting_started/strategies_depr/what.md
@@ -34,6 +34,12 @@ nav:
 
 copyright:
   Copyright &copy; 2022 - 2024 Globus Labs, University of Chicago.
+
+watch:
+  - mkdocs.yml
+  - README.md
+  - docs/
+  - flox/
 
 extra:
   social:

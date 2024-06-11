@@ -1,4 +1,4 @@
-from flox.flock import Flock
+from flox.topos import Topology
 
 
 def test_str_ids():
@@ -24,7 +24,7 @@ def test_str_ids():
     }
     failure = False
     try:
-        Flock.from_dict(topo)
+        Topology.from_dict(topo)
     except Exception:
         failure = True
     assert failure

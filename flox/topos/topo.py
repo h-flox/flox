@@ -5,12 +5,11 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-import matplotlib.pyplot as plt
 import networkx as nx
 import yaml
 from matplotlib.axes import Axes
 
-from flox.flock.node import FlockNode, NodeID, NodeKind
+from flox.topos.node import Node, NodeID, NodeKind
 
 REQUIRED_ATTRS: set[str] = {
     "kind",
@@ -33,15 +32,11 @@ PROGS = [
     "patchwork",
 ]
 
-"""
-TODO: Make an `OmegaConf` standard.
-"""
 
-
-class Flock:
+class Topology:
     topo: nx.DiGraph
     node_counter: int
-    leader: FlockNode | None
+    leader: Node | None
 
     def __init__(self, topo: nx.DiGraph | None = None, src: Path | str | None = None):
         """
@@ -74,9 +69,9 @@ class Flock:
 
             found_leader = False
             for idx, data in self.topo.nodes(data=True):
-                if data["kind"] is NodeKind.LEADER:
+                if data["kind"] is NodeKind.COORDINATOR:
                     if not found_leader:
-                        self.leader = FlockNode(
+                        self.leader = Node(
                             idx=idx,
                             kind=data["kind"],
                             globus_compute_endpoint=data["globus_compute_endpoint"],
@@ -96,11 +91,11 @@ class Flock:
         kind: NodeKind | str,
         globus_compute_endpoint_id: UUID | None = None,
         proxystore_endpoint_id: UUID | None = None,
-    ) -> FlockNode:
+    ) -> Node:
         if isinstance(kind, str):
             kind = NodeKind.from_str(kind)
 
-        if kind is NodeKind.LEADER and self.leader is not None:
+        if kind is NodeKind.COORDINATOR and self.leader is not None:
             raise ValueError("A leader node has already been established.")
 
         idx = self.node_counter
@@ -131,6 +126,267 @@ class Flock:
             )
         self.topo.add_edge(u, v, **attrs)
 
+    def validate_topo(self) -> bool:
+        # STEP 1: Confirm that there only exists ONE leader in the Flock.
+        leaders = []
+        for idx, data in self.topo.nodes(data=True):
+            if data["kind"] is NodeKind.COORDINATOR:
+                leaders.append(idx)
+        if len(leaders) != 1:
+            return False
+
+        # STEP 2: Confirm that the Flock has a tree topology.
+        if not nx.is_tree(self.topo):
+            return False
+
+        # TODO: We will also need to confirm that worker nodes are leaves in the tree.
+        ...
+
+        return True
+
+    def parent(self, node: Node | NodeID | int) -> Node:
+        if isinstance(node, Node):
+            idx = node.idx
+        else:
+            idx = node.idx
+
+        if idx == self.leader.idx:
+            raise ValueError("Leader node has no parent.")
+
+        parent_idx = list(self.topo.predecessors(idx))
+        if len(parent_idx) != 1:
+            raise ValueError(
+                f"A node must have exactly 1 parent (except client); illegal topology -- {parent_idx=}"
+            )
+        return self[parent_idx[0]]
+
+    def children(self, node: Node | NodeID | int) -> Iterator[Node]:
+        if isinstance(node, Node):
+            idx = node.idx
+        else:
+            idx = node
+        gce = "globus_compute_endpoint"
+        pse = "proxystore_endpoint"
+        for child_idx in self.topo.successors(idx):
+            yield self[child_idx]
+
+    def get_kind(self, node: Node | NodeID | int) -> NodeKind:
+        if isinstance(node, Node):
+            idx = node.idx
+        else:
+            idx = node
+        return self.topo.nodes[idx]["kind"]
+
+    # ================================================================================= #
+
+    @staticmethod
+    def from_dict(content: dict[str, Any], src: Path | str | None = None) -> "Topology":
+        """
+        Imports a ``dict`` object to create a Flock network.
+
+        Args:
+            content (dict[str, Any]): Dictionary that defines the Flock network.
+            src (Path | str | None): Identifies the source file used to define
+                the Flock network. This should **not** be used by users. It is used by
+                ``Flock`` class methods that are built on top of this method
+                (e.g., ``Flock.from_yaml()``).
+
+        Examples:
+            >>> topo = {
+            >>>     0: {
+            >>>         'kind': 'leader',
+            >>>         'globus_compute_endpoint': LEADER_GC_UUID,
+            >>>         'proxystore_endpoint': LEADER_PS_UUID,
+            >>>         'children': [1, 2]
+            >>>     },
+            >>>     1: {
+            >>>         'kind': 'worker',
+            >>>         'globus_compute_endpoint': w1_gc_endpoint,
+            >>>         'proxystore_endpoint': w1_ps_endpoint,
+            >>>         'children': []
+            >>>     },
+            >>>     2: {
+            >>>         'kind': 'worker',
+            >>>         'globus_compute_endpoint': w2_gc_endpoint,
+            >>>         'proxystore_endpoint': w2_ps_endpoint,
+            >>>         'children': []
+            >>>     }
+            >>> }
+            >>> topos = Topology.from_dict(topo)
+            >>> print(topos.number_of_workers) # outputs 2
+
+        Returns:
+            An instance of a Flock.
+        """
+        topo = nx.DiGraph()
+
+        # STEP 1: Add the nodes with their attributes --- ignore children for now.
+        for node_idx, values in content.items():
+            for attr in REQUIRED_ATTRS:
+                if attr not in values:
+                    raise ValueError(
+                        f"Node {node_idx} does not have required attribute: `{attr}`."
+                    )
+
+            topo.add_node(
+                node_idx,
+                kind=NodeKind.from_str(values["kind"]),
+                globus_compute_endpoint=values["globus_compute_endpoint"],
+                proxystore_endpoint=values["proxystore_endpoint"],
+            )
+            for extra_attr in set(values) - REQUIRED_ATTRS:
+                topo.nodes[node_idx][extra_attr] = values[extra_attr]
+
+        # STEP 2: Add the edges from the children attribute.
+        for node_idx, values in content.items():
+            for child in values["children"]:
+                topo.add_edge(node_idx, child)
+
+        return Topology(topo=topo, src=src)
+
+    @staticmethod
+    def from_json(path: Path | str) -> "Topology":
+        """Imports a .json file as a Flock.
+
+        Examples:
+            >>> topos = Topology.from_json("my_flock.json")
+
+        Args:
+            path (Path | str): Must be a .json file defining a Flock topology.
+
+        Returns:
+            An instance of a Flock.
+        """
+        # TODO: Figure out how to address the issue of JSON requiring string keys for `from_json()`.
+        with open(path) as f:
+            content = json.load(f)
+        return Topology.from_dict(content, src=path)
+
+    @staticmethod
+    def from_yaml(path: Path | str) -> "Topology":
+        """Imports a `.yaml` file as a Flock.
+
+        Examples:
+            >>> topos = Topology.from_yaml("my_flock.yaml")
+
+        Args:
+            path (Path | str): Must be a .yaml file defining a Flock topology.
+
+        Returns:
+            An instance of a Flock.
+        """
+        with open(path) as f:
+            content = yaml.safe_load(f)
+        return Topology.from_dict(content, src=path)
+
+    # ================================================================================= #
+
+    @property
+    def globus_compute_ready(self) -> bool:
+        """
+        True if the Flock instance has all necessary endpoints to be run across
+        Globus Compute; False otherwise.
+        """
+        # TODO: The leader does NOT need a Globus Compute endpoint.
+        key = "globus_compute_endpoint"
+        for _idx, data in self.topo.nodes(data=True):
+            value = data[key]
+            if any([value is None, isinstance(value, UUID) is False]):
+                return False
+        return True
+
+    @property
+    def proxystore_ready(self) -> bool:
+        """
+        This property informs users of whether their `Flock` has all the necessary information to support
+        data transmission over Proxystore (`True`) or not (`False`). Proxystore just requires that each
+        node in the Flock has its own `proxystore_endpoint`.
+
+        It is worth noting that Proxystore is necessary to transmit mid-to-large size model (roughly > 5MB
+        in size) with Globus Compute.
+        """
+        key = "proxystore_endpoint"
+        for _idx, data in self.topo.nodes(data=True):
+            value = data[key]
+
+            try:
+                if any([value is None, UUID(value) is False]):
+                    return False
+            except ValueError:
+                return False
+        return True
+
+    # @property
+    # def leader(self):
+    #     return self.nodes(by_kind=NodeKind.LEADER)
+
+    @property
+    def aggregators(self) -> Iterator[Node]:
+        """
+        The aggregator nodes of the Flock.
+
+        Returns:
+            Generator[FlockNode]
+        """
+        return self.nodes(by_kind=NodeKind.AGGREGATOR)
+
+    @property
+    def workers(self) -> Iterator[Node]:
+        """
+        The worker nodes of the Flock.
+
+        Returns:
+            Generator[FlockNode]
+        """
+        return self.nodes(by_kind=NodeKind.WORKER)
+
+    @functools.cached_property
+    def is_two_tier(self) -> bool:
+        """
+        Whether the topology is a two-tier topology or not.
+
+        Notes:
+            This must be ``True`` for asynchronous FL processes.
+
+        Returns:
+            ``True`` if the topology is two-tier, ``False`` otherwise.
+        """
+        assert self.leader is not None, "There must be a leader node in the topology."
+        leader_id = self.leader.idx
+        assert leader_id is not None, "Leader ID cannot be `None`."
+        tree = nx.bfs_tree(self.topo, leader_id, depth_limit=1)
+        return tree.number_of_nodes() == self.topo.number_of_nodes()
+
+    @functools.cached_property
+    def number_of_aggregators(self) -> int:
+        """The number of aggregator nodes in the Flock."""
+        return len(list(self.aggregators))
+
+    @functools.cached_property
+    def number_of_workers(self) -> int:
+        """The number of worker nodes in the Flock."""
+        return len(list(self.workers))
+
+    @functools.cached_property
+    def two_tier(self) -> bool:
+        assert self.leader is not None
+        for worker in self.workers:
+            if not self.topo.has_edge(self.leader.idx, worker.idx):
+                return False
+        return True
+
+    def nodes(self, by_kind: NodeKind | None = None) -> Iterator[Node]:
+        for idx, data in self.topo.nodes(data=True):
+            if by_kind is not None and data["kind"] != by_kind:
+                continue
+            yield Node(
+                idx=idx,
+                kind=data["kind"],
+                globus_compute_endpoint=data["globus_compute_endpoint"],
+                proxystore_endpoint=data["proxystore_endpoint"],
+                # children_idx: Sequence[NodeID] | None
+            )
+
     def draw(
         self,
         color_by_kind: bool = True,
@@ -142,7 +398,7 @@ class Flock:
         ax: Axes | None = None,
     ) -> Axes:
         """
-        Draws the flock using Matplotlib. The nodes are organized as a tree with the proper
+        Draws the topos using Matplotlib. The nodes are organized as a tree with the proper
         hierarchy based on depth from the Leader node (root).
 
         Args:
@@ -189,12 +445,12 @@ class Flock:
 
         if node_kind_attrs is None:
             node_kind_attrs = {
-                NodeKind.LEADER: {"color": "red", "shape": "D", "size": 300},
+                NodeKind.COORDINATOR: {"color": "red", "shape": "D", "size": 300},
                 NodeKind.AGGREGATOR: {"color": "green", "shape": "s", "size": 300},
                 NodeKind.WORKER: {"color": "blue", "shape": "o", "size": 300},
             }
 
-        kinds = [NodeKind.LEADER, NodeKind.AGGREGATOR, NodeKind.WORKER]
+        kinds = [NodeKind.COORDINATOR, NodeKind.AGGREGATOR, NodeKind.WORKER]
         node_sets = [leader, aggregators, workers]
         for kind, nodes in zip(kinds, node_sets):
             nx.draw_networkx_nodes(
@@ -214,271 +470,10 @@ class Flock:
 
         return ax
 
-    def validate_topo(self) -> bool:
-        # STEP 1: Confirm that there only exists ONE leader in the Flock.
-        leaders = []
-        for idx, data in self.topo.nodes(data=True):
-            if data["kind"] is NodeKind.LEADER:
-                leaders.append(idx)
-        if len(leaders) != 1:
-            return False
-
-        # STEP 2: Confirm that the Flock has a tree topology.
-        if not nx.is_tree(self.topo):
-            return False
-
-        # TODO: We will also need to confirm that worker nodes are leaves in the tree.
-        ...
-
-        return True
-
-    def parent(self, node: FlockNode | NodeID | int) -> FlockNode:
-        if isinstance(node, FlockNode):
-            idx = node.idx
-        else:
-            idx = node.idx
-
-        if idx == self.leader.idx:
-            raise ValueError("Leader node has no parent.")
-
-        parent_idx = list(self.topo.predecessors(idx))
-        if len(parent_idx) != 1:
-            raise ValueError(
-                f"A node must have exactly 1 parent (except client); illegal topology -- {parent_idx=}"
-            )
-        return self[parent_idx[0]]
-
-    def children(self, node: FlockNode | NodeID | int) -> Iterator[FlockNode]:
-        if isinstance(node, FlockNode):
-            idx = node.idx
-        else:
-            idx = node
-        gce = "globus_compute_endpoint"
-        pse = "proxystore_endpoint"
-        for child_idx in self.topo.successors(idx):
-            yield self[child_idx]
-
-    def get_kind(self, node: FlockNode | NodeID | int) -> NodeKind:
-        if isinstance(node, FlockNode):
-            idx = node.idx
-        else:
-            idx = node
-        return self.topo.nodes[idx]["kind"]
-
-    # ================================================================================= #
-
-    @staticmethod
-    def from_dict(content: dict[str, Any], src: Path | str | None = None) -> "Flock":
-        """
-        Imports a ``dict`` object to create a Flock network.
-
-        Args:
-            content (dict[str, Any]): Dictionary that defines the Flock network.
-            src (Path | str | None): Identifies the source file used to define
-                the Flock network. This should **not** be used by users. It is used by
-                ``Flock`` class methods that are built on top of this method
-                (e.g., ``Flock.from_yaml()``).
-
-        Examples:
-            >>> topo = {
-            >>>     0: {
-            >>>         'kind': 'leader',
-            >>>         'globus_compute_endpoint': LEADER_GC_UUID,
-            >>>         'proxystore_endpoint': LEADER_PS_UUID,
-            >>>         'children': [1, 2]
-            >>>     },
-            >>>     1: {
-            >>>         'kind': 'worker',
-            >>>         'globus_compute_endpoint': w1_gc_endpoint,
-            >>>         'proxystore_endpoint': w1_ps_endpoint,
-            >>>         'children': []
-            >>>     },
-            >>>     2: {
-            >>>         'kind': 'worker',
-            >>>         'globus_compute_endpoint': w2_gc_endpoint,
-            >>>         'proxystore_endpoint': w2_ps_endpoint,
-            >>>         'children': []
-            >>>     }
-            >>> }
-            >>> flock = Flock.from_dict(topo)
-            >>> print(flock.number_of_workers) # outputs 2
-
-        Returns:
-            An instance of a Flock.
-        """
-        topo = nx.DiGraph()
-
-        # STEP 1: Add the nodes with their attributes --- ignore children for now.
-        for node_idx, values in content.items():
-            for attr in REQUIRED_ATTRS:
-                if attr not in values:
-                    raise ValueError(
-                        f"Node {node_idx} does not have required attribute: `{attr}`."
-                    )
-
-            topo.add_node(
-                node_idx,
-                kind=NodeKind.from_str(values["kind"]),
-                globus_compute_endpoint=values["globus_compute_endpoint"],
-                proxystore_endpoint=values["proxystore_endpoint"],
-            )
-            for extra_attr in set(values) - REQUIRED_ATTRS:
-                topo.nodes[node_idx][extra_attr] = values[extra_attr]
-
-        # STEP 2: Add the edges from the children attribute.
-        for node_idx, values in content.items():
-            for child in values["children"]:
-                topo.add_edge(node_idx, child)
-
-        return Flock(topo=topo, src=src)
-
-    @staticmethod
-    def from_json(path: Path | str) -> "Flock":
-        """Imports a .json file as a Flock.
-
-        Examples:
-            >>> flock = Flock.from_json("my_flock.json")
-
-        Args:
-            path (Path | str): Must be a .json file defining a Flock topology.
-
-        Returns:
-            An instance of a Flock.
-        """
-        # TODO: Figure out how to address the issue of JSON requiring string keys for `from_json()`.
-        with open(path) as f:
-            content = json.load(f)
-        return Flock.from_dict(content, src=path)
-
-    @staticmethod
-    def from_yaml(path: Path | str) -> "Flock":
-        """Imports a `.yaml` file as a Flock.
-
-        Examples:
-            >>> flock = Flock.from_yaml("my_flock.yaml")
-
-        Args:
-            path (Path | str): Must be a .yaml file defining a Flock topology.
-
-        Returns:
-            An instance of a Flock.
-        """
-        with open(path) as f:
-            content = yaml.safe_load(f)
-        return Flock.from_dict(content, src=path)
-
-    # ================================================================================= #
-
-    @property
-    def globus_compute_ready(self) -> bool:
-        """
-        True if the Flock instance has all necessary endpoints to be run across
-        Globus Compute; False otherwise.
-        """
-        # TODO: The leader does NOT need a Globus Compute endpoint.
-        key = "globus_compute_endpoint"
-        for _idx, data in self.topo.nodes(data=True):
-            value = data[key]
-            if any([value is None, isinstance(value, UUID) is False]):
-                return False
-        return True
-
-    @property
-    def proxystore_ready(self) -> bool:
-        """
-        This property informs users of whether their `Flock` has all the necessary information to support
-        data transmission over Proxystore (`True`) or not (`False`). Proxystore just requires that each
-        node in the Flock has its own `proxystore_endpoint`.
-
-        It is worth noting that Proxystore is necessary to transmit mid-to-large size model (roughly > 5MB
-        in size) with Globus Compute.
-        """
-        key = "proxystore_endpoint"
-        for _idx, data in self.topo.nodes(data=True):
-            value = data[key]
-
-            try:
-                if any([value is None, UUID(value) is False]):
-                    return False
-            except ValueError:
-                return False
-        return True
-
-    # @property
-    # def leader(self):
-    #     return self.nodes(by_kind=NodeKind.LEADER)
-
-    @property
-    def aggregators(self) -> Iterator[FlockNode]:
-        """
-        The aggregator nodes of the Flock.
-
-        Returns:
-            Generator[FlockNode]
-        """
-        return self.nodes(by_kind=NodeKind.AGGREGATOR)
-
-    @property
-    def workers(self) -> Iterator[FlockNode]:
-        """
-        The worker nodes of the Flock.
-
-        Returns:
-            Generator[FlockNode]
-        """
-        return self.nodes(by_kind=NodeKind.WORKER)
-
-    @functools.cached_property
-    def is_two_tier(self) -> bool:
-        """
-        Whether the topology is a two-tier topology or not.
-
-        Notes:
-            This must be ``True`` for asynchronous FL processes.
-
-        Returns:
-            ``True`` if the topology is two-tier, ``False`` otherwise.
-        """
-        assert self.leader is not None, "There must be a leader node in the topology."
-        leader_id = self.leader.idx
-        assert leader_id is not None, "Leader ID cannot be `None`."
-        tree = nx.bfs_tree(self.topo, leader_id, depth_limit=1)
-        return tree.number_of_nodes() == self.topo.number_of_nodes()
-
-    @functools.cached_property
-    def number_of_aggregators(self) -> int:
-        """The number of aggregator nodes in the Flock."""
-        return len(list(self.aggregators))
-
-    @functools.cached_property
-    def number_of_workers(self) -> int:
-        """The number of worker nodes in the Flock."""
-        return len(list(self.workers))
-
-    @functools.cached_property
-    def two_tier(self) -> bool:
-        assert self.leader is not None
-        for worker in self.workers:
-            if not self.topo.has_edge(self.leader.idx, worker.idx):
-                return False
-        return True
-
-    def nodes(self, by_kind: NodeKind | None = None) -> Iterator[FlockNode]:
-        for idx, data in self.topo.nodes(data=True):
-            if by_kind is not None and data["kind"] != by_kind:
-                continue
-            yield FlockNode(
-                idx=idx,
-                kind=data["kind"],
-                globus_compute_endpoint=data["globus_compute_endpoint"],
-                proxystore_endpoint=data["proxystore_endpoint"],
-                # children_idx: Sequence[NodeID] | None
-            )
-
     # ================================================================================= #
 
     def __repr__(self):
-        return f"Flock(`{self.mode}`)"
+        return f"Topology(`{self.mode}`)"
 
-    def __getitem__(self, idx: NodeID) -> FlockNode:
-        return FlockNode(idx, **self.topo.nodes[idx])
+    def __getitem__(self, idx: NodeID) -> Node:
+        return Node(idx, **self.topo.nodes[idx])
