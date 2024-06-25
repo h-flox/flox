@@ -10,7 +10,7 @@ import yaml
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
-from flox.topos import Node, NodeKind, NodeID
+from flox.topos.types import Node, NodeKind, NodeID
 
 REQUIRED_ATTRS: set[str] = {
     "kind",

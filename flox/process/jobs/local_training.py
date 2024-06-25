@@ -8,7 +8,7 @@ if t.TYPE_CHECKING:
     from flox.learn.data import FloxDataset
     from flox.topos import Node, WorkerState
     from flox.learn import FloxModule
-    from flox.learn.typing import Params
+    from flox.learn.types import Params
     from flox.runtime import Result
     from flox.runtime.transfer import TransferProtocol
     from flox.strategies import TrainerStrategy, WorkerStrategy

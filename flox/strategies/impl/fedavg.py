@@ -9,7 +9,7 @@ from flox.strategies.strategy import DefaultAggregatorStrategy, DefaultWorkerStr
 
 if t.TYPE_CHECKING:
     from flox.topos import AggrState, NodeID, NodeState, WorkerState
-    from flox.learn.typing import Params
+    from flox.learn.types import Params
 
 
 class FedAvgAggr(DefaultAggregatorStrategy):

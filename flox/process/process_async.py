@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
     from flox.learn.data import FloxDataset
     from flox.topos import Topology, NodeID, Node, NodeState, AggrState, WorkerState
-    from flox.learn.typing import Params
+    from flox.learn.types import Params
     from flox.learn import FloxModule
     from flox.runtime import Result
     from flox.runtime.runtime import Runtime

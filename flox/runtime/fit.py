@@ -6,7 +6,7 @@ from pandas import DataFrame
 from flox import strategies as fl_strategies
 from flox.learn import FloxModule
 from flox.learn.data import FloxDataset
-from flox.learn.typing import Kind
+from flox.learn.types import Kind
 from flox.process import Process, AsyncProcess, SyncProcess
 from flox.runtime.launcher import (
     GlobusComputeLauncher,

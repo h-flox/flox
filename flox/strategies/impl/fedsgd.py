@@ -1,6 +1,6 @@
 import typing as t
 
-from flox.learn.typing import Params
+from flox.learn.types import Params
 from flox.strategies import Strategy
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.commons.worker_selection import random_worker_selection

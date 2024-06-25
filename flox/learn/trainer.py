@@ -10,10 +10,10 @@ from torch.utils.data import DataLoader
 
 from flox.learn import FloxModule
 from flox.learn.logger import ModelLogger
-from flox.topos import WorkerState
 
 if t.TYPE_CHECKING:
     from flox.strategies import TrainerStrategy
+    from flox.topos.types import WorkerState
 
 
 class Trainer:

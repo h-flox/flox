@@ -10,7 +10,7 @@ if t.TYPE_CHECKING:
     from pandas import DataFrame
 
     from flox.topos import NodeID, NodeKind, NodeState
-    from flox.learn.typing import Params
+    from flox.learn.types import Params
 
 
 @dataclass

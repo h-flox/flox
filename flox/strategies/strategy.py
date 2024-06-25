@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 import torch
 
-from flox.learn.typing import Params, Loss
+from flox.learn.types import Params, Loss
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.topos import NodeState, NodeID, AggrState, WorkerState
 

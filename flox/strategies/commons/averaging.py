@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from flox.topos import NodeID
-    from flox.learn.typing import Params
+    from flox.learn.types import Params
 
 
 def average_state_dicts(

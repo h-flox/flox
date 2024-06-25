@@ -1,10 +1,45 @@
+import sys
+import typing as t
 from collections import defaultdict
-from typing import Any
+
+from numpy.random import default_rng, Generator
+
+
+class _ProbSkipBlock(Exception):
+    pass
+
+
+class Probability:
+    def __init__(self, p: float, rng: t.Optional[Generator | int] = None):
+        if not 0.0 <= p <= 1.0:
+            raise ValueError(
+                "Illegal value for probability `p`. Must be in range [0.0, 1.0]."
+            )
+
+        if not isinstance(rng, Generator):
+            rng = default_rng(rng)
+
+        self.skip = bool(p <= rng.random())
+
+    def __enter__(self):
+        if self.skip:
+            sys.settrace(lambda *args, **keys: None)
+            frame = sys._getframe(1)
+            frame.f_trace = self.trace
+
+    def trace(self, frame, event, arg):
+        raise _ProbSkipBlock()
+
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            return
+        if issubclass(type, _ProbSkipBlock):
+            return True
 
 
 def extend_dicts(
-    *dicts: dict[Any, list[Any]], pure_dict: bool = True
-) -> dict[Any, list[Any]] | defaultdict[Any, list[Any]]:
+    *dicts: dict[t.Any, list[t.Any]], pure_dict: bool = True
+) -> dict[t.Any, list[t.Any]] | defaultdict[t.Any, list[t.Any]]:
     """
     Takes some variable number of ``dict`` objects and will append them along each key.
 

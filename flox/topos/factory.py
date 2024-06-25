@@ -9,7 +9,7 @@ import networkx as nx
 from flox.topos import Topology, NodeKind, Node
 
 if t.TYPE_CHECKING:
-    from flox.topos.typing import NodeID
+    from flox.topos.types import NodeID
 
 
 def create_standard_flock(num_workers: int, **edge_attrs) -> Topology:

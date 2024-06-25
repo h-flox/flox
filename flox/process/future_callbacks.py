@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from flox.topos import Node
-    from flox.jobs import AggregableJob
+    from flox.process.jobs import AggregableJob
     from flox.runtime.runtime import Runtime
     from flox.strategies import AggregatorStrategy
 

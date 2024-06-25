@@ -4,7 +4,7 @@ import typing as t
 
 if t.TYPE_CHECKING:
     from flox.topos import WorkerState
-    from flox.learn.typing import Loss
+    from flox.learn.types import Loss
 
 
 class TrainerStrategy(t.Protocol):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 from collections import OrderedDict
 
-from flox.learn.typing import Params
+from flox.learn.types import Params
 from flox.strategies import Strategy
 from flox.strategies.strategy import DefaultAggregatorStrategy
 from flox.topos import AggrState, NodeID, NodeState

@@ -1,4 +1,4 @@
-from typing import Any
+import typing as t
 
 from pandas import DataFrame
 
@@ -9,10 +9,10 @@ class ModelLogger:
     def __init__(self):
         self.records = []
 
-    def log(self, name: str, value: Any) -> None:
+    def log(self, name: str, value: t.Any) -> None:
         self.records.append({name: value})
 
-    def log_dict(self, record: dict[str, Any]):
+    def log_dict(self, record: dict[str, t.Any]):
         self.records.append(record)
 
     def clear(self):
@@ -20,3 +20,11 @@ class ModelLogger:
 
     def dataframe(self) -> DataFrame:
         return DataFrame.from_records(self.records)
+
+
+class NewLogger:
+    def __enter__(self):
+        print("Entering `NewLogger` context.")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        print("Exiting `NewLogger` context")
