@@ -2,14 +2,13 @@ from pathlib import Path
 
 import pandas as pd
 import torch
+from flox.data import FederatedSubsets, LocalDataset, federated_split
 from sklearn.datasets import make_classification
-
 # TODO: Get rid of `sklearn` as a dependency.
 from torch.utils.data import Dataset
 
-from flox.data import FederatedSubsets, LocalDataset, federated_split
-from flox.flock import Flock
-from flox.flock.states import NodeState
+from flox.topos import Topology, NodeState
+
 
 ##################################################################################################################
 
@@ -34,10 +33,10 @@ class MyDataDir(LocalDataset):
 """
 def test_dir_datasets(tmpdir):
     data_dir = tmpdir
-    flock = Flock.from_yaml("examples/flocks/2-tier.yaml")
+    topos = Flock.from_yaml("examples/flocks/2-tier.yaml")
     rand_state = np.random.RandomState(1)
 
-    for worker in flock.workers:
+    for worker in topos.workers:
         client_dir = (data_dir / f"{worker.idx}").mkdir()
         client_path = client_dir / "data.csv"
         with open(client_path, "w") as file:
@@ -59,7 +58,7 @@ def test_dir_datasets(tmpdir):
             data = pd.read_csv(path)
             print(data.head())
 
-    for worker in flock.workers:
+    for worker in topos.workers:
         state = WorkerState(worker.idx, None, None)
         try:
             worker_data = MyDataDir(state, tmpdir)
@@ -95,7 +94,7 @@ class MyRandomDataset(Dataset):
 
 
 def test_fed_subsets():
-    flock = Flock.from_yaml("examples/flocks/2-tier.yaml")
+    flock = Topology.from_yaml("examples/flocks/2-tier.yaml")
     data = MyRandomDataset(n_classes=2)
     fed_data = federated_split(
         data, flock, num_classes=2, samples_alpha=1.0, labels_alpha=1.0

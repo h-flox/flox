@@ -1,25 +1,14 @@
-from typing import Any
+import typing as t
 
 
-class BaseTransfer:
-    # def report(
-    #     self,
-    #     node_state: NodeState | dict[str, Any] | None,
-    #     node_idx: NodeID | None,
-    #     node_kind: NodeKind | None,
-    #     params: Params | None,
-    #     history: DataFrame | None,
-    # ) -> Result:
-    #     return JobResult(
-    #         node_state=node_state,
-    #         node_idx=node_idx,
-    #         node_kind=node_kind,
-    #         params=params,
-    #         history=history,
-    #     )
+class TransferProtocol(t.Protocol):
+    def transfer(self, data: t.Any) -> t.Any:
+        """
+        Transfer data method.
 
-    def report(self, data: Any) -> Any:
-        return data
+        Args:
+            data (t.Any): Data to transfer across the network.
 
-    def proxy(self, data: Any) -> Any:
-        return data
+        Returns:
+            Transferred object.
+        """

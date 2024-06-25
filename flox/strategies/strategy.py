@@ -3,15 +3,16 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass, field
 
-if t.TYPE_CHECKING:
-    import torch
+import torch
 
-    from flox.flock import AggrState, NodeID, NodeState, WorkerState
-    from flox.nn.typing import Loss, Params
+from flox.learn.typing import Params, Loss
+from flox.strategies.commons.averaging import average_state_dicts
+from flox.topos import NodeState, NodeID, AggrState, WorkerState
+
+if t.TYPE_CHECKING:
     from flox.runtime import JobResult
     from flox.strategies.aggregator import AggregatorStrategy
     from flox.strategies.client import ClientStrategy
-    from flox.strategies.commons.averaging import average_state_dicts
     from flox.strategies.trainer import TrainerStrategy
     from flox.strategies.worker import WorkerStrategy
 

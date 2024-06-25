@@ -1,16 +1,16 @@
 import typing as t
 
-from flox.flock import AggrState, NodeID, NodeState
-from flox.nn.typing import Params
+from flox.learn.typing import Params
 from flox.strategies import Strategy
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.commons.worker_selection import random_worker_selection
-from flox.strategies.strategy import DefaultAggregatorStrategy, DefaultClientStrategy
+from flox.strategies.strategy import DefaultClientStrategy, DefaultAggregatorStrategy
+from flox.topos import AggrState, NodeID, NodeState
 
 
 class FedSGDClient(DefaultClientStrategy):
     """
-    ...
+    Federated learning algorithm that does a simple averaging strategy for model aggregation.
     """
 
     def __init__(
@@ -39,7 +39,7 @@ class FedSGDClient(DefaultClientStrategy):
 
 class FedSGDAggr(DefaultAggregatorStrategy):
     """
-    ...
+    Standard averaging strategy.
     """
 
     def aggregate_params(

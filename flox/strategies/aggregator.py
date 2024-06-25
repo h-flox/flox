@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flox.flock import AggrState, NodeID, NodeState
-    from flox.nn.typing import Params
+    from flox.topos import AggrState, NodeID, NodeState
+    from flox.learn.typing import Params
 
 
 class AggregatorStrategy(t.Protocol):

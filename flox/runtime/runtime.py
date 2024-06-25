@@ -1,42 +1,34 @@
 import typing as t
 from concurrent.futures import Future
 
-from flox.jobs import Job
+from flox.process.jobs import Job
 from flox.runtime.launcher import Launcher
-from flox.runtime.transfer import BaseTransfer
+from flox.runtime.transfer import TransferProtocol
 
 Config = t.NewType("Config", dict[str, t.Any])
 
+if t.TYPE_CHECKING:
+    from flox.runtime import Result
 
-class Borg:
+
+class _Borg:
     _shared_state: dict[str, t.Any] = {}
 
     def __init__(self):
         self.__dict__ = self._shared_state
 
 
-class Runtime(Borg):
+class Runtime(_Borg):
     launcher: Launcher
-    transfer: BaseTransfer
+    transfer: TransferProtocol
 
-    def __init__(self, launcher: Launcher, transfer: BaseTransfer):
-        Borg.__init__(self)
+    def __init__(self, launcher: Launcher, transfer: TransferProtocol):
+        _Borg.__init__(self)
         self.launcher = launcher
         self.transfer = transfer
 
-    # TODO: Come up with typing for `Job = NewType("Job", Callable[[...], ...])`
-    def submit(self, job: Job, /, **kwargs) -> Future:
+    def submit(self, job: Job, /, **kwargs) -> Future[Result]:
         return self.launcher.submit(job, **kwargs, transfer=self.transfer)
 
-    def proxy(self, data: t.Any):
-        return self.transfer.proxy(data)
-
-    # @classmethod
-    # def create(
-    #     cls, launcher_cfg: Config | None, transfer_cfg: Config | None
-    # ) -> "Runtime":
-    #     launcher_cfg = {} if launcher_cfg is None else launcher_cfg
-    #     transfer_cfg = {} if transfer_cfg is None else transfer_cfg
-    #     launcher = Launcher.create(**launcher_cfg)
-    #     transfer = Transfer.create(**transfer_cfg)
-    #     return Runtime(launcher, transfer)
+    def transfer(self, data: t.Any):
+        return self.transfer.transfer(data)
