@@ -1,7 +1,6 @@
-from flox.jobs.aggregation import AggregateJob, DebugAggregateJob
-from flox.jobs.protocols import AggregableJob, TrainableJob
-
+from flox.process.jobs.aggregation import AggregateJob, DebugAggregateJob
 from flox.process.jobs.local_training import DebugLocalTrainJob, LocalTrainJob
+from flox.process.jobs.protocols import AggregableJob, TrainableJob
 
 
 def test_protocol_implementations():

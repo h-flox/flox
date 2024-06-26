@@ -1,10 +1,35 @@
+from __future__ import annotations
+
+import typing as t
+
+import networkx as nx
+from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
+
+if t.TYPE_CHECKING:
+    from flox.topos import NodeKind
+
+PROGS = [
+    "dot",
+    "neato",
+    "fdp",
+    "sfdp",
+    "circo",
+    "twopi",
+    "nop",
+    "nop2",
+    "osage",
+    "patchwork",
+]
+
+
 def draw(
     self,
     color_by_kind: bool = True,
     with_labels: bool = True,
     label_color: str = "white",
     prog: str = "dot",
-    node_kind_attrs: dict[NodeKind, dict[str, Any]] | None = None,
+    node_kind_attrs: dict[NodeKind, dict[str, t.Any]] | None = None,
     show_axis_border: bool = False,
     ax: Axes | None = None,
 ) -> Axes:
@@ -13,6 +38,7 @@ def draw(
     hierarchy based on depth from the Leader node (root).
 
     Args:
+        self: ...
         color_by_kind (bool): Color nodes by kind, if True.
         with_labels (bool): Display labels of nodes, if True.
         label_color (str): Color of labels.

@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib.axes import Axes
 from torch.utils.data import DataLoader, Dataset
 
-from flox.data import FederatedSubsets
-from flox.topos import Topology, NodeID
+from flox.learn.data import FederatedSubsets
+from flox.topos import NodeID, Topology
 
 
 # TODO: Implement something similar for regression-based data.

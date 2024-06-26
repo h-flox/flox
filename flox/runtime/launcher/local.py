@@ -1,6 +1,6 @@
 from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
 
-from flox.jobs import Job
+from flox.process.jobs import Job
 from flox.runtime.launcher.base import Launcher
 
 

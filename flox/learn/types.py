@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-if t.TYPE_CHECKING:
-    import torch
+import torch
 
 Kind: t.TypeAlias = t.Literal["async", "sync", "sync-v2"]
 """..."""

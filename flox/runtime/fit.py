@@ -7,7 +7,7 @@ from flox import strategies as fl_strategies
 from flox.learn import FloxModule
 from flox.learn.data import FloxDataset
 from flox.learn.types import Kind
-from flox.process import Process, AsyncProcess, SyncProcess
+from flox.process import AsyncProcess, Process, SyncProcess
 from flox.runtime.launcher import (
     GlobusComputeLauncher,
     Launcher,
@@ -15,7 +15,7 @@ from flox.runtime.launcher import (
     ParslLauncher,
 )
 from flox.runtime.runtime import Runtime
-from flox.runtime.transfer import TransferProtocol, ProxyStoreTransfer, RedisTransfer
+from flox.runtime.transfer import ProxyStoreTransfer, RedisTransfer, Transfer
 from flox.topos import Topology
 
 
@@ -86,7 +86,7 @@ def federated_fit(
     elif isinstance(launcher, ParslLauncher):
         transfer = RedisTransfer(ip_address=redis_ip_address)
     else:
-        transfer = TransferProtocol()
+        transfer = Transfer()
 
     runtime = Runtime(launcher, transfer)
     parsed_strategy = parse_strategy_args(
@@ -127,11 +127,8 @@ def federated_fit(
 
     start_time = datetime.datetime.now()
     trained_module, history = process.start(debug_mode=debug_mode)
-    try:
-        history["train/rel_time"] = history["train/time"] - start_time
-        history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
-    except KeyError as err:
-        print(history.head())
+    history["train/rel_time"] = history["train/time"] - start_time
+    history["train/rel_time"] = history["train/rel_time"].dt.total_seconds()
 
     if isinstance(runtime.launcher, ParslLauncher):
         runtime.launcher.executor.shutdown()
@@ -140,13 +137,13 @@ def federated_fit(
 
 
 def parse_strategy_args(
-    strategy: strategies.Strategy | str | None,
-    client_strategy: strategies.ClientStrategy | None,
-    aggr_strategy: strategies.AggregatorStrategy | None,
-    worker_strategy: strategies.WorkerStrategy | None,
-    trainer_strategy: strategies.TrainerStrategy | None,
+    strategy: fl_strategies.Strategy | str | None,
+    client_strategy: fl_strategies.ClientStrategy | None,
+    aggr_strategy: fl_strategies.AggregatorStrategy | None,
+    worker_strategy: fl_strategies.WorkerStrategy | None,
+    trainer_strategy: fl_strategies.TrainerStrategy | None,
     **kwargs,
-) -> strategies.Strategy:
+) -> fl_strategies.Strategy:
     if isinstance(strategy, fl_strategies.Strategy):
         return strategy
 

@@ -2,14 +2,14 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from flox.data import FederatedSubsets, LocalDataset, federated_split
 from sklearn.datasets import make_classification
 
 # TODO: Get rid of `sklearn` as a dependency.
 from torch.utils.data import Dataset
 
-from flox.topos import Topology, NodeState
-
+from flox.learn.data import FederatedSubsets, LocalDataset
+from flox.learn.data.utils import federated_split
+from flox.topos import NodeState, Topology
 
 ##################################################################################################################
 
