@@ -1,4 +1,4 @@
-from flox.logger import Logger, CSVLogger, TensorBoardLogger
+from flox.logger import Logger, CSVLogger, TensorBoardLogger, NullLogger
 from flox.topos import Topology, Node
 
 # from flox.runtime.process.process_sync_v2 import SyncProcessV2
