@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import Future
 
-from flox.jobs import Job
+from flox.process.jobs import Job
 
 # @dataclass
 # class LauncherConfig:

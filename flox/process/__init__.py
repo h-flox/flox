@@ -9,5 +9,7 @@ one of the two that (currently) supports hierarchical execution.
 """
 
 from flox.process.process_async import AsyncProcess
+from flox.process.process import Process
+from flox.process.process_sync import SyncProcess
 
 __all__ = ["AsyncProcess", "Process", "SyncProcess"]

@@ -63,6 +63,7 @@ simulated, decentralized dataset.
 """
 
 from flox.learn.data.core import FederatedSubsets, FloxDataset, LocalDataset
+from flox.learn.data.utils import federated_split
 
 __all__ = [
     "FloxDataset",

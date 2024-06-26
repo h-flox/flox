@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from torch.utils.data import DataLoader, Dataset
 
-from flox.data import FederatedSubsets
+from flox.learn.data import FederatedSubsets
 from flox.topos import Topology, NodeID
 
 
