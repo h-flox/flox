@@ -3,8 +3,10 @@ import typing as t
 
 from pandas import DataFrame
 
-from flox import strategies as fl_strategies
+import flox.strategies as fl_strategies
+#from flox import strategies as fl_strategies
 from flox.learn import FloxModule
+from flox.logger import Logger, CSVLogger, TensorBoardLogger
 from flox.learn.data import FloxDataset
 from flox.learn.types import Kind
 from flox.process import AsyncProcess, Process, SyncProcess
@@ -53,7 +55,7 @@ def federated_fit(
     launcher_kind: str = "process",
     launcher_cfg: dict[str, t.Any] | None = None,
     debug_mode: bool = False,
-    logging: bool = False,
+    logger: Logger | None = None,
     redis_ip_address: str = "127.0.0.1",
 ) -> tuple[FloxModule, DataFrame]:
     """
@@ -109,7 +111,7 @@ def federated_fit(
                 module=module,
                 dataset=datasets,
                 strategy=parsed_strategy,
-                logging=logging,
+                logger=logger,
             )
 
         case "async":

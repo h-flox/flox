@@ -6,6 +6,7 @@ from concurrent.futures import Future
 from flox.process.jobs import Job
 from flox.runtime.launcher import Launcher
 from flox.runtime.transfer import TransferProtocol
+from flox.runtime.result import Result
 
 Config = t.NewType("Config", dict[str, t.Any])
 

@@ -2,7 +2,8 @@ experiments/
 runinfo/
 notebooks/
 examples/
-
+**/logs.csv
+runs/
 # macOS system
 .DS_Store
 experiments/

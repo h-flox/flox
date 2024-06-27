@@ -9,6 +9,7 @@ from datetime import datetime
 import pandas as pd
 from tqdm import tqdm
 
+from flox.logger import Logger, CSVLogger, TensorBoardLogger
 from flox.process.future_callbacks import all_child_futures_finished_cbk
 from flox.process.jobs import AggregateJob, DebugLocalTrainJob, LocalTrainJob
 from flox.process.process import Process
@@ -42,7 +43,7 @@ class SyncProcess(Process):
         dataset: FloxDataset,
         global_rounds: int,
         debug_mode: bool = False,
-        logging: bool = False,
+        logger: Logger | None = None,
     ):
         self.runtime = runtime
         self.flock = flock
@@ -52,7 +53,7 @@ class SyncProcess(Process):
         self.global_rounds = global_rounds
         self.debug_mode = debug_mode
         self._selected_children = {}
-        self.logging = logging
+        self.logger = logger
         self.params = None
 
     def start(self, debug_mode: bool = False) -> tuple[FloxModule, pd.DataFrame]:
@@ -234,5 +235,6 @@ class SyncProcess(Process):
     def log(self, msg: str):
         ts = str(datetime.now())
         ts = ts.split(".")[0]
-        if self.logging:
-            print(f"( {ts} - SyncProcessV2 ) ❯  {msg}")
+        if self.logger:
+            #print(f"( {ts} - SyncProcessV2 ) ❯  {msg}")
+            self.logger.log(f"( {ts} - SyncProcess)", msg)

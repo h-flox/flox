@@ -1,8 +1,7 @@
-from __future__ import annotations
-
+import torch
+import torch
 import typing as t
 
-import torch
 
 Kind: t.TypeAlias = t.Literal["async", "sync", "sync-v2"]
 """..."""
