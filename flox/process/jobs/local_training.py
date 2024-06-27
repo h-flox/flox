@@ -5,13 +5,13 @@ import typing as t
 from flox.process.jobs.protocols import TrainableJob
 
 if t.TYPE_CHECKING:
-    from flox.learn.data import FloxDataset
-    from flox.topos import Node, WorkerState
     from flox.learn import FloxModule
+    from flox.learn.data import FloxDataset
     from flox.learn.types import Params
     from flox.runtime import Result
     from flox.runtime.transfer import TransferProtocol
     from flox.strategies import TrainerStrategy, WorkerStrategy
+    from flox.topos import Node
 
 
 class LocalTrainJob(TrainableJob):
@@ -43,14 +43,15 @@ class LocalTrainJob(TrainableJob):
             Local fitting results.
         """
 
-        from torch.utils.data import DataLoader
         from copy import deepcopy
         from datetime import datetime
 
+        from proxystore.proxy import Proxy, extract
+        from torch.utils.data import DataLoader
+
         from flox.learn.trainer import Trainer
         from flox.runtime import JobResult
-
-        from proxystore.proxy import extract, Proxy
+        from flox.topos import WorkerState
 
         training_start = datetime.now()
         local_model = deepcopy(global_model)
@@ -140,8 +141,8 @@ class DebugLocalTrainJob(TrainableJob):
         import numpy as np
         import pandas
 
-        from flox.topos import WorkerState
         from flox.runtime import JobResult
+        from flox.topos import WorkerState
 
         local_module = global_model
         node_state = WorkerState(

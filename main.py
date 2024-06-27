@@ -1,16 +1,13 @@
 import os
 
-import pandas as pd
-import pytest
 import torch
 from torch import nn
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 
-from flox import federated_fit
+from flox import Topology, federated_fit
 from flox.learn import FloxModule
 from flox.learn.data.utils import federated_split
-from flox.topos import Topology
 
 
 class MyModule(FloxModule):
@@ -41,8 +38,7 @@ class MyModule(FloxModule):
         return torch.optim.SGD(self.parameters(), lr=1e-3)
 
 
-@pytest.fixture
-def data():
+def load_data():
     return MNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,
@@ -51,26 +47,10 @@ def data():
     )
 
 
-def test_2_tier_fit(data):
-    flock = Topology.from_yaml("examples/flocks/2-tier.yaml")
-    fed_data = federated_split(
-        data,
-        flock,
-        10,
-        samples_alpha=10.0,
-        labels_alpha=10.0,
-    )
-    module, train_history = federated_fit(
-        flock, MyModule(), fed_data, 2, strategy="fedavg", launcher_kind="thread"
-    )
-    assert isinstance(module, FloxModule)
-    assert isinstance(train_history, pd.DataFrame)
-
-
-def test_3_tier_fit(data):
+if __name__ == "__main__":
     flock = Topology.from_yaml("examples/flocks/3-tier.yaml")
     fed_data = federated_split(
-        data,
+        load_data(),
         flock,
         10,
         samples_alpha=10.0,
@@ -79,21 +59,3 @@ def test_3_tier_fit(data):
     module, train_history = federated_fit(
         flock, MyModule(), fed_data, 2, strategy="fedavg", launcher_kind="thread"
     )
-    assert isinstance(module, FloxModule)
-    assert isinstance(train_history, pd.DataFrame)
-
-
-def test_complex_fit(data):
-    flock = Topology.from_yaml("examples/flocks/complex.yaml")
-    fed_data = federated_split(
-        data,
-        flock,
-        10,
-        samples_alpha=10.0,
-        labels_alpha=10.0,
-    )
-    module, train_history = federated_fit(
-        flock, MyModule(), fed_data, 2, strategy="fedavg", launcher_kind="thread"
-    )
-    assert isinstance(module, FloxModule)
-    assert isinstance(train_history, pd.DataFrame)

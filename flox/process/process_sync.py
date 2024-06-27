@@ -7,27 +7,27 @@ from copy import deepcopy
 from datetime import datetime
 
 import pandas as pd
-from flox.process.jobs import LocalTrainJob, AggregateJob, DebugLocalTrainJob
 from tqdm import tqdm
 
 from flox.logger import Logger, CSVLogger, TensorBoardLogger
 from flox.process.future_callbacks import all_child_futures_finished_cbk
+from flox.process.jobs import AggregateJob, DebugLocalTrainJob, LocalTrainJob
 from flox.process.process import Process
 from flox.process.testing import test_model
-from flox.topos import Node, NodeKind, AggrState
+from flox.topos import AggrState, Node, NodeKind
 
 if t.TYPE_CHECKING:
     from flox import Topology
-    from flox.data import FloxDataset
     from flox.learn import FloxModule
-    from flox.runtime.runtime import Runtime
+    from flox.learn.data import FloxDataset
     from flox.runtime import Result
+    from flox.runtime.runtime import Runtime
     from flox.strategies import (
+        AggregatorStrategy,
+        ClientStrategy,
         Strategy,
         TrainerStrategy,
-        AggregatorStrategy,
         WorkerStrategy,
-        ClientStrategy,
     )
 
 
@@ -174,7 +174,7 @@ class SyncProcess(Process):
             children = self.flock.children(node)
 
         job = AggregateJob()
-        state = AggrState(node.idx, children, None)
+        _ = AggrState(node.idx, children, None)  # FIXME: This state is never used.
         children_futures = [self.step(child, node) for child in children]
         future: Future[Result] = Future()
         finished_children_cbk = functools.partial(

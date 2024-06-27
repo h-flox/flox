@@ -25,6 +25,7 @@ class ModelLogger:
 class NewLogger:
     def __enter__(self):
         print("Entering `NewLogger` context.")
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         print("Exiting `NewLogger` context")

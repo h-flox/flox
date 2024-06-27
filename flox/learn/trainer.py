@@ -49,7 +49,7 @@ class Trainer:
         model.to(self.device)
         with torch.set_grad_enabled(True):
             for epoch in range(num_epochs):
-                avg_loss = self._epoch(
+                _ = self._epoch(
                     epoch,
                     model,
                     node_state,
@@ -72,7 +72,7 @@ class Trainer:
                     self.validate(model, valid_dataloader, epoch, valid_ckpt_path)
 
         # model.to("cpu")
-        return self.logger.to_pandas()
+        return self.logger.dataframe()
 
     def test(
         self,
@@ -94,7 +94,7 @@ class Trainer:
         model.eval()
         with torch.no_grad():
             for batch_idx, batch in enumerate(valid_dataloader):
-                loss = model.validation_step(batch, batch_idx)
+                _ = model.validation_step(batch, batch_idx)
                 # self.logger.log_dict(
                 #     {
                 #         "valid/loss": loss.item(),
@@ -114,6 +114,21 @@ class Trainer:
         valid_ckpt_path: Path | str | None = None,
         valid_dataloader: DataLoader | None = None,
     ):
+        """
+
+        Args:
+            epoch_index:
+            model:
+            node_state:
+            optimizer:
+            train_dataloader:
+            valid_ckpt_path:
+            valid_dataloader:
+
+        Returns:
+            The average loss of the epoch.
+        """
+
         def log_condition(batch_idx: int):
             conditions = [
                 batch_idx % self.log_every_n_batches == self.log_every_n_batches - 1,

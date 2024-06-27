@@ -12,3 +12,8 @@ class TransferProtocol(t.Protocol):
         Returns:
             Transferred object.
         """
+
+
+class Transfer:
+    def transfer(self, data: t.Any) -> t.Any:  # noqa
+        return data

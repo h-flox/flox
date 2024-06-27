@@ -9,7 +9,7 @@ from flox.runtime.launcher.base import Launcher
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from flox.jobs import Job
+    from flox.process.jobs import Job
 
 
 class GlobusComputeLauncher(Launcher):

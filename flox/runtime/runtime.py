@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from concurrent.futures import Future
 
@@ -21,15 +23,15 @@ class _Borg:
 
 class Runtime(_Borg):
     launcher: Launcher
-    transfer: TransferProtocol
+    transfer_protocol: TransferProtocol
 
-    def __init__(self, launcher: Launcher, transfer: TransferProtocol):
+    def __init__(self, launcher: Launcher, transfer_protocol: TransferProtocol):
         _Borg.__init__(self)
         self.launcher = launcher
-        self.transfer = transfer
+        self.transfer_protocol = transfer_protocol
 
     def submit(self, job: Job, /, **kwargs) -> Future[Result]:
-        return self.launcher.submit(job, **kwargs, transfer=self.transfer)
+        return self.launcher.submit(job, **kwargs, transfer=self.transfer_protocol)
 
     def transfer(self, data: t.Any):
-        return self.transfer.transfer(data)
+        return self.transfer_protocol.transfer(data)

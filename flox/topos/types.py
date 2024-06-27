@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import abc
 import typing as t
+import warnings
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Iterable
+from typing import Any
 
 from flox.learn import FloxModule
 
@@ -53,7 +55,7 @@ class NodeKind(Enum):
     WORKER = auto()  # leaf
 
     @staticmethod
-    def from_str(s: str) -> "NodeKind":
+    def from_str(s: str) -> NodeKind:
         """
         Converts a string (namely, 'leader', 'aggregator', and 'worker') into their respective item in this Enum.
 
@@ -72,9 +74,17 @@ class NodeKind(Enum):
         s = s.lower().strip()
         matches = {
             "leader": NodeKind.COORDINATOR,
+            "coordinator": NodeKind.COORDINATOR,
             "aggregator": NodeKind.AGGREGATOR,
             "worker": NodeKind.WORKER,
         }
+
+        if s == "leader":
+            warnings.warn(
+                "FLoX is phasing out the term 'leader' for node kinds. Please transition to 'coordinator'.",
+                DeprecationWarning,
+            )
+
         if s in matches:
             return matches[s]
         raise ValueError(
@@ -102,7 +112,7 @@ class NodeState(abc.ABC):
     """The ID of the ``FlockNode`` that the ``NodeState`` corresponds with."""
 
     cache: dict[str, Any] = field(init=False, default_factory=dict)
-    """A dictionary containing extra data. This can be used as a temporary 
+    """A dictionary containing extra data. This can be used as a temporary
     "store" to pass data between callbacks for custom ``Strategy`` objects."""
 
     def __init__(self, idx: NodeID):
