@@ -5,7 +5,7 @@ from numpy import array
 from numpy.random import RandomState
 from numpy.typing import NDArray
 
-from flox.topos import Node, NodeKind
+from flox.federation.topologies import Node, NodeKind
 
 
 def random_worker_selection(

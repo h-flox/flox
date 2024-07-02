@@ -8,8 +8,8 @@ from uuid import UUID
 import networkx as nx
 import yaml
 
-import flox.topos.vis as topo_vis
-from flox.topos.types import Node, NodeID, NodeKind
+from flox.federation.topologies import draw as topo_draw
+from flox.federation.topologies.types import Node, NodeID, NodeKind
 
 REQUIRED_ATTRS: set[str] = {
     "kind",
@@ -131,11 +131,16 @@ class Topology:
 
         return True
 
-    def parent(self, node: Node | NodeID | int) -> Node:
-        if isinstance(node, Node):
-            idx = node.idx
-        else:
-            idx = node.idx
+    def parent(self, node: Node | NodeID) -> Node:
+        match node:
+            case Node():
+                idx = node.idx
+            case NodeID():
+                idx = node
+            case _:
+                raise ValueError(
+                    "Illegal value for argument `node`. Must be of type `Node` or `NodeID` (`str` or `int`)."
+                )
 
         if idx == self.coordinator.idx:
             raise ValueError("Leader node has no parent.")
@@ -202,8 +207,8 @@ class Topology:
             >>>         'children': []
             >>>     }
             >>> }
-            >>> topos = Topology.from_dict(topo)
-            >>> print(topos.number_of_workers) # outputs 2
+            >>> topologies = Topology.from_dict(topo)
+            >>> print(topologies.number_of_workers) # outputs 2
 
         Returns:
             An instance of a Topology.
@@ -239,7 +244,7 @@ class Topology:
         """Imports a .json file as a Topology.
 
         Examples:
-            >>> topos = Topology.from_json("my_flock.json")
+            >>> topologies = Topology.from_json("my_flock.json")
 
         Args:
             path (Path | str): Must be a .json file defining a Topology topology.
@@ -257,7 +262,7 @@ class Topology:
         """Imports a `.yaml` file as a Topology.
 
         Examples:
-            >>> topos = Topology.from_yaml("my_flock.yaml")
+            >>> topologies = Topology.from_yaml("my_flock.yaml")
 
         Args:
             path (Path | str): Must be a .yaml file defining a Topology topology.
@@ -316,7 +321,7 @@ class Topology:
         The aggregator nodes of the Topology.
 
         Returns:
-            Generator[FlockNode]
+            Iterator[FlockNode]
         """
         return self.nodes(by_kind=NodeKind.AGGREGATOR)
 
@@ -387,4 +392,4 @@ class Topology:
     def __getitem__(self, idx: NodeID) -> Node:
         return Node(idx, **self.topo.nodes[idx])
 
-    draw = topo_vis.draw
+    draw = topo_draw.draw

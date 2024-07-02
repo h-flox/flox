@@ -1,4 +1,4 @@
-from flox.topos import Topology
+from flox.federation.topologies import Topology
 
 
 def test_str_ids():

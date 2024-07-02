@@ -1,10 +1,11 @@
-from flox.logger.base import Logger
-from datetime import datetime
-from typing import Any
-import pandas as pd
 import csv
+from datetime import datetime
 from pathlib import Path
-from flox.topos import Node
+from typing import Any
+
+import pandas as pd
+
+from flox.federation.topologies import Node
 
 
 class CSVLogger:
@@ -55,6 +56,6 @@ class CSVLogger:
     def to_pandas(self, filename: str | Path | None = None) -> None | str:
         df = pd.DataFrame.from_records(self.records)
         return df.to_csv(filename, index=False)
-    
+
     def clear(self) -> None:
         self.records = []

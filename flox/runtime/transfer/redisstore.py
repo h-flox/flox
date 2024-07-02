@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import typing
+import typing as t
 
 from proxystore.connectors.redis import RedisConnector
 from proxystore.store import Store
 
-from flox.runtime.transfer.base import TransferProtocol
-
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from proxystore.proxy import Proxy
 
 
-class RedisTransfer(TransferProtocol):
+class RedisTransfer:
     def __init__(
         self, ip_address, name: str = "default"
     ) -> None:  # , store: str = "endpoint",):
@@ -19,5 +17,5 @@ class RedisTransfer(TransferProtocol):
         store = Store(name=name, connector=self.connector)
         self.config = store.config()
 
-    def transfer(self, data: typing.Any) -> Proxy[typing.Any]:
+    def transfer(self, data: t.Any) -> Proxy[t.Any]:
         return Store.from_config(self.config).proxy(data)

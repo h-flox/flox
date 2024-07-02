@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib.axes import Axes
 from torch.utils.data import DataLoader, Dataset
 
+from flox.federation.topologies import NodeID, Topology
 from flox.learn.data import FederatedSubsets
-from flox.topos import NodeID, Topology
 
 
 # TODO: Implement something similar for regression-based data.
@@ -35,17 +35,17 @@ def federated_split(
         flock (Topology): The network to split data across.
         num_classes (int): Number of classes available in ``data``.
         samples_alpha (float): The $\alpha>0$ parameter under the Dirichlet distribution for *the number of
-            data samples* each worker node in ``topos`` will have. The number of data samples across all worker
+            data samples* each worker node in ``topologies`` will have. The number of data samples across all worker
             nodes become increasingly heterogeneous as $\alpha$ gets larger.
         labels_alpha (float): The $\alpha>0$ parameter under the Dirichlet distribution for the class distributions
-            across worker nodes in ``topos``. The number of data samples across all worker nodes become increasingly
-            heterogeneous as $\alpha$ gets larger.
+            across worker nodes in ``topologies``. The number of data samples across all worker nodes become
+            increasingly heterogeneous as $\alpha$ gets larger.
 
     Examples:
         >>> from torchvision.datasets import MNIST
-        >>> topos = Topology.from_yaml("my_flock.yml")
+        >>> topologies = Topology.from_yaml("my_flock.yml")
         >>> data = MNIST()
-        >>> subsets = federated_split(data, topos, num_classes=10, samples_alpha=1., labels_alpha=1.)
+        >>> subsets = federated_split(data, topologies, num_classes=10, samples_alpha=1., labels_alpha=1.)
         >>> next(iter(subsets.items()))
         >>> # (NodeID(1), Subset(...)) # TODO: Run a real example and paste it here.
 
@@ -112,7 +112,7 @@ def federated_split(
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
-    # mapping = {w.idx: Subset(data, indices[w.idx]) for w in topos.workers}
+    # mapping = {w.idx: Subset(data, indices[w.idx]) for w in topologies.workers}
     return FederatedSubsets(data, indices)
 
 

@@ -8,10 +8,10 @@ if t.TYPE_CHECKING:
 
 def test_model(module: FloxModule) -> tuple[float, float]:
     import os
+
     import torch
     import torch.nn.functional as F
     import torchvision.transforms as transforms
-
     from torch.utils.data import DataLoader
     from torchvision.datasets import FashionMNIST
 
@@ -33,7 +33,7 @@ def test_model(module: FloxModule) -> tuple[float, float]:
         num_samples = 0
         running_loss = 0.0
         running_acc = 0.0
-        for batch_idx, batch in enumerate(dataloader):
+        for _, batch in enumerate(dataloader):
             inputs, targets = batch
             preds = module(inputs)
             assert isinstance(preds, torch.Tensor) and isinstance(targets, torch.Tensor)

@@ -6,49 +6,49 @@ import typing as t
 
 import networkx as nx
 
-from flox.topos import Topology, NodeKind, Node
+from flox.federation.topologies import NodeKind, Topology
 
 if t.TYPE_CHECKING:
-    from flox.topos.types import NodeID
+    from flox.federation.topologies.types import NodeID
 
 
-def create_standard_flock(num_workers: int, **edge_attrs) -> Topology:
+def two_tier_topology(num_workers: int, **edge_attrs) -> Topology:
     flock = Topology()
-    flock.coordinator = flock.add_node("coordinator")
+    flock.coordinator = flock.add_node(NodeKind.COORDINATOR)
     for _ in range(num_workers):
-        worker = flock.add_node("worker")
+        worker = flock.add_node(NodeKind.WORKER)
         flock.add_edge(flock.coordinator.idx, worker.idx, **edge_attrs)
     return flock
 
 
-def _choose_parents(tree: nx.DiGraph, children: list[NodeID], parents: list[NodeID]):
-    children_without_parents = [child for child in children]
+def hierarchical_topology(
+    workers: int, aggr_shape: t.List[int] | None = None
+) -> Topology:
+    def choose_parents(tree: nx.DiGraph, children: list[NodeID], parents: list[NodeID]):
+        children_without_parents = [child for child in children]
 
-    for parent in parents:
-        child = random.choice(children_without_parents)
-        children_without_parents.remove(child)
-        tree.add_edge(parent, child)
+        for parent in parents:
+            child = random.choice(children_without_parents)
+            children_without_parents.remove(child)
+            tree.add_edge(parent, child)
 
-    for child in children_without_parents:
-        parent = random.choice(parents)
-        tree.add_edge(parent, child)
+        for child in children_without_parents:
+            parent = random.choice(parents)
+            tree.add_edge(parent, child)
 
-
-def create_hierarchical_flock(
-    workers: int, aggr_shape: t.List[int] | None = None, return_nx: bool = False
-) -> Topology | nx.DiGraph:
     client_idx = 0
-    flock = nx.DiGraph()
-    flock.add_node(
+    graph = nx.DiGraph()
+    graph.add_node(
         client_idx,
         kind=NodeKind.COORDINATOR,
         proxystore_endpoint=None,
         globus_compute_endpoint=None,
     )
-    worker_nodes = []
+
+    worker_nodes: t.List[NodeID] = []
     for i in range(workers):
         idx = i + 1
-        flock.add_node(
+        graph.add_node(
             idx,
             kind=NodeKind.WORKER,
             proxystore_endpoint=None,
@@ -58,10 +58,8 @@ def create_hierarchical_flock(
 
     if aggr_shape is None:
         for worker in worker_nodes:
-            flock.add_edge(client_idx, worker)
-        if return_nx:
-            return flock
-        return Topology(flock)
+            graph.add_edge(client_idx, worker)
+        return Topology(graph)
 
     # Validate the values of the `aggr_shape` argument.
     for i in range(len(aggr_shape) - 1):
@@ -77,7 +75,7 @@ def create_hierarchical_flock(
             )
 
     aggr_idx = 1 + workers
-    last_aggrs = [client_idx]
+    last_aggrs: t.List[NodeID] = [client_idx]
     for num_aggrs in aggr_shape:
         if not 0 < num_aggrs <= workers:
             raise ValueError(
@@ -85,9 +83,9 @@ def create_hierarchical_flock(
                 "no greater than the number of workers."
             )
 
-        curr_aggrs = []
-        for aggr in range(num_aggrs):
-            flock.add_node(
+        curr_aggrs: t.List[NodeID] = []
+        for _ in range(num_aggrs):
+            graph.add_node(
                 aggr_idx,
                 kind=NodeKind.AGGREGATOR,
                 proxystore_endpoint=None,
@@ -96,17 +94,15 @@ def create_hierarchical_flock(
             curr_aggrs.append(aggr_idx)
             aggr_idx += 1
 
-        _choose_parents(flock, curr_aggrs, last_aggrs)
+        choose_parents(graph, curr_aggrs, last_aggrs)
         last_aggrs = curr_aggrs
 
-    _choose_parents(flock, worker_nodes, last_aggrs)
+    choose_parents(graph, worker_nodes, last_aggrs)
 
-    if return_nx:
-        return flock
-    return Topology(flock)
+    return Topology(graph)
 
 
-def created_balanced_hierarchical_flock(branching_factor: int, height: int):
+def balanced_hierarchical_topology(branching_factor: int, height: int):
     tree = nx.balanced_tree(branching_factor, height, create_using=nx.DiGraph)
     gce = "globus_compute_endpoint"
     pse = "proxystore_endpoint"
@@ -126,7 +122,7 @@ def created_balanced_hierarchical_flock(branching_factor: int, height: int):
     return Topology(tree)
 
 
-def created_balanced_hierarchical_flock_by_leaves(
+def balanced_hierarchical_topology_by_leaves(
     leaves: int,
     height: int,
     rounding: t.Literal["round", "floor", "ceil"] = "round",
@@ -170,7 +166,7 @@ def created_balanced_hierarchical_flock_by_leaves(
         case "ceil":
             r = math.ceil(branching_factor)
         case _:
-            raise ValueError(f"Illegal value for arg `rounding`.")
+            raise ValueError("Illegal value for arg `rounding`.")
 
     tree = nx.balanced_tree(r, height, create_using=nx.DiGraph)
 
@@ -189,19 +185,3 @@ def created_balanced_hierarchical_flock_by_leaves(
         tree.nodes[idx]["proxystore_endpoint"] = None
 
     return Topology(tree)
-
-
-def from_yaml():
-    pass
-
-
-def from_dict(topo: dict[str, t.Any]):
-    pass
-
-
-def from_list(topo: list[Node | dict[str, t.Any]]):
-    pass
-
-
-def from_json():
-    pass

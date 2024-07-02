@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import typing as t
 
-from flox.process.jobs.protocols import TrainableJob
+from flox.federation.jobs.protocols import TrainJob
 
 if t.TYPE_CHECKING:
+    from flox.federation.topologies import Node
     from flox.learn import FloxModule
     from flox.learn.data import FloxDataset
     from flox.learn.types import Params
     from flox.runtime import Result
     from flox.runtime.transfer import TransferProtocol
     from flox.strategies import TrainerStrategy, WorkerStrategy
-    from flox.topos import Node
 
 
-class LocalTrainJob(TrainableJob):
+class LocalTrainJob(TrainJob):
     @staticmethod
     def __call__(
         node: Node,
@@ -49,9 +49,9 @@ class LocalTrainJob(TrainableJob):
         from proxystore.proxy import Proxy, extract
         from torch.utils.data import DataLoader
 
+        from flox.federation.topologies import WorkerState
         from flox.learn.trainer import Trainer
         from flox.runtime import JobResult
-        from flox.topos import WorkerState
 
         training_start = datetime.now()
         local_model = deepcopy(global_model)
@@ -110,7 +110,7 @@ class LocalTrainJob(TrainableJob):
         return "LocalTrainJob"
 
 
-class DebugLocalTrainJob(TrainableJob):
+class DebugLocalTrainJob(TrainJob):
     @staticmethod
     def __call__(
         node: Node,
@@ -141,8 +141,8 @@ class DebugLocalTrainJob(TrainableJob):
         import numpy as np
         import pandas
 
+        from flox.federation.topologies import WorkerState
         from flox.runtime import JobResult
-        from flox.topos import WorkerState
 
         local_module = global_model
         node_state = WorkerState(

@@ -3,10 +3,10 @@ from __future__ import annotations
 import typing as t
 from collections import OrderedDict
 
+from flox.federation.topologies import AggrState, NodeID, NodeState
 from flox.learn.types import Params
 from flox.strategies import Strategy
 from flox.strategies.strategy import DefaultAggregatorStrategy
-from flox.topos import AggrState, NodeID, NodeState
 
 
 class FedAsyncAggr(DefaultAggregatorStrategy):
@@ -22,8 +22,8 @@ class FedAsyncAggr(DefaultAggregatorStrategy):
         **kwargs,
     ) -> Params:
         last_updated = kwargs.get("last_updated_node", None)
-        if last_updated is None:
-            raise ValueError
+        assert last_updated is not None
+        assert isinstance(last_updated, int | str)
 
         global_model_params = state.global_model.state_dict()
         last_updated_params = children_state_dicts[last_updated]

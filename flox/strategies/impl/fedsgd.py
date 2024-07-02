@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import typing as t
 
-from flox.learn.types import Params
+from flox.federation.topologies import AggrState, NodeID, NodeState
 from flox.strategies import Strategy
 from flox.strategies.commons.averaging import average_state_dicts
 from flox.strategies.commons.worker_selection import random_worker_selection
-from flox.strategies.strategy import DefaultClientStrategy, DefaultAggregatorStrategy
-from flox.topos import AggrState, NodeID, NodeState
+from flox.strategies.strategy import DefaultAggregatorStrategy, DefaultClientStrategy
+
+if t.TYPE_CHECKING:
+    from flox.federation.topologies import Node
+    from flox.learn.types import Params
 
 
 class FedSGDClient(DefaultClientStrategy):
@@ -24,8 +29,8 @@ class FedSGDClient(DefaultClientStrategy):
         self.always_include_child_aggregators = always_include_child_aggregators
 
     def select_worker_nodes(
-        self, state: NodeState, workers: t.Iterable[NodeID], seed: int | None = None
-    ):
+        self, state: NodeState, workers: t.Iterable[Node], seed: int | None = None
+    ) -> t.Iterable[Node]:
         # print(f"FedSGDClient.select_worker_nodes() :: {workers=}")
         selected_workers = random_worker_selection(
             workers,

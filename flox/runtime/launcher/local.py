@@ -1,6 +1,6 @@
 from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
 
-from flox.process.jobs import Job
+from flox.federation.jobs import Job
 from flox.runtime.launcher.base import Launcher
 
 
@@ -15,7 +15,7 @@ class LocalLauncher(Launcher):
         super().__init__()
         self.max_workers = n_workers
         match pool:
-            case "process":
+            case "federation":
                 self.pool = ProcessPoolExecutor(n_workers)
             case "thread":
                 self.pool = ThreadPoolExecutor(n_workers)

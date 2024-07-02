@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flox.topos import AggrState, NodeID, NodeState
+    from flox.federation.topologies import AggrState, NodeID, NodeState
     from flox.learn.types import Params
 
 

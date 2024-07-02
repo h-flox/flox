@@ -5,7 +5,8 @@ from torch import nn
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 
-from flox import Topology, federated_fit
+from flox import federated_fit
+from flox.federation.topologies import Topology
 from flox.learn import FloxModule
 from flox.learn.data.utils import federated_split
 
@@ -59,3 +60,4 @@ if __name__ == "__main__":
     module, train_history = federated_fit(
         flock, MyModule(), fed_data, 2, strategy="fedavg", launcher_kind="thread"
     )
+    train_history.to_csv("temp.csv")

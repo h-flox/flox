@@ -2,7 +2,7 @@
 This submodule contains default implementations of well-known federated learning strategies (or algorithms)
 from the academic literature. These include:
 
-- [`FedSGD`][flox.strategies.impl.fedSGD.FedSGD]
+- [`FedSGD`][flox.strategies.impl.fedsgd.FedSGD]
 - [`FedAvg`][flox.strategies.impl.fedavg.FedAvg]
 - [`FedProx`][flox.strategies.impl.fedprox.FedProx]
 

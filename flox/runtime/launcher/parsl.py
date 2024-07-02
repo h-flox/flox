@@ -2,7 +2,7 @@ import time
 import typing as t
 from concurrent.futures import Future
 
-from flox.process.jobs import Job
+from flox.federation.jobs import Job
 from flox.runtime.launcher.base import Launcher
 
 

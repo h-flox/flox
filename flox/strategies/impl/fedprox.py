@@ -4,15 +4,16 @@ import typing as t
 
 import torch
 
-from flox.const import DEVICE
 from flox.strategies import Strategy
 from flox.strategies.impl.fedavg import FedAvgWorker
-from flox.strategies.impl.fedsgd import FedSGDClient, FedSGDAggr
+from flox.strategies.impl.fedsgd import FedSGDAggr, FedSGDClient
 from flox.strategies.strategy import DefaultTrainerStrategy
 
 if t.TYPE_CHECKING:
-    from flox.topos import WorkerState
+    from flox.federation.topologies import WorkerState
     from flox.learn.types import Loss
+
+DEVICE = "cpu"
 
 
 class FedProxTrainer(DefaultTrainerStrategy):

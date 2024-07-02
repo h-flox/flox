@@ -1,9 +1,10 @@
 from datetime import datetime
-from flox.logger.base import Logger
-from typing import Any
-from torch.utils.tensorboard import SummaryWriter
-from flox.topos import Node, NodeKind
 from pathlib import Path
+from typing import Any
+
+from torch.utils.tensorboard import SummaryWriter
+
+from flox.federation.topologies import Node
 
 
 class TensorBoardLogger:
@@ -25,7 +26,6 @@ class TensorBoardLogger:
         epoch: int | None = None,
         time: datetime | None = None,
     ) -> None:
-
         self.records.append(
             {
                 "name": name,

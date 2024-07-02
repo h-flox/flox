@@ -1,13 +1,13 @@
 import typing as t
 
-from flox.process.jobs.protocols import AggregableJob
+from flox.federation.jobs.protocols import AggrJob
+from flox.federation.topologies import AggrState, Node, NodeID, NodeState
 from flox.runtime.result import Result
 from flox.runtime.transfer import TransferProtocol
 from flox.strategies import AggregatorStrategy
-from flox.topos import Node, NodeID, NodeState, AggrState
 
 
-class AggregateJob(AggregableJob):
+class AggregateJob(AggrJob):
     @staticmethod
     def __call__(
         node: Node,
@@ -66,7 +66,7 @@ class AggregateJob(AggregableJob):
         return "AggregateJob"
 
 
-class DebugAggregateJob(AggregableJob):
+class DebugAggregateJob(AggrJob):
     @staticmethod
     def __call__(
         node: Node,
@@ -91,7 +91,7 @@ class DebugAggregateJob(AggregableJob):
         import numpy
         import pandas
 
-        from flox.topos import AggrState
+        from flox.federation.topologies import AggrState
         from flox.runtime import JobResult
 
         result = next(iter(results))

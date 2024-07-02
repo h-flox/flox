@@ -10,6 +10,7 @@ project_dir = "flox"
 reference_dir = "docs"
 
 for path in sorted(Path(project_dir).rglob("**/*.py")):
+    print(f"{path=}")
     # module_path = path.relative_to(project_dir).with_suffix("")
     module_path = path.with_suffix("")
     doc_path = path.relative_to(project_dir).with_suffix(".md")

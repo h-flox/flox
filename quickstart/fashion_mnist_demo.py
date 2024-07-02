@@ -11,7 +11,7 @@ from torchvision.transforms import ToTensor
 try:
     sys.path.append("..")
     from flox.data.utils import federated_split
-    from flox.topos import Topology
+    from flox.federation.topologies import Topology
     from flox.learn import FloxModule
     from flox.run import federated_fit
     from flox.strategies_depr import FedProx
@@ -48,7 +48,7 @@ class MyModule(FloxModule):
 
 def main():
     flock = Topology.from_yaml("../examples/flocks/complex.yaml")
-    # topos = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
+    # topologies = Flock.from_yaml("../examples/flocks/gce-complex-sample.yaml")
     mnist = FashionMNIST(
         root=os.environ["TORCH_DATASETS"],
         download=False,

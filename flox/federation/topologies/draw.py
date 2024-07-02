@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
 if t.TYPE_CHECKING:
-    from flox.topos import NodeKind
+    from flox.federation.topologies import NodeKind
 
 PROGS = [
     "dot",
@@ -34,7 +34,7 @@ def draw(
     ax: Axes | None = None,
 ) -> Axes:
     """
-    Draws the topos using Matplotlib. The nodes are organized as a tree with the proper
+    Draws the topologies using Matplotlib. The nodes are organized as a tree with the proper
     hierarchy based on depth from the Leader node (root).
 
     Args:

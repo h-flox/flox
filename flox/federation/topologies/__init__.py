@@ -2,8 +2,15 @@
 This module defines the `Flock` network topology class, along with related classes and functions.
 """
 
-from flox.topos.topo import Topology
-from flox.topos.types import Node, NodeKind, NodeID, NodeState, AggrState, WorkerState
+from flox.federation.topologies.topo import Topology
+from flox.federation.topologies.types import (
+    AggrState,
+    Node,
+    NodeID,
+    NodeKind,
+    NodeState,
+    WorkerState,
+)
 
 __all__ = [
     "Topology",

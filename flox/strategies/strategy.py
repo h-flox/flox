@@ -5,23 +5,28 @@ from dataclasses import dataclass, field
 
 import torch
 
-from flox.learn.types import Params, Loss
-from flox.strategies.commons.averaging import average_state_dicts
-from flox.topos import NodeState, NodeID, AggrState, WorkerState
-
 if t.TYPE_CHECKING:
+    from flox.federation.topologies import (
+        AggrState,
+        Node,
+        NodeID,
+        NodeState,
+        WorkerState,
+    )
+    from flox.learn.types import Loss, Params
     from flox.runtime import JobResult
     from flox.strategies.aggregator import AggregatorStrategy
     from flox.strategies.client import ClientStrategy
+    from flox.strategies.commons.averaging import average_state_dicts
     from flox.strategies.trainer import TrainerStrategy
     from flox.strategies.worker import WorkerStrategy
 
 
 class DefaultClientStrategy:
     def select_worker_nodes(
-        self, state: NodeState, workers: t.Iterable[NodeID], seed: int | None = None
-    ) -> t.Iterable[NodeID]:
-        return workers
+        self, state: NodeState, children: t.Iterable[Node], seed: int | None
+    ) -> t.Iterable[Node]:
+        return children
 
 
 class DefaultAggregatorStrategy:

@@ -8,14 +8,14 @@ from flox.runtime.utils import set_parent_future
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from flox.topos import Node
-    from flox.process.jobs import AggregableJob
+    from flox.federation.jobs import AggrJob
+    from flox.federation.topologies import Node
     from flox.runtime.runtime import Runtime
     from flox.strategies import AggregatorStrategy
 
 
 def all_child_futures_finished_cbk(
-    job: AggregableJob,
+    job: AggrJob,
     parent_future: Future,
     children: t.Iterable[Node],
     selected_children_futures: t.Iterable[Future],
@@ -31,6 +31,20 @@ def all_child_futures_finished_cbk(
     partial function will be added as a callback which is run after the completion
     of each child future. But, it will only perform aggregation once since only the
     last future to be completed will activate the conditional.
+
+    Note:
+        This function is intended to be used with the ``functools.partial`` function.
+
+    Args:
+        job (AggrJob): ...
+        parent_future (Future): ...
+        children (t.Iterable[Node]): ...
+        selected_children_futures (t.Iterable[Future]): ...
+        node (Node): ...
+        runtime (Runtime): ...
+        aggr_strategy (AggregatorStrategy): ...
+        _ (Future): ...
+
     """
     if all([child_future.done() for child_future in selected_children_futures]):
         # TODO: We need to add error-handling for cases when the

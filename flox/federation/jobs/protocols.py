@@ -24,9 +24,9 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flox.learn.data import FloxDataset
-    from flox.topos import Node
+    from flox.federation.topologies import Node
     from flox.learn import FloxModule
+    from flox.learn.data import FloxDataset
     from flox.learn.types import Params
     from flox.runtime import Result
     from flox.runtime.transfer import TransferProtocol
@@ -43,7 +43,7 @@ class LauncherFunction(t.Protocol):
 
 
 @t.runtime_checkable
-class AggregableJob(t.Protocol):
+class AggrJob(t.Protocol):
     """
     A protocol that defines functions that are valid impl to be used for model aggregation in
     launching FLoX processes.
@@ -77,7 +77,7 @@ class AggregableJob(t.Protocol):
 
 
 @t.runtime_checkable
-class TrainableJob(t.Protocol):
+class TrainJob(t.Protocol):
     """
     A protocol that defines functions that are valid impl to be used for local training in
     launching FLoX processes.

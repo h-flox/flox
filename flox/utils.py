@@ -2,7 +2,7 @@ import sys
 import typing as t
 from collections import defaultdict
 
-from numpy.random import default_rng, Generator
+from numpy.random import Generator, default_rng
 
 
 class _ProbSkipBlock(Exception):
@@ -10,6 +10,25 @@ class _ProbSkipBlock(Exception):
 
 
 class Probability:
+    """
+    A utility class for executing code blocks probabilistically using a context manager.
+
+    A simple example can be seen below:
+    >>> with Probability(p=0.5):
+    >>>     print("This will be printed with a 50% likelihood.")
+
+    If you wish to have reproducible executions, then it is recommended that you generate
+    a `Generator` from `numpy` using `numpy.random.default_rng`. This can then be passed
+    into the `Probability` class. An example is below:
+    >>> gen = default_rng(1)
+    >>> with Probability(p=0.5, rng=gen):
+    >>>     print("This will be printed with a 50% likelihood.")
+
+    While, you can pass an integer seed directly into the
+    class instance, this is not encouraged. Because running that separate times will fix
+    all iterations to the same outcome.
+    """
+
     def __init__(self, p: float, rng: t.Optional[Generator | int] = None):
         if not 0.0 <= p <= 1.0:
             raise ValueError(
@@ -23,17 +42,17 @@ class Probability:
 
     def __enter__(self):
         if self.skip:
-            sys.settrace(lambda *args, **keys: None)
-            frame = sys._getframe(1)
+            sys.settrace(lambda *args, **keys: None)  # noqa
+            frame = sys._getframe(1)  # noqa
             frame.f_trace = self.trace
 
     def trace(self, frame, event, arg):
         raise _ProbSkipBlock()
 
-    def __exit__(self, type, value, traceback):
-        if type is None:
+    def __exit__(self, _type, value, traceback):
+        if _type is None:
             return
-        if issubclass(type, _ProbSkipBlock):
+        if issubclass(_type, _ProbSkipBlock):
             return True
 
 

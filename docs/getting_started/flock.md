@@ -19,7 +19,7 @@ The recommended approach is ***file mode***. In this mode, you define the Flock 
 e.g., `*.yaml`) and simply use it to create the Flock instance.
 
 ```python
-from flox.topos import Topology
+from flox.federation.topologies import Topology
 
 f = "my_flock.yaml"
 flock = Topology.from_yaml(f)

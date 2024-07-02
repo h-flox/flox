@@ -8,7 +8,7 @@ from flox.strategies.impl.fedsgd import FedSGDClient
 from flox.strategies.strategy import DefaultAggregatorStrategy, DefaultWorkerStrategy
 
 if t.TYPE_CHECKING:
-    from flox.topos import AggrState, NodeID, NodeState, WorkerState
+    from flox.federation.topologies import AggrState, NodeID, NodeState, WorkerState
     from flox.learn.types import Params
 
 

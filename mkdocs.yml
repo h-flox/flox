@@ -17,7 +17,7 @@ nav:
       - home/proxystore.md
   - Getting Started:
       - getting_started/index.md
-      - getting_started/topos.md
+      - getting_started/topologies.md
       - Strategies:
           - getting_started/strategies_depr/index.md
           - getting_started/strategies_depr/what.md

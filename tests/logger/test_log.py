@@ -1,21 +1,17 @@
-from flox.logger import Logger, CSVLogger, TensorBoardLogger, NullLogger
-from flox.topos import Topology, Node
-
-# from flox.runtime.process.process_sync_v2 import SyncProcessV2
-from flox.runtime import federated_fit
-from flox.learn.data import federated_split
-#from flox.runtime.launcher import Launcher, LocalLauncher
-#from flox.runtime.runtime import Runtime
-from flox.learn import FloxModule
-
-
-from torchvision.datasets import MNIST
-from torchvision.transforms import ToTensor
-from datetime import datetime
 import os
+from datetime import datetime
+
 import torch
 from torch import nn
-from torch.utils.data import Subset
+
+from flox.federation.topologies import Node
+
+# from flox.runtime.launcher import Launcher, LocalLauncher
+# from flox.runtime.runtime import Runtime
+from flox.learn import FloxModule
+from flox.logger import CSVLogger, Logger, TensorBoardLogger
+
+# from flox.runtime.federation.process_sync_v2 import SyncProcessV2
 
 
 class MyModule(FloxModule):
@@ -108,17 +104,19 @@ def test_csv_output_format():
 
     actual: str = logger.to_pandas(None)
     expected: str = (
-        f"name,value,nodeid,epoch,datetime\ntrain/loss,2.3,node 1,0,{dt1}\ntrain/loss,2.4,node 2,0,{dt2}\ntrain/loss,1.4,node 1,1,{dt3}\ntrain/loss,1.2,node 2,1,{dt4}"
+        f"name,value,nodeid,epoch,datetime\ntrain/loss,2.3,node 1,0,{dt1}\ntrain/loss,2.4,"
+        f"node 2,0,{dt2}\ntrain/loss,1.4,node 1,1,{dt3}\ntrain/loss,1.2,node 2,1,{dt4}"
     )
 
     assert expected.lower().splitlines() == actual.lower().splitlines()
     assert expect_records == logger.records
 
+
 """
 def test_csv_flox():
-    
+
     flock = Topology.from_yaml("./flox/tests/logger/examples/three-level.yaml")
-    
+
 
     data = MNIST(
         root=os.environ["TORCH_DATASETS"],
@@ -128,13 +126,13 @@ def test_csv_flox():
     )
 
     subset_data = Subset(data, indices=range(len(data) // 1000))
-    
+
     fs = federated_split(subset_data, flock, 10, samples_alpha=10.0, labels_alpha=10.0)
-    
+
     logger = CSVLogger(filename="./flox/tests/logger/logs.csv")
     print(fs.dataset)
     print(fs.indices[1])
-    
+
     module, train_history = federated_fit(
         flock,
         MyModule(),
@@ -144,9 +142,10 @@ def test_csv_flox():
         launcher_kind="thread",
         logger=logger,
     )
-    
+
     assert True
 """
+
 
 def test_tensorboard():
     node_worker1 = Node(idx="node1", kind="worker")
@@ -161,7 +160,6 @@ def test_tensorboard():
     import numpy as np
 
     for step in range(1, 101):
-
         rand1 = np.random.random()
         dt1 = datetime.now()
         logger_worker1.log("Train/Loss", rand1 / step, "node 1", step, dt1)
@@ -218,4 +216,3 @@ def test_switch():
     new_logger: TensorBoardLogger = logger_csv
 
     assert expected == new_logger.records
-

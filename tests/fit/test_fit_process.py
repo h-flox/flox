@@ -8,9 +8,9 @@ from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 
 from flox import federated_fit
+from flox.federation.topologies import Topology
 from flox.learn import FloxModule
 from flox.learn.data.utils import federated_split
-from flox.topos import Topology
 
 
 class MyModule(FloxModule):

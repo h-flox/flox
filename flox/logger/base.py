@@ -1,11 +1,18 @@
-from typing import Protocol, Any, runtime_checkable
-from datetime import datetime
-from flox.topos import Node
-from pathlib import Path
+from __future__ import annotations
+
+import typing as t
+
+if t.TYPE_CHECKING:
+    from datetime import datetime
+    from pathlib import Path
+
+    from flox.federation.topologies import Node, NodeID
+
+Record: t.TypeAlias = t.Dict[str, t.Any]
 
 
-@runtime_checkable
-class Logger(Protocol):
+@t.runtime_checkable
+class Logger(t.Protocol):
     records: list
 
     def __init__(
@@ -16,8 +23,8 @@ class Logger(Protocol):
     def log(
         self,
         name: str,
-        value: Any,
-        nodeid: str | None,
+        value: t.Any,
+        node_id: NodeID,
         epoch: int | None,
         time: datetime | None,
     ) -> None:
@@ -38,7 +45,7 @@ class Logger(Protocol):
         Args:
             record (dict): set of keys and values to be logged
         """
-    
+
     def clear(self) -> None:
         """
         clears the records list

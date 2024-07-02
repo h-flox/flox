@@ -62,13 +62,15 @@ FLoX includes utility functions to simplify the conversion from a standard, cent
 simulated, decentralized dataset.
 """
 
-from flox.learn.data.core import FederatedSubsets, FloxDataset, LocalDataset
-from flox.learn.data.utils import federated_split
+from flox.learn.data.core import FloxDataset
+from flox.learn.data.local import LocalDataset
+from flox.learn.data.subsets import FederatedSubsets
+from flox.learn.data.utils import fed_barplot, federated_split
 
 __all__ = [
     "FloxDataset",
-    "LocalDataset",
     "FederatedSubsets",
     "fed_barplot",
     "federated_split",
+    "LocalDataset",
 ]

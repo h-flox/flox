@@ -3,15 +3,13 @@ from __future__ import annotations
 import typing as t
 from concurrent.futures import Future
 
-from flox.process.jobs import Job
-from flox.runtime.launcher import Launcher
-from flox.runtime.transfer import TransferProtocol
-from flox.runtime.result import Result
+if t.TYPE_CHECKING:
+    from flox.federation.jobs import Job
+    from flox.runtime.launcher import Launcher
+    from flox.runtime.result import Result
+    from flox.runtime.transfer import TransferProtocol
 
 Config = t.NewType("Config", dict[str, t.Any])
-
-if t.TYPE_CHECKING:
-    from flox.runtime import Result
 
 
 class _Borg:

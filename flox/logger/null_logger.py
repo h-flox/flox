@@ -1,14 +1,21 @@
-from flox.logger.base import Logger
-from flox.topos import Node
+from __future__ import annotations
 
+import typing as t
+from datetime import datetime
 from pathlib import Path
 from typing import Any
-from datetime import datetime
+
+from flox.federation.topologies import Node
+
+if t.TYPE_CHECKING:
+    from flox.logger.base import Record
 
 
 class NullLogger:
-    def __init__(self, node: Node | None = None, filename: str | Path | None = None) -> None:
-        self.records = []
+    def __init__(
+        self, node: Node | None = None, filename: str | Path | None = None
+    ) -> None:
+        self.records: t.List[Record] = []
 
     def log(
         self,

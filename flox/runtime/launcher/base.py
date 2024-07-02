@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import Future
 
-from flox.process.jobs import Job
+from flox.federation.jobs import Job
 
 # @dataclass
 # class LauncherConfig:
@@ -11,7 +11,7 @@ from flox.process.jobs import Job
 
 class Launcher(ABC):
     """
-    Base class for launching functions in an FL process.
+    Base class for launching functions in an FL federation.
     """
 
     def __init__(self):

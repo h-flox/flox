@@ -8,7 +8,7 @@ import torch
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from flox.topos import NodeID
+    from flox.federation.topologies import NodeID
     from flox.learn.types import Params
 
 

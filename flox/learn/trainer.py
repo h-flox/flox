@@ -12,8 +12,8 @@ from flox.learn import FloxModule
 from flox.learn.logger import ModelLogger
 
 if t.TYPE_CHECKING:
+    from flox.federation.topologies import WorkerState
     from flox.strategies import TrainerStrategy
-    from flox.topos.types import WorkerState
 
 
 class Trainer:

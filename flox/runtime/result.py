@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 import typing as t
+from concurrent.futures import Future
 from dataclasses import dataclass, field
 
 from proxystore.proxy import Proxy
@@ -9,7 +10,7 @@ from proxystore.proxy import Proxy
 if t.TYPE_CHECKING:
     from pandas import DataFrame
 
-    from flox.topos import NodeID, NodeKind, NodeState
+    from flox.federation.topologies import NodeID, NodeKind, NodeState
     from flox.learn.types import Params
 
 
@@ -44,3 +45,8 @@ class JobResult:
 
 
 Result: t.TypeAlias = JobResult | Proxy[JobResult]
+"""The result of a job or the proxied result of a job (if using
+[ProxyStoreTransfer][flox.runtime.transfer.proxystore.ProxyStoreTransfer])."""
+
+ResultFuture: t.TypeAlias = Future[Result]
+"""A future result."""
