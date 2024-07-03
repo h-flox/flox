@@ -1,6 +1,7 @@
 import time
 import typing as t
 from concurrent.futures import Future
+from pathlib import Path
 
 from flox.federation.jobs import Job
 from flox.runtime.launcher.base import Launcher
@@ -12,7 +13,11 @@ class ParslLauncher(Launcher):
     """
 
     def __init__(
-        self, config: dict[str, t.Any], run_dir: str = ".parsl", stript_dir=".parsl"
+        self,
+        config: dict[str, t.Any],
+        run_dir: Path | str = ".parsl",
+        stript_dir: Path | str = ".parsl",
+        priming: bool = True,
     ):
         super().__init__()
 
@@ -28,9 +33,10 @@ class ParslLauncher(Launcher):
         self.executor.start()
 
         # Run priming job to reduce initial startup costs.
-        fut = self.executor.submit(_platform_info, {})
-        fut.result()
-        print(f"priming_done:{time.perf_counter()}")
+        if priming:
+            fut = self.executor.submit(_platform_info, {})
+            fut.result()
+            print(f"priming_done:{time.perf_counter()}")
 
     def submit(self, job: Job, /, **kwargs) -> Future:
         future = self.executor.submit(job, {}, **kwargs)

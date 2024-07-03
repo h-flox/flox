@@ -49,4 +49,4 @@ Result: t.TypeAlias = JobResult | Proxy[JobResult]
 [ProxyStoreTransfer][flox.runtime.transfer.proxystore.ProxyStoreTransfer])."""
 
 ResultFuture: t.TypeAlias = Future[Result]
-"""A future result."""
+"""A Future object that will return a Result when finished."""

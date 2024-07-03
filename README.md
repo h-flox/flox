@@ -47,13 +47,13 @@ flox/
 │   │   ├── globus.py
 │   │   ├── parsl.py
 │   │   ├── local.py
-    │   └── ...
-├   ├── data/
-            redis.py
-            proxystore.py
-        runtime.py
-    strategies/
-        commons/
-        impl/
-        protocols.py
+│   │   └── ...
+│   ├── data/
+│   │   ├── redis.py
+│   │   └── proxystore.py
+│   └── runtime.py
+└── strategies/
+    ├── commons/
+    ├── impl/
+    └── protocols.py
 ```
