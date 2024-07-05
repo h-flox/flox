@@ -115,7 +115,7 @@ def test_csv_output_format():
 """
 def test_csv_flox():
 
-    flock = Topology.from_yaml("./flox/tests/logger/examples/three-level.yaml")
+    flock = Topology.from_yaml("./flox/flox_tests/logger/examples/three-level.yaml")
 
 
     data = MNIST(
@@ -129,7 +129,7 @@ def test_csv_flox():
 
     fs = federated_split(subset_data, flock, 10, samples_alpha=10.0, labels_alpha=10.0)
 
-    logger = CSVLogger(filename="./flox/tests/logger/logs.csv")
+    logger = CSVLogger(filename="./flox/flox_tests/logger/logs.csv")
     print(fs.dataset)
     print(fs.indices[1])
 

@@ -54,6 +54,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -U pip setuptools
       - run: python -m pip install tox
-      - name: run tests
+      - name: run flox_tests
         run: |
           tox -e py
