@@ -12,18 +12,10 @@ import flight.federation.topologies.io as io
 
 from .exceptions import NodeNotFoundError, TopologyException
 from .node import Node, NodeID, NodeKind
-from .types import GraphDict
+from .types import GraphDict, NodeLink
 
 if t.TYPE_CHECKING:
     import numpy as np
-
-
-def validate_graph(graph: nx.DiGraph) -> bool:
-    # TODO: Finish the implementation of this.
-    return True
-    # leaders = []
-    # for node in self.nodes(kind="coordinator"):
-    #
 
 
 def resolve_node_or_idx(node_or_idx: Node | NodeID) -> NodeID:
@@ -52,8 +44,16 @@ class Topology:
         edges: list[tuple[NodeID, NodeID]],
         source: pathlib.Path | str | None = None,
     ):
-        self._nodes = {node.idx: node for node in nodes}
+        node_dict = {node.idx: node for node in nodes}
+        graph = nx.DiGraph()
+        graph.add_nodes_from(list(node_dict))
+        graph.add_edges_from(edges)
+        # validate_graph(node_dict.values(), edges, graph)
+
+        self._nodes = node_dict
         self._edges = edges
+        self._graph = graph
+
         match source:
             case pathlib.Path():
                 self._source = source
@@ -67,9 +67,7 @@ class Topology:
                     "Leave it to the constructor methods."
                 )
 
-        self._graph = nx.DiGraph()
-        self._graph.add_nodes_from(list(self._nodes))
-        self._graph.add_edges_from(self._edges)
+        validate(self)
 
     def __contains__(self, idx: NodeID) -> bool:
         """Returns `True` if a node with the given ID is in the topology; `False` otherwise."""
@@ -148,11 +146,6 @@ class Topology:
             The parent node of the given node.
         """
         idx = resolve_node_or_idx(node_or_idx)
-        print(
-            f"Topology.parent(): {node_or_idx=} ({type(node_or_idx)}) |  {idx=} ({type(idx)})\n"
-            f"Topology.parent(): {list(self.__iter__())=}\n"
-            f"Topology.parent(): {idx in self=}"
-        )
         if idx not in self:
             raise NodeNotFoundError()
 
@@ -360,3 +353,82 @@ class Topology:
             A `Topology` instance.
         """
         return cls(*io.from_yaml(path))
+
+
+def validate(topo: Topology) -> None:
+    """
+    Validates
+
+    Args:
+        topo (Topology): The `Topology` instance to validate.
+
+    Throws:
+        - `TopologyException` if an illegal topology has been defined based on Nodes, edges/links,
+            and underlying graph. Exception messages will more explicitly state the exact issue.
+            Refer to the docs for more information about the requirements for a legal Flight topology.
+
+    Returns:
+        `True` if the graph is legitimate; `False` otherwise.
+    """
+    nodes: t.Mapping[NodeID, Node] = topo._nodes  # noqa
+    edges: list[NodeLink] = topo._edges  # noqa
+    graph: nx.DiGraph = topo._graph  # noqa
+
+    if not isinstance(graph, nx.DiGraph):
+        raise TopologyException(
+            "Graphs for a legal `Topology` must be *directed* (i.e., `nx.DiGraph`)."
+        )
+
+    if not nx.is_tree(graph):
+        raise TopologyException(
+            "Graph structure of a legal `Topology` must be a *tree* (i.e., a connected graph with no  cycles)."
+        )
+
+    num_kinds = {NodeKind(kind): 0 for kind in NodeKind}
+    for node in nodes.values():
+        num_kinds[node.kind] += 1
+
+    if num_kinds[NodeKind.COORD] != 1:
+        raise TopologyException(
+            "Legal Flight topologies must have exactly *one* "
+            "Coordinator node (of kind `NodeKind.COORD`)."
+        )
+
+    if num_kinds[NodeKind.WORKER] == 0:
+        raise TopologyException(
+            "Legal Flight topologies must have at least 1 Worker node (of kind `NodeKind.WORKER`)."
+        )
+
+    for node_idx in graph.nodes():
+        node = topo[node_idx]
+        kind_str = node.kind.title()
+
+        num_parents = len(list(graph.predecessors(node_idx)))
+        num_children = len(list(graph.successors(node_idx)))
+
+        match node.kind:
+            case NodeKind.COORD:
+                if not num_parents == 0:
+                    raise TopologyException(f"{kind_str} node cannot have a parent.")
+                if not num_children >= 1:
+                    raise TopologyException(
+                        f"{kind_str} node must have at least 1 child."
+                    )
+            case NodeKind.AGGR:
+                if not num_parents == 1:
+                    raise TopologyException(
+                        f"{kind_str} node(s) must have exactly 1 parent."
+                    )
+                if not num_children >= 1:
+                    raise TopologyException(
+                        f"{kind_str} node(s) must have at least 1 child."
+                    )
+            case NodeKind.WORKER:
+                if not num_parents == 1:
+                    raise TopologyException(
+                        f"{kind_str} node(s) must have exactly 1 parent."
+                    )
+                if not num_children == 0:
+                    raise TopologyException(
+                        f"{kind_str} node(s) cannot have any children nodes."
+                    )
