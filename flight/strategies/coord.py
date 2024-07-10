@@ -5,13 +5,13 @@ import typing as t
 if t.TYPE_CHECKING:
     from numpy.random import Generator
 
-    from ..federation.topologies.node import Node
+    from flight.federation.topologies.node import Node
 
-    CoordState: t.TypeAlias = t.Any
+    NodeState: t.TypeAlias = t.Any
 
-
+@t.runtime_checkable
 class CoordStrategy(t.Protocol):
     def select_workers(
-        self, state: CoordState, workers: t.Iterable[Node], rng: Generator
+        self, state: NodeState, workers: t.Iterable[Node], rng: Generator
     ) -> t.Sequence[Node]:
         pass
