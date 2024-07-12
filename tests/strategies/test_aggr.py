@@ -1,8 +1,12 @@
+import typing as t
+
+import torch
+
 from flight.strategies import AggrStrategy
 from flight.strategies.base import DefaultAggrStrategy
 
-import tensorflow as tf
-import torch
+if t.TYPE_CHECKING:
+    NodeState: t.TypeAlias = t.Any
 
 
 def test_instance():
@@ -14,25 +18,18 @@ def test_instance():
 def test_aggr_aggregate_params():
     default_aggr = DefaultAggrStrategy()
 
-    state = "foo"
+    state: NodeState = "foo"
     children = {1: "foo1", 2: "foo2"}
 
-    children_state_dicts = {
+    children_state_dicts_pt = {
         1: {
-            "train/loss": tf.convert_to_tensor(2.3, dtype=tf.float32),
-            "train/acc": tf.convert_to_tensor(1.2, dtype=tf.float32),
+            "train/loss": torch.tensor(2.3, dtype=torch.float32),
+            "train/acc": torch.tensor(1.2, dtype=torch.float32),
         },
         2: {
-            "train/loss": tf.convert_to_tensor(3.1, dtype=tf.float32),
-            "train/acc": tf.convert_to_tensor(1.4, dtype=tf.float32),
+            "train/loss": torch.tensor(3.1, dtype=torch.float32),
+            "train/acc": torch.tensor(1.4, dtype=torch.float32),
         },
-    }
-
-    children_state_dicts_pt = {
-        key: {
-            sub_key: torch.tensor(value.numpy()) for sub_key, value in sub_dict.items()
-        }
-        for key, sub_dict in children_state_dicts.items()
     }
 
     avg = default_aggr.aggregate_params(state, children, children_state_dicts_pt)
@@ -47,5 +44,4 @@ def test_aggr_aggregate_params():
     epsilon = 1e-6
     for key, value in avg.items():
         expected = expected_avg[key]
-
-        assert abs(expected - value) < epsilon
+        assert abs(expected - value.item()) < epsilon

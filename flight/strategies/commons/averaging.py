@@ -16,12 +16,19 @@ def average_state_dicts(
     state_dicts: Mapping[NodeID, Params], weights: Mapping[NodeID, float] | None = None
 ) -> Params:
     num_nodes = len(state_dicts)
-    weight_sum = None if weights is None else numpy.sum(list(weights.values()))
+
+    if weights is not None:
+        weight_sum = numpy.sum(list(weights.values()))
+    else:
+        weight_sum = None
 
     with torch.no_grad():
         avg_weights = {}
         for node, state_dict in state_dicts.items():
-            w = 1 / num_nodes if weights is None else weights[node] / weight_sum
+            if weights is not None:
+                w = weights[node] / weight_sum
+            else:
+                w = 1 / num_nodes
             for name, value in state_dict.items():
                 value = w * torch.clone(value)
                 if name not in avg_weights:

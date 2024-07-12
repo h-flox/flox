@@ -1,29 +1,35 @@
 from __future__ import annotations
 
-import pydantic as pyd
-import typing as t
 import functools
+import typing as t
 
+import pydantic as pyd
+
+from flight.strategies.aggr import AggrStrategy
 from flight.strategies.commons.averaging import average_state_dicts
+from flight.strategies.coord import CoordStrategy
+from flight.strategies.trainer import TrainerStrategy
+from flight.strategies.worker import WorkerStrategy
+
+StrategyType: t.TypeAlias = (
+    t.Any
+)  # WorkerStrategy | AggrStrategy | CoordStrategy | TrainerStrategy
 
 if t.TYPE_CHECKING:
     import torch
     from numpy.random import Generator
 
     NodeState: t.TypeAlias = t.Any
-    NodeID: t.TypeAlias = int | str
-    Params: t.TypeAlias = t.Any
-    Loss: t.TypeAlias = torch.Tensor
-
-    from flight.federation.topologies.node import Node
     from flight.federation.jobs.result import Result
+    from flight.federation.topologies.node import Node, NodeID
+    from flight.strategies import Loss, Params
 
 
 class DefaultCoordStrategy:
     def select_workers(
         self, state: NodeState, children: t.Iterable[Node], rng: Generator
     ) -> t.Sequence[Node]:
-        return children
+        return list(children)
 
 
 class DefaultAggrStrategy:
@@ -33,7 +39,7 @@ class DefaultAggrStrategy:
     def aggregate_params(
         self,
         state: NodeState,
-        children: t.Mapping[NodeID, NodeState],
+        children_states: t.Mapping[NodeID, NodeState],
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
@@ -71,10 +77,19 @@ class DefaultTrainerStrategy:
 
 @pyd.dataclasses.dataclass(frozen=True, repr=False)
 class Strategy:
-    coord_strategy: str = pyd.Field()
-    aggr_strategy: str = pyd.Field()
-    worker_strategy: str = pyd.Field()
-    trainer_strategy: str = pyd.Field()
+    """
+    A 'Strategy' implementation is comprised of the four different type of implementations of strategies
+    to be used on the respective node types throughout the training process.
+    """
+
+    """Implementation of the specific callbacks for the coordinator node."""
+    coord_strategy: StrategyType = pyd.Field()
+    """Implementation of the specific callbacks for the aggregator node(s)."""
+    aggr_strategy: StrategyType = pyd.Field()
+    """Implementation of the specific callbacks for the worker node(s)."""
+    worker_strategy: StrategyType = pyd.Field()
+    """Implementation of callbacks specific to the execution of the training loop on the worker node(s)."""
+    trainer_strategy: StrategyType = pyd.Field()
 
     def __iter__(self) -> t.Iterator[tuple[str, t.Any]]:
         yield from (
@@ -87,7 +102,7 @@ class Strategy:
     def __repr__(self) -> str:
         return str(self)
 
-    @functools.cached_property
+    # @functools.cached_property
     def __str__(self) -> str:
         name = self.__class__.__name__
         inner = ", ".join(
