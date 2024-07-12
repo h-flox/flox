@@ -6,7 +6,7 @@ import mkdocs_gen_files
 
 nav = mkdocs_gen_files.Nav()
 
-project_dir = "flox"
+project_dir = "flight"
 reference_dir = "docs"
 
 for path in sorted(Path(project_dir).rglob("**/*.py")):

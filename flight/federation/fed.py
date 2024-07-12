@@ -21,10 +21,10 @@ class Federation(abc.ABC):
         """Starts the federation.
 
         Returns:
-            A tuple that contains the following items,
-            (i) the trained global model hosted on the coordinator and
-            (ii) the results from training during the federation.
+            A tuple that contains the following items, (i) the trained global model hosted on the
+            coordinator and (ii) the results from training during the federation.
         """
+        pass
 
     @property
     def coord_strategy(self) -> CoordStrategy:
