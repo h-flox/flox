@@ -15,7 +15,7 @@ class FloxModule(torch.nn.Module, ABC):
 
     @abstractmethod
     def training_step(
-        self, batch: torch.Tensor | tuple[torch.Tensor, torch.Tensor], batch_idx: int
+        *self, batch: torch.Tensor | tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         """
         A single training step to calculate loss before performing backpropagation.

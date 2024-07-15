@@ -1,2 +1,2 @@
 def federated_fit():
-    pass
+    print("[Flight] Hello, world!")
