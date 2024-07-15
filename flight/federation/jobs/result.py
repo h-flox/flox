@@ -21,3 +21,4 @@ class Result:
 
 
 AbstractResult: t.TypeAlias = Result | Proxy[Result]
+"""Helper type alias for a `Result` or a proxy to a `Result`."""

@@ -8,7 +8,7 @@ if t.TYPE_CHECKING:
 
 
 class TrainerStrategy(t.Protocol):
-    def trainer_kwargs(self) -> dict[str, t.Any]:
+    def trainer_hparams(self) -> dict[str, t.Any]:
         pass
 
     def before_backprop(self, state: WorkerState, loss: Loss) -> Loss:
