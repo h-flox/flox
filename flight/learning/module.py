@@ -3,7 +3,6 @@ import typing as t
 import torch
 
 FlightDataset: t.TypeAlias = t.Any
-FlightModule: t.TypeAlias = t.Any
 
 Record: t.TypeAlias = t.Dict[str, t.Any]
 RecordList: t.TypeAlias = t.List[Record]

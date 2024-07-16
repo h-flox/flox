@@ -1,22 +1,12 @@
 import typing as t
 
-from flight.federation.topologies.node import Node
-from flight.learning.datasets.core import DataLoadable
-from flight.learning.module import FlightModule
 
 if t.TYPE_CHECKING:
-    from flox.strategies import TrainerStrategy, WorkerStrategy
+    from flight.federation.jobs.types import Result, TrainJobArgs
 
 
 # TODO: Test the hell out of this function.
-def default_training_job(
-    node: Node,
-    parent: Node,
-    model: FlightModule,
-    data: DataLoadable,
-    worker_strategy: WorkerStrategy,
-    trainer_strategy: TrainerStrategy,
-):
+def default_training_job(args: TrainJobArgs) -> Result:
     from datetime import datetime
 
     from torch.utils.data import DataLoader
@@ -25,7 +15,7 @@ def default_training_job(
 
     training_start = datetime.now()
 
-    state = worker_strategy.work_start()
+    state = worker_strategy.start_work()
 
     data = {
         "train": data.load(node, "train"),
@@ -46,7 +36,7 @@ def default_training_job(
         **{key: val for (key, val) in hparams if key.startswith("trainer.")},
     )
 
-    state = worker_strategy.work_end()
+    state = worker_strategy.end_work()
 
     training_end = datetime.now()
 

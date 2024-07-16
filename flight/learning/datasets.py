@@ -1,6 +1,6 @@
 import typing as t
 
-from ...federation.topologies.node import Node
+from flight.federation.topologies.node import Node
 
 
 class DataLoadable(t.Protocol):
