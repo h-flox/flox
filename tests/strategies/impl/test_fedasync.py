@@ -21,22 +21,22 @@ from flight.strategies.impl.fedasync import FedAsync, FedAsyncAggr
 
 class TestValidFedAsync:
     def test_class_hierarchy(self):
+        """Test that the associated node strategy types follow the correct protocols."""
         fedasync = FedAsync(0.5)
 
-        assert (
-            isinstance(fedasync.aggr_strategy, (AggrStrategy, FedAsyncAggr))
-            and isinstance(
-                fedasync.coord_strategy, (CoordStrategy, DefaultCoordStrategy)
-            )
-            and isinstance(
-                fedasync.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
-            )
-            and isinstance(
-                fedasync.worker_strategy, (WorkerStrategy, DefaultWorkerStrategy)
-            )
+        assert isinstance(fedasync.aggr_strategy, (AggrStrategy, FedAsyncAggr))
+        assert isinstance(
+            fedasync.coord_strategy, (CoordStrategy, DefaultCoordStrategy)
+        )
+        assert isinstance(
+            fedasync.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
+        )
+        assert isinstance(
+            fedasync.worker_strategy, (WorkerStrategy, DefaultWorkerStrategy)
         )
 
     def test_fedasync_aggr(self):
+        """Tests implementation of the aggregator within 'FedAsync'"""
         strategy = FedAsync(0.5)
         aggr_strategy: AggrStrategy = strategy.aggr_strategy
 
@@ -62,5 +62,6 @@ class TestValidFedAsync:
 
 class TestInvalidFedAsync:
     def test_invalid_alpha(self):
+        """Test inputing a value for alpha which is too large."""
         with pytest.raises(AssertionError):
             fedasync = FedAsync(alpha=1.1)

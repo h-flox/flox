@@ -19,6 +19,12 @@ if t.TYPE_CHECKING:
 
 
 class FedSGDCoord(DefaultCoordStrategy):
+    """The coordinator and its respective methods for 'FedSGD'.
+
+    Args:
+        DefaultCoordStrategy: The base class providing the necessary methods for 'FedSGDCoord'.
+    """
+
     def __init__(
         self,
         participation,
@@ -32,6 +38,16 @@ class FedSGDCoord(DefaultCoordStrategy):
     def select_worker_nodes(
         self, state: NodeState, workers: t.Iterable[Node], rng: Generator | None = None
     ) -> t.Sequence[Node]:
+        """Method containing the method for worker selection for 'FedSGD'.
+
+        Args:
+            state (NodeState): State of the coordinator node.
+            workers (t.Iterable[Node]): Iterable containing the worker nodes.
+            rng (Generator | None, optional): RNG object used for randomness. Defaults to None.
+
+        Returns:
+            t.Sequence[Node]: The selected worker nodes.
+        """
         selected_workers = random_worker_selection(
             workers,
             participation=self.participation,
@@ -43,6 +59,12 @@ class FedSGDCoord(DefaultCoordStrategy):
 
 
 class FedSGDAggr(DefaultAggrStrategy):
+    """The aggregator and its respective methods for 'FedSGD'.
+
+    Args:
+        DefaultAggrStrategy: The base class providing the necessary methods for 'FedSGDAggr'.
+    """
+
     def aggregate_params(
         self,
         state: NodeState,
@@ -50,10 +72,28 @@ class FedSGDAggr(DefaultAggrStrategy):
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
+        """Method used by aggregator nodes for aggregating the passed node state dictionary.
+
+        Args:
+            state (NodeState): State of the current aggregator node.
+            children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states of the children.
+            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each child to its values.
+            **kwargs: Key word arguments provided by the user.
+
+        Returns:
+            Params: The aggregated values.
+        """
         return average_state_dicts(children_state_dicts, weights=None)
 
 
 class FedSGD(Strategy):
+    """Implementation of the FedSGD strategy, which uses 'FedSGD' for the coordinator and aggregators, and defaults
+        for the workers and trainer.
+
+    Args:
+        Strategy: The base class providing the necessary attributes for 'FedSGD'.
+    """
+
     def __init__(
         self,
         participation: float = 1.0,

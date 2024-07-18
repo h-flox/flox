@@ -14,20 +14,20 @@ from tests.strategies.environment import create_children
 
 class TestValidFedSGD:
     def test_fedsgd_class_hierarchy(self):
+        """Test that the associated node strategy types follow the correct protocols."""
         fedsgd = FedSGD(1, False, True)
 
-        assert (
-            isinstance(fedsgd.aggr_strategy, (AggrStrategy, FedSGDAggr))
-            and isinstance(fedsgd.coord_strategy, (CoordStrategy, FedSGDCoord))
-            and isinstance(
-                fedsgd.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
-            )
-            and isinstance(
-                fedsgd.worker_strategy, (WorkerStrategy, DefaultWorkerStrategy)
-            )
+        assert isinstance(fedsgd.aggr_strategy, (AggrStrategy, FedSGDAggr))
+        assert isinstance(fedsgd.coord_strategy, (CoordStrategy, FedSGDCoord))
+        assert isinstance(
+            fedsgd.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
+        )
+        assert isinstance(
+            fedsgd.worker_strategy, (WorkerStrategy, DefaultWorkerStrategy)
         )
 
     def test_default_fedsgd_coord(self):
+        """Tests the usability of the coordinator strategy for 'FedSGD'"""
         fedsgd = FedSGD(1, False, True)
         coordStrat: CoordStrategy = fedsgd.coord_strategy
         gen = default_rng()
@@ -39,6 +39,7 @@ class TestValidFedSGD:
             assert worker in selected
 
     def test_fedsgd_aggr(self):
+        """Tests the usability of the aggregator strategy for 'FedSGD'"""
         fedsgd = FedSGD(1, False, True)
         aggrStrat: AggrStrategy = fedsgd.aggr_strategy
 

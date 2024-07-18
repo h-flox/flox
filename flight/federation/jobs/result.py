@@ -10,6 +10,7 @@ NodeID: t.TypeAlias = t.Hashable
 NodeState: t.TypeAlias = tuple
 
 
+# TODO: Remove config when all type definitions have been resolvedß
 @dataclass(config={"arbitrary_types_allowed": True})
 class Result:
     state: NodeState

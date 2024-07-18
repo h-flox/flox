@@ -19,18 +19,18 @@ if t.TYPE_CHECKING:
 
 class TestValidFedAvg:
     def test_fedavg_class_hierarchy(self):
+        """Test that the associated node strategy types follow the correct protocols."""
         fedavg = FedAvg()
 
-        assert (
-            isinstance(fedavg.aggr_strategy, (AggrStrategy, FedAvgAggr))
-            and isinstance(fedavg.coord_strategy, (CoordStrategy, FedSGDCoord))
-            and isinstance(
-                fedavg.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
-            )
-            and isinstance(fedavg.worker_strategy, (WorkerStrategy, FedAvgWorker))
+        assert isinstance(fedavg.aggr_strategy, (AggrStrategy, FedAvgAggr))
+        assert isinstance(fedavg.coord_strategy, (CoordStrategy, FedSGDCoord))
+        assert isinstance(
+            fedavg.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
         )
+        assert isinstance(fedavg.worker_strategy, (WorkerStrategy, FedAvgWorker))
 
     def test_fedavg_aggr(self):
+        """Tests the usability of the aggregator strategy for 'FedAvg'"""
         fedavg = FedAvg()
         aggregatorStrat: AggrStrategy = fedavg.aggr_strategy
         nodestate: NodeState = {}
@@ -66,6 +66,7 @@ class TestValidFedAvg:
             assert abs(expected - value.item()) < epsilon
 
     def test_fedavg_worker(self):
+        """Tests the usability of the worker strategy for 'FedAvg'"""
         fedavg = FedAvg()
 
         workerStrat: WorkerStrategy = fedavg.worker_strategy

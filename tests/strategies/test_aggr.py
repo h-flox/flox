@@ -7,12 +7,14 @@ from flight.strategies.base import DefaultAggrStrategy
 
 
 def test_instance():
+    """Test that the associated node strategy type follows the correct protocols."""
     default_aggr = DefaultAggrStrategy()
 
     assert isinstance(default_aggr, AggrStrategy)
 
 
 def test_aggr_aggregate_params():
+    """Tests usability for the 'aggregate_params' function on two children."""
     default_aggr = DefaultAggrStrategy()
 
     state: NodeState = "foo"

@@ -14,6 +14,17 @@ NodeState: t.TypeAlias = t.Any
 
 
 def load_strategy(strategy_name: str, **kwargs) -> Strategy:
+    """Function used to grab the users preferred 'Strategy'.
+
+    Args:
+        strategy_name (str): The name of the 'Strategy' to be grabbed.
+
+    Raises:
+        ValueError: If an unknown 'Strategy' type is passed through.
+
+    Returns:
+        Strategy: The selected 'Strategy' type.
+    """
     assert isinstance(strategy_name, str), "`strategy_name` must be a string."
     match strategy_name.lower():
         case "default":

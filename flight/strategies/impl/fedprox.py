@@ -16,10 +16,25 @@ DEVICE = "cpu"
 
 
 class FedProxTrainer(DefaultTrainerStrategy):
+    """The coordinator and its respective methods for 'FedProx'.
+
+    Args:
+        DefaultTrainerStrategy: The base class providing necessary methods for 'FedProxTrainer'.
+    """
+
     def __init__(self, mu: float = 0.3):
         self.mu = mu
 
     def before_backprop(self, state: NodeState, loss: Loss) -> Loss:
+        """Callback to run before backpropagation.
+
+        Args:
+            state (NodeState): The state of the current node.
+            loss (Loss): The calculated loss associated with the current node.
+
+        Returns:
+            Loss: The updated loss associated with the current node.
+        """
         global_model = state.global_model
         local_model = state.local_model
         assert global_model is not None
@@ -47,6 +62,13 @@ class FedProxTrainer(DefaultTrainerStrategy):
 
 
 class FedProx(Strategy):
+    """Implementation of the FedProx strategy, which uses
+        'FedAvg' for the workers, 'FedSGD' for the coordinator and aggregators, and 'FedProx' for the trainer.
+
+    Args:
+        Strategy: The base class providing the necessary attributes for 'FedProx'.
+    """
+
     def __init__(
         self,
         mu: float = 0.3,

@@ -15,6 +15,15 @@ if t.TYPE_CHECKING:
 def average_state_dicts(
     state_dicts: Mapping[NodeID, Params], weights: Mapping[NodeID, float] | None = None
 ) -> Params:
+    """Helper function used by aggregator nodes for averaging the passed node state dictionary.
+
+    Args:
+        state_dicts (Mapping[NodeID, Params]): A dictionary object mapping nodes to their respective states.
+        weights (Mapping[NodeID, float] | None, optional): Optional dictionary that maps each node to its contribution factor. Defaults to None.
+
+    Returns:
+        Params: The averaged states.
+    """
     num_nodes = len(state_dicts)
 
     if weights is not None:

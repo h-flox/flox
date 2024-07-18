@@ -3,8 +3,6 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    import torch
-
     from flight.federation.topologies.node import NodeID
     from flight.strategies import NodeState, Params
 
@@ -33,7 +31,7 @@ class AggrStrategy(t.Protocol):
             **kwargs: Keyword arguments provided by users.
 
         Returns:
-            The aggregated parameters to update the model at the current aggregator.
+            Params: The aggregated parameters to update the model at the current aggregator.
         """
         pass
 
