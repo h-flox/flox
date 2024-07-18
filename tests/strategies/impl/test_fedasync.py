@@ -7,6 +7,7 @@ from flight.strategies import (
     AggrStrategy,
     CoordStrategy,
     DefaultStrategy,
+    NodeState,
     TrainerStrategy,
     WorkerStrategy,
 )
@@ -17,32 +18,29 @@ from flight.strategies.base import (
 )
 from flight.strategies.impl.fedasync import FedAsync, FedAsyncAggr
 
-if t.TYPE_CHECKING:
-    NodeState: t.TypeAlias = t.Any
-
 
 class TestValidFedAsync:
     def test_class_hierarchy(self):
-        strategy = FedAsync(0.5)
+        fedasync = FedAsync(0.5)
 
         assert (
-            isinstance(strategy.aggr_strategy, (AggrStrategy, FedAsyncAggr))
+            isinstance(fedasync.aggr_strategy, (AggrStrategy, FedAsyncAggr))
             and isinstance(
-                strategy.coord_strategy, (CoordStrategy, DefaultCoordStrategy)
+                fedasync.coord_strategy, (CoordStrategy, DefaultCoordStrategy)
             )
             and isinstance(
-                strategy.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
+                fedasync.trainer_strategy, (TrainerStrategy, DefaultTrainerStrategy)
             )
             and isinstance(
-                strategy.worker_strategy, (WorkerStrategy, DefaultWorkerStrategy)
+                fedasync.worker_strategy, (WorkerStrategy, DefaultWorkerStrategy)
             )
         )
 
     def test_fedasync_aggr(self):
-        strategy = FedAsync(alpha=0.5)
+        strategy = FedAsync(0.5)
         aggr_strategy: AggrStrategy = strategy.aggr_strategy
 
-        nodestate: NodeState = "foo"
+        nodestate: NodeState = {}
         childstates = {1: "foo1", 2: "foo2"}
         children_state_dicts_pt = {
             1: {

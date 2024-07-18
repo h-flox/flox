@@ -2,11 +2,8 @@ import typing as t
 
 import torch
 
-from flight.strategies import AggrStrategy
+from flight.strategies import AggrStrategy, NodeState
 from flight.strategies.base import DefaultAggrStrategy
-
-if t.TYPE_CHECKING:
-    NodeState: t.TypeAlias = t.Any
 
 
 def test_instance():

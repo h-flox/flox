@@ -6,8 +6,7 @@ if t.TYPE_CHECKING:
     from numpy.random import Generator
 
     from flight.federation.topologies.node import Node
-
-    NodeState: t.TypeAlias = t.Any
+    from flight.strategies import NodeState
 
 
 @t.runtime_checkable

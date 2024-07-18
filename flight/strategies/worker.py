@@ -6,8 +6,7 @@ if t.TYPE_CHECKING:
     import torch
 
     from flight.federation.jobs.result import Result
-
-    NodeState: t.TypeAlias = t.Any
+    from flight.strategies import NodeState
 
 
 @t.runtime_checkable

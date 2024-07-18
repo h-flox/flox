@@ -13,9 +13,8 @@ from flight.strategies.commons import average_state_dicts
 from .fedsgd import FedSGDCoord
 
 if t.TYPE_CHECKING:
-    NodeState: t.TypeAlias = t.Any
     from flight.federation.topologies.node import NodeID
-    from flight.strategies import Params
+    from flight.strategies import NodeState, Params
 
 
 class FedAvgAggr(DefaultAggrStrategy):

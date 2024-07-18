@@ -12,24 +12,23 @@ from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
 StrategyType: t.TypeAlias = (
-    t.Any
-)  # WorkerStrategy | AggrStrategy | CoordStrategy | TrainerStrategy
+    WorkerStrategy | AggrStrategy | CoordStrategy | TrainerStrategy
+)
 
 if t.TYPE_CHECKING:
     import torch
     from numpy.random import Generator
 
-    NodeState: t.TypeAlias = t.Any
     from flight.federation.jobs.result import Result
     from flight.federation.topologies.node import Node, NodeID
-    from flight.strategies import Loss, Params
+    from flight.strategies import Loss, NodeState, Params
 
 
 class DefaultCoordStrategy:
     def select_workers(
-        self, state: NodeState, children: t.Iterable[Node], rng: Generator
+        self, state: NodeState, workers: t.Iterable[Node], rng: Generator
     ) -> t.Sequence[Node]:
-        return list(children)
+        return list(workers)
 
 
 class DefaultAggrStrategy:
@@ -75,7 +74,9 @@ class DefaultTrainerStrategy:
         return loss
 
 
-@pyd.dataclasses.dataclass(frozen=True, repr=False)
+@pyd.dataclasses.dataclass(
+    frozen=True, repr=False, config={"arbitrary_types_allowed": True}
+)
 class Strategy:
     """
     A 'Strategy' implementation is comprised of the four different type of implementations of strategies
@@ -102,8 +103,16 @@ class Strategy:
     def __repr__(self) -> str:
         return str(self)
 
-    # @functools.cached_property
-    def __str__(self) -> str:
+    @functools.cached_property
+    def _description(self) -> str:
+        """A utility function for generating the string for `__str__`.
+
+        This is written to avoid the `mypy` issue:
+            "Signature of '__str__' incompatible with supertype 'object'".
+
+        Returns:
+            The string representation of the a Strategy instance.
+        """
         name = self.__class__.__name__
         inner = ", ".join(
             [
@@ -113,6 +122,9 @@ class Strategy:
             ]
         )
         return f"{name}({inner})"
+
+    def __str__(self) -> str:
+        return self._description
 
 
 class DefaultStrategy(Strategy):

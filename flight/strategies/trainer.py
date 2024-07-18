@@ -4,8 +4,7 @@ import typing as t
 
 if t.TYPE_CHECKING:
 
-    NodeState: t.TypeAlias = t.Any
-    from flight.strategies import Loss
+    from flight.strategies import Loss, NodeState
 
 
 @t.runtime_checkable

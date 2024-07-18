@@ -5,11 +5,8 @@ import typing as t
 if t.TYPE_CHECKING:
     import torch
 
-    from flight.strategies import Params
-
-    NodeState: t.TypeAlias = t.Any
-
     from flight.federation.topologies.node import NodeID
+    from flight.strategies import NodeState, Params
 
 
 @t.runtime_checkable

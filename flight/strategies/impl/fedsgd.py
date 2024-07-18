@@ -15,9 +15,7 @@ from flight.strategies.commons import average_state_dicts, random_worker_selecti
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import Node, NodeID
-    from flight.strategies import Params
-
-    NodeState: t.TypeAlias = t.Any
+    from flight.strategies import NodeState, Params
 
 
 class FedSGDCoord(DefaultCoordStrategy):
@@ -33,7 +31,7 @@ class FedSGDCoord(DefaultCoordStrategy):
 
     def select_worker_nodes(
         self, state: NodeState, workers: t.Iterable[Node], rng: Generator | None = None
-    ) -> t.Iterable[Node]:
+    ) -> t.Sequence[Node]:
         selected_workers = random_worker_selection(
             workers,
             participation=self.participation,

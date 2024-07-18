@@ -2,14 +2,15 @@ import typing as t
 
 import torch
 
-Loss: t.TypeAlias = torch.tensor
-Params: t.TypeAlias = dict[str, torch.Tensor]
-
 from flight.strategies.aggr import AggrStrategy
 from flight.strategies.base import DefaultStrategy, Strategy
 from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
+
+Loss: t.TypeAlias = torch.Tensor
+Params: t.TypeAlias = dict[str, torch.Tensor]
+NodeState: t.TypeAlias = t.Any
 
 
 def load_strategy(strategy_name: str, **kwargs) -> Strategy:

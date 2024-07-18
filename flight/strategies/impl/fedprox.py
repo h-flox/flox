@@ -10,8 +10,7 @@ from .fedavg import FedAvgWorker
 from .fedsgd import FedSGDAggr, FedSGDCoord
 
 if t.TYPE_CHECKING:
-    NodeState: t.TypeAlias = t.Any
-    from flight.strategies import Loss
+    from flight.strategies import Loss, NodeState
 
 DEVICE = "cpu"
 
