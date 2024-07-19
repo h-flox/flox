@@ -4,14 +4,14 @@ from proxystore.proxy import Proxy
 from pydantic.dataclasses import dataclass
 
 from flight.learning.module import RecordList
-from flight.strategies.aggr import Params
+from flight.strategies import Params
 
-if t.TYPE_CHECKING:
-    NodeID: t.TypeAlias = t.Hashable
-    NodeState: t.TypeAlias = tuple
+NodeID: t.TypeAlias = t.Hashable
+NodeState: t.TypeAlias = tuple
 
 
-@dataclass
+# TODO: Remove config when all type definitions have been resolvedß
+@dataclass(config={"arbitrary_types_allowed": True})
 class Result:
     state: NodeState
     node_idx: NodeID

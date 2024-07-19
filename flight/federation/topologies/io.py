@@ -9,6 +9,7 @@ to take advantage of the wrapper functions directly provided as class methods in
 wish to use `from_yaml()` to create a Topology with a YAML file, we encourage the use the `Topology.from_yaml()` method
 instead.
 """
+
 from __future__ import annotations
 
 import json
