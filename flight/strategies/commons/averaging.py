@@ -22,7 +22,7 @@ def average_state_dicts(
         weights (Mapping[NodeID, float] | None, optional): Optional dictionary that maps each node to its contribution factor. Defaults to None.
 
     Returns:
-        Params: The averaged states.
+        Params: The averaged parameters.
     """
     num_nodes = len(state_dicts)
 
