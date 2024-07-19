@@ -60,7 +60,7 @@ class TestInvalidFixedSelection:
         """Tests an invalid level of participation on prob selection raises a 'ValueError'"""
         gen = default_rng()
 
-        children = create_children(numWorkers=1, numAggr=2)
+        children = create_children(num_workers=1, num_aggrs=2)
 
         with pytest.raises(ValueError):
             fixed_random = random_worker_selection(
