@@ -48,11 +48,7 @@ class FedAvgAggr(DefaultAggrStrategy):
 
 
 class FedAvgWorker(DefaultWorkerStrategy):
-    """The worker for 'FedAvg' and its respective methods.
-
-    Args:
-        DefaultWorkerStrategy: The base class providing necessary methods for 'FedAvgWorker'
-    """
+    """The worker for 'FedAvg' and its respective methods."""
 
     def before_training(
         self, state: NodeState, data: Params
@@ -71,11 +67,9 @@ class FedAvgWorker(DefaultWorkerStrategy):
 
 
 class FedAvg(Strategy):
-    """Implementation of the FedAvg strategy, which uses default strategies for the trainer,
-        'FedAvg' for aggregator and workers, and 'FedSGD' for the coordinator.
-
-    Args:
-        Strategy: The base class providing the necessary attributes for 'FedAvg'.
+    """
+    Implementation of the FedAvg strategy, which uses default strategies for the trainer,
+    'FedAvg' for aggregator and workers, and 'FedSGD' for the coordinator.
     """
 
     def __init__(
