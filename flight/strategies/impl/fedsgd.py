@@ -19,11 +19,7 @@ if t.TYPE_CHECKING:
 
 
 class FedSGDCoord(DefaultCoordStrategy):
-    """The coordinator and its respective methods for 'FedSGD'.
-
-    Args:
-        DefaultCoordStrategy: The base class providing the necessary methods for 'FedSGDCoord'.
-    """
+    """The coordinator and its respective methods for 'FedSGD'."""
 
     def __init__(
         self,
@@ -87,11 +83,9 @@ class FedSGDAggr(DefaultAggrStrategy):
 
 
 class FedSGD(Strategy):
-    """Implementation of the FedSGD strategy, which uses 'FedSGD' for the coordinator and aggregators, and defaults
-        for the workers and trainer.
-
-    Args:
-        Strategy: The base class providing the necessary attributes for 'FedSGD'.
+    """
+    Implementation of the FedSGD strategy, which uses 'FedSGD' for the coordinator and aggregators, and defaults
+    for the workers and trainer.
     """
 
     def __init__(
