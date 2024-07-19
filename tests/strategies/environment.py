@@ -13,6 +13,6 @@ def create_children(num_workers: int, num_aggrs: int = 0) -> list[Node]:
     """
     aggr = [Node(idx=i, kind=NodeKind.AGGR) for i in range(1, num_aggrs + 1)]
     workers = [
-        Node(idx=i + numAggr, kind=NodeKind.WORKER) for i in range(1, num_workers + 1)
+        Node(idx=i + num_aggrs, kind=NodeKind.WORKER) for i in range(1, num_workers + 1)
     ]
     return workers + aggr
