@@ -18,11 +18,7 @@ if t.TYPE_CHECKING:
 
 
 class FedAvgAggr(DefaultAggrStrategy):
-    """The aggregator for 'FedAvg' and its respective methods.
-
-    Args:
-        DefaultAggrStrategy: The base class providing necessary methods for 'FedAvgAggr'.
-    """
+    """The aggregator for the FedAvg algorithm and its respective methods."""
 
     def aggregate_params(
         self,
