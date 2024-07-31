@@ -1,5 +1,6 @@
 import typing as t
 
-import torch
+from torch import Tensor
 
-LocalStepOutput: t.TypeAlias = t.Optional[torch.Tensor | t.Mapping[str, t.Any]]
+LocalStepOutput: t.TypeAlias = t.Optional[Tensor | t.Mapping[str, t.Any]]
+Params: t.TypeAlias = t.Mapping[str, Tensor]

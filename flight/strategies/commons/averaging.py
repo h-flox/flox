@@ -5,11 +5,11 @@ import typing as t
 import numpy
 import torch
 
+from flight.federation.topologies.node import NodeID
+from flight.learning.types import Params
+
 if t.TYPE_CHECKING:
     from collections.abc import Mapping
-
-    NodeID: t.TypeAlias = t.Any
-    Params: t.TypeAlias = t.Any
 
 
 def average_state_dicts(

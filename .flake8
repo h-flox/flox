@@ -5,7 +5,10 @@ per-file-ignores =
 
 # TODO: Change to 88 later for black
 max-line-length = 120
-exclude:
-  quickstart/
+exclude =
+  quickstart
+  flox
+  flox_examples
+  flox_tests
 
 

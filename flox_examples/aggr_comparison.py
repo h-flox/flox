@@ -13,19 +13,19 @@ logging.basicConfig(
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    import flox
     import os
+
     import pandas as pd
     import torchvision.transforms as transforms
-
+    from models import *
     from torchvision.datasets import FashionMNIST
 
+    import flox
+    from flox import Topology
+    from flox.data import FloxDataset
     from flox.data.utils import federated_split
     from flox.federation.topologies import hierarchical_topology
     from flox.strategies import load_strategy
-    from flox import Topology
-    from flox.data import FloxDataset
-    from models import *
 
 
 def train_experiment(

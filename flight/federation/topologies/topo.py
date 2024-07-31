@@ -21,7 +21,7 @@ if t.TYPE_CHECKING:
 def resolve_node_or_idx(node_or_idx: Node | NodeID) -> NodeID:
     if isinstance(node_or_idx, Node):
         return node_or_idx.idx
-    elif isinstance(node_or_idx, int | str):  # mypy doesn't accept just using `NodeID`
+    elif isinstance(node_or_idx, NodeID):  # type: ignore # (mypy wants `int | str`)
         return node_or_idx
     else:
         raise ValueError("Argument `node_or_idx` must be of type `Node` or `NodeID`.")
@@ -105,10 +105,12 @@ class Topology:
         included in the returned iterator.
 
         Args:
-            kind:
+            kind (NodeKind | str | None): The kind of nodes to include in the iterator. If `None`,
+                then all nodes in the topology are included in the returned iterator.
 
         Raises:
-            - `ValueError` in the event the user provides an illegal `str` (see docs for `NodeKind` enum).
+            - `ValueError` in the event the user provides an illegal `str` for arg `kind`
+              (see docs for `NodeKind` enum).
 
         Examples:
             >>> nodes: list[Node] = ...
@@ -357,7 +359,9 @@ class Topology:
 
 def validate(topo: Topology) -> None:
     """
-    Validates
+    Validates whether the provided topology is structurally legal or not. If the topology is not
+    structurally legal, then `TopologyException` is thrown. If no exception is thrown, then the
+    topology is legal.
 
     Args:
         topo (Topology): The `Topology` instance to validate.
@@ -366,9 +370,6 @@ def validate(topo: Topology) -> None:
         - `TopologyException` if an illegal topology has been defined based on Nodes, edges/links,
             and underlying graph. Exception messages will more explicitly state the exact issue.
             Refer to the docs for more information about the requirements for a legal Flight topology.
-
-    Returns:
-        `True` if the graph is legitimate; `False` otherwise.
     """
     nodes: t.Mapping[NodeID, Node] = topo._nodes  # noqa
     edges: list[NodeLink] = topo._edges  # noqa

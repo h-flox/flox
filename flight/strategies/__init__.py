@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 
 import torch
@@ -8,9 +10,8 @@ from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-Loss: t.TypeAlias = torch.Tensor
-Params: t.TypeAlias = dict[str, torch.Tensor]
-NodeState: t.TypeAlias = t.Any
+if t.TYPE_CHECKING:
+    Loss: t.TypeAlias = torch.Tensor
 
 
 def load_strategy(strategy_name: str, **kwargs) -> Strategy:

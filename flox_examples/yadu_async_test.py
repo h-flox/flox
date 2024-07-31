@@ -11,7 +11,6 @@ import flox
 from flox.federation.topologies import two_tier_topology
 from flox.strategies import load_strategy
 
-
 # from flox_classes import Net, KyleNet
 
 

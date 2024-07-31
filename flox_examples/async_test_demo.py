@@ -7,16 +7,16 @@ from pathlib import Path
 import pandas as pd
 import torch
 import torchmetrics
-from flox.data import federated_split
 from torch import nn
 from torch.nn import functional as F
 from torchvision import transforms
 from torchvision.datasets import FashionMNIST
 
 import flox
+from flox.data import federated_split
+from flox.federation.topologies import two_tier_topology
 from flox.learn import FloxModule
 from flox.strategies import load_strategy
-from flox.federation.topologies import two_tier_topology
 
 logging.basicConfig(
     format="(%(levelname)s  - %(asctime)s) ❯ %(message)s", level=logging.INFO

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import typing as t
 from concurrent.futures import Future
@@ -6,18 +8,19 @@ from flight.strategies.aggr import AggrStrategy
 from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
+
+from ..learning.datasets.loadable import DataLoadable
+from ..types import Record
 from .jobs.types import Result, TrainJob, TrainJobArgs
 from .jobs.work import default_training_job
 from .topologies.node import Node
 from .topologies.topo import Topology
-from ..learning.datasets import DataLoadable
 
 if t.TYPE_CHECKING:
     from .fed_sync import Engine
 
     Strategy: t.TypeAlias = t.Any
     Module: t.TypeAlias = t.Any
-    Record: t.TypeAlias = dict[str, t.Any]
 
 
 class Federation(abc.ABC):

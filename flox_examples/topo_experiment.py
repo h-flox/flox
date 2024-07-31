@@ -12,15 +12,15 @@ logging.basicConfig(
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    import flox
     import os
-    import torchvision.transforms as transforms
 
+    import torchvision.transforms as transforms
+    from models import *
     from torchvision.datasets import FashionMNIST
 
-    from flox.federation.topologies import hierarchical_topology
+    import flox
     from flox.data import federated_split
-    from models import *
+    from flox.federation.topologies import hierarchical_topology
 
 
 def load_data() -> FashionMNIST:

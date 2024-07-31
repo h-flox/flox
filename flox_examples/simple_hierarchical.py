@@ -7,17 +7,17 @@ logging.basicConfig(
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    import flox
     import os
-    import pandas as pd
 
+    import pandas as pd
+    from models import *
     from torchvision.datasets import FashionMNIST
     from torchvision.transforms import ToTensor
 
+    import flox
     from flox.data.utils import federated_split
     from flox.federation.topologies import create_hier_flock
     from flox.strategies import load_strategy
-    from models import *
 
 
 def main():

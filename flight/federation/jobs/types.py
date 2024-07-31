@@ -1,32 +1,32 @@
+from __future__ import annotations
+
 import typing as t
 from concurrent.futures import Future
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-import pydantic as pyd
-
-from flight.federation.topologies.node import Node
-from flight.learning.module import RecordList
+from flight.federation.topologies.node import Node, NodeState, WorkerState
+from flight.learning.datasets.loadable import DataLoadable
+from flight.learning.modules.base import Record
+from flight.learning.modules.torch import FlightModule
+from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
-    from flight.learning.datasets import DataLoadable
-    from flight.learning.module import FlightModule
     from flight.strategies.trainer import TrainerStrategy
     from flight.strategies.worker import WorkerStrategy
 
-    NodeState: t.TypeAlias = t.Any
-    Params: t.TypeAlias = t.Any
 
-
-@pyd.dataclasses.dataclass
-class Result(pyd.BaseModel):
-    node: Node = pyd.Field()
-    node_state: NodeState = pyd.Field()
-    params: Params = pyd.Field()
-    records: RecordList = pyd.Field()
-    cache: dict[str, t.Any] = pyd.Field(default_factory=dict, init=False)
-
-
-AggrJob: t.TypeAlias = t.Callable[[Node, Node], Result]
+@dataclass
+class Result:
+    node: Node
+    """The node that produced this result during a federation."""
+    node_state: NodeState
+    """The current state of the node that returned a given result during a federation."""
+    params: Params
+    """Parameters returned as part of a result from a single Node in a federation."""
+    records: list[Record] = field(default_factory=list)
+    """List of records for model training/aggregation metrics."""
+    extra: dict[str, t.Any] = field(default_factory=dict)
+    """Extra data recorded by a node during the runtime of its job."""
 
 
 # class TrainJob(t.Protocol):
@@ -57,6 +57,7 @@ class TrainJobArgs:
 
     node: Node
     parent: Node
+    node_state: WorkerState
     model: FlightModule
     data: DataLoadable
     worker_strategy: WorkerStrategy
@@ -64,4 +65,7 @@ class TrainJobArgs:
 
 
 AggrJob: t.TypeAlias = t.Callable[[AggrJobArgs], Result]
+"""Function signature for aggregation jobs."""
+
 TrainJob: t.TypeAlias = t.Callable[[TrainJobArgs], Result]
+"""Function signature for loca training jobs."""

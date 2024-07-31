@@ -2,22 +2,22 @@ import argparse
 from pathlib import Path
 
 import torch
-from flox.data.utils import federated_split
 from torch import nn
 from torch.nn import functional as F
 from torchvision import transforms
 from torchvision.datasets import FashionMNIST
 
 import flox
-from flox.learn import FloxModule
+from flox.data.utils import federated_split
 from flox.federation.topologies import two_tier_topology
+from flox.learn import FloxModule
 
 
 class Net(FloxModule):
     """Model (simple CNN adapted from 'PyTorch: A 60 Minute Blitz')"""
 
     def __init__(self) -> None:
-        super(Net, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)

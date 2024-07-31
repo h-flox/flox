@@ -1,7 +1,8 @@
 import pytest
 import torch
 
-from flight.learning.torch import FlightModule
+from flight.learning.modules.base import Trainable
+from flight.learning.modules.torch import FlightModule
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ def valid_module():
 
 @pytest.fixture
 def invalid_module():
-    class TestModule(FlightModule): # noqa
+    class TestModule(FlightModule):  # noqa
         def __init__(self):
             super().__init__()
             self.model = torch.nn.Sequential(
@@ -43,15 +44,25 @@ def invalid_module():
 
 
 class TestModelInit:
-    def test_1(self, valid_module):
+    def test_valid_model_init(self, valid_module):
         model = valid_module()
         assert isinstance(model, FlightModule)
+        assert isinstance(model, Trainable)
         assert isinstance(model, torch.nn.Module)
 
         x = torch.tensor([[1.0]])
         y = model(x)
         assert isinstance(y, torch.Tensor)
 
-    def test_2(self, invalid_module):
+    def test_invalid_model_init(self, invalid_module):
         with pytest.raises(TypeError):
             invalid_module()
+
+    def test_model_get_params(self, valid_module):
+        model = valid_module()
+        try:
+            _ = model.get_params(include_state=False)
+            params = model.get_params(include_state=True)
+            model.set_params(params)
+        except Exception as exc:
+            pytest.fail(exc, "Unexpected error/exception.")
