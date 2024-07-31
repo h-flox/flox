@@ -1,13 +1,15 @@
 """
 I/O module for loading Flight topologies for several different data formats.
 
-More specifically, the functions in this submodule will return a node-list (`List[Node]`) and an
-edge-list (`List[NodeLink]`) which are then given as inputs into the `Topology` class for construction.
+More specifically, the functions in this submodule will return a node-list
+(`List[Node]`) and an edge-list (`List[NodeLink]`) which are then given as inputs
+into the `Topology` class for construction.
 
-It is recommended that users do **not** use the functions of this submodule directly. We instead encourage users
-to take advantage of the wrapper functions directly provided as class methods in the `Topology` class. So, if users
-wish to use `from_yaml()` to create a Topology with a YAML file, we encourage the use the `Topology.from_yaml()` method
-instead.
+It is recommended that users do **not** use the functions of this submodule directly.
+We instead encourage users to take advantage of the wrapper functions directly provided
+as class methods in the `Topology` class. So, if users wish to use `from_yaml()` to
+create a Topology with a YAML file, we encourage the use the `Topology.from_yaml()`
+method instead.
 """
 
 from __future__ import annotations
@@ -40,12 +42,13 @@ def from_adj_matrix(matrix: np.ndarray) -> tuple[list[Node], list[NodeLink]]:
 
 def from_dict(data: GraphDict) -> tuple[list[Node], list[NodeLink]]:
     """
-    Parses a mapping object (e.g., `dict` or `OrderedDict`) and returns its corresponding node list and edge list.
+    Parses a mapping object (e.g., `dict` or `OrderedDict`) and returns its
+    corresponding node list and edge list.
 
     Args:
-        data (GraphDict): A dictionary where each top-level key is the node ID (`str` or `int`) and the
-            values are Mappings (e.g., dicts) with `str` keys for each input into the `Node` class and
-            the child Node IDs.
+        data (GraphDict): A dictionary where each top-level key is the node ID (`str`
+            or `int`) and the values are Mappings (e.g., dicts) with `str` keys for
+            each input into the `Node` class and the child Node IDs.
 
     Returns:
         Tuple of two lists: (i) list of `Node`s and (ii) list of `NodeLink`s.
@@ -81,14 +84,15 @@ def from_json(
 
     Args:
         path (pathlib.Path | str): Path to the JSON file.
-        safe_load (bool): Will convert node IDs (i.e., top-level keys and children IDs) to strings.
-            Should be set to `True` (default) in most circumstances.
+        safe_load (bool): Will convert node IDs (i.e., top-level keys and children IDs)
+            to strings. Should be set to `True` (default) in most circumstances.
 
     Notes:
         Any Topology defined as a JSON will require all Node IDs to be of type `str`.
-        This is due to a limitation of the JSON format (JSON does not support integer keys).
-        As a safety precaution, this function will convert any Node ID to a string if
-        `safe_load = True`. But, this is detail is worth being aware of for users.
+        This is due to a limitation of the JSON format (JSON does not support integer
+        keys). As a safety precaution, this function will convert any Node ID to a
+        string if `safe_load = True`. But, this is detail is worth being aware of for
+        users.
 
     Returns:
         Tuple of two lists: (i) list of `Node`s and (ii) list of `NodeLink`s.
@@ -97,8 +101,9 @@ def from_json(
         data = json.load(fp)
 
     if safe_load:
-        # Because the JSON format does not support integers for keys, we have to convert every
-        # value in `children` from integers to strings. This is a limitation of the data format.
+        # Because the JSON format does not support integers for keys, we have to
+        # convert every value in `children` from integers to strings. This is a
+        # limitation of the data format.
         data = {str(key): value for key, value in data.items()}
         for key, value in data.items():
             value = map(lambda val: str(val), value["children"])
@@ -115,11 +120,13 @@ def from_networkx(graph: nx.DiGraph) -> tuple[list[Node], list[NodeLink]]:
         graph (nx.DiGraph): NetworkX directed graph to convert into a Topology.
 
     Notes:
-        Any node-specific features (e.g., Globus Compute UUID) should be stored as attributes on the
-        node itself. Anything besides the standard `Node` features should be stored in `extra`.
+        Any node-specific features (e.g., Globus Compute UUID) should be stored as
+        attributes on the node itself. Anything besides the standard `Node` features
+        should be stored in `extra`.
 
     Throws:
-        - `ValueError` if an undirected `nx.Graph` object is passed instead of a directed `nx.DiGraph`.
+        - `ValueError` if an undirected `nx.Graph` object is passed instead of a
+          directed `nx.DiGraph`.
 
     Returns:
         Tuple of two lists: (i) list of `Node`s and (ii) list of `NodeLink`s.

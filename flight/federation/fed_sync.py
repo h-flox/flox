@@ -2,9 +2,8 @@ import functools
 import typing as t
 from concurrent.futures import Future
 
-from flight.learning.modules.base.module import Trainable
-
-from ..learning.datasets import DataLoadable
+from ..learning.modules import HasParameters
+from ..learning.modules.base import DataLoadable
 from ..strategies.base import Strategy
 from .fed_abs import Federation
 from .topologies.node import Node, NodeKind
@@ -23,7 +22,7 @@ def log(msg: str):
 class SyncFederation(Federation):
     def __init__(
         self,
-        module: Trainable,
+        module: HasParameters,
         data: DataLoadable,
         topology: Topology,
         strategy: Strategy,
@@ -87,7 +86,8 @@ class SyncFederation(Federation):
                 return self.start_coordinator_task(node)
             case NodeKind.AGGREGATOR:
                 log(
-                    f"Launching aggregation task on {node.kind.title()} node {node.idx}."
+                    f"Launching aggregation task on {node.kind.title()} "
+                    f"node {node.idx}."
                 )
                 return self.start_aggregator_task(node, self.selected_children[node])
             case NodeKind.WORKER:
@@ -102,8 +102,8 @@ class SyncFederation(Federation):
             state, self.topology.workers, seed=None
         )
 
-        # Identify any intermediate aggregators that are on the path between the coordinator and
-        # the selected worker nodes.
+        # Identify any intermediate aggregators that are on the path between the
+        # coordinator and the selected worker nodes.
         intermediate_aggrs = set()
         for worker in selected_workers:
             parent = self.topology.parent(worker)
@@ -111,8 +111,8 @@ class SyncFederation(Federation):
                 intermediate_aggrs.add(parent)
                 parent = self.topology.parent(parent)
 
-        # Identify the immediate children of the coordinator node that are part of this
-        # federation based on the above code.
+        # Identify the immediate children of the coordinator node that are part
+        # of this federation based on the above code.
         worker_set = set(selected_workers)
         coord_children = set(self.topology.children(node))
         if len(intermediate_aggrs):
@@ -129,8 +129,8 @@ class SyncFederation(Federation):
 
         return self.start_aggregator_task(node, self.selected_children[node])
 
-        # Identify which child nodes are necessary in this round of the federation. Necessary nodes
-        # are all the selected worker nodes and any other node
+        # Identify which child nodes are necessary in this round of the federation.
+        # Necessary nodes are all the selected worker nodes and any other node
 
     def start_aggregator_task(
         self,

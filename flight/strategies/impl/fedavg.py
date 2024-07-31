@@ -10,14 +10,20 @@ from flight.strategies.base import (
 )
 from flight.strategies.commons import average_state_dicts
 
-from .fedsgd import FedSGDCoord
-
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import NodeID
-    from flight.strategies import NodeState, Params
+    from flight.federation.topologies.node import NodeID, NodeState
+
+    from ...learning.types import Params
+    from .fedsgd import FedSGDCoord
 
 
-class FedAvgAggr(DefaultAggrStrategy):
+class _FedAvgConstMixins:
+    """Defines common constants throughout that will be used for `FedAvg` classes."""
+
+    NUM_SAMPLES = "num_data_samples"
+
+
+class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
     """The aggregator for the FedAvg algorithm and its respective methods."""
 
     def aggregate_params(
@@ -27,12 +33,16 @@ class FedAvgAggr(DefaultAggrStrategy):
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
-        """Method used by aggregator nodes for aggregating the passed node state dictionary.
+        """
+        Method used by aggregator nodes for aggregating the passed node state
+        dictionary.
 
         Args:
             state (NodeState): State of the current aggregator node.
-            children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states of the children.
-            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each child to its values.
+            children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states
+                of the children.
+            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each
+                child to its values.
             **kwargs: Key word arguments provided by the user.
 
         Returns:
@@ -40,14 +50,13 @@ class FedAvgAggr(DefaultAggrStrategy):
         """
         weights = {}
         for node, child_state in children_states.items():
-            weights[node] = child_state["num_data_samples"]
+            weights[node] = child_state[FedAvgAggr.NUM_SAMPLES]
 
-        state["num_data_samples"] = sum(weights.values())
-
+        state[FedAvgAggr.NUM_SAMPLES] = sum(weights.values())
         return average_state_dicts(children_state_dicts, weights=weights)
 
 
-class FedAvgWorker(DefaultWorkerStrategy):
+class FedAvgWorker(DefaultWorkerStrategy, _FedAvgConstMixins):
     """The worker for 'FedAvg' and its respective methods."""
 
     def before_training(
@@ -60,16 +69,17 @@ class FedAvgWorker(DefaultWorkerStrategy):
             data (Params): The data related to the current worker node.
 
         Returns:
-            tuple[NodeState, Params]: A tuple containing the updated state of the worker node and the data.
+            tuple[NodeState, Params]: A tuple containing the updated state of the
+                worker node and the data.
         """
-        state["num_data_samples"] = len(data)
+        state[FedAvgWorker.NUM_SAMPLES] = len(data)
         return state, data
 
 
 class FedAvg(Strategy):
     """
-    Implementation of the FedAvg strategy, which uses default strategies for the trainer,
-    'FedAvg' for aggregator and workers, and 'FedSGD' for the coordinator.
+    Implementation of the FedAvg strategy, which uses default strategies for the
+    trainer, 'FedAvg' for aggregator and workers, and 'FedSGD' for the coordinator.
     """
 
     def __init__(

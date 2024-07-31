@@ -14,8 +14,8 @@ from flight.strategies.base import (
 from flight.strategies.commons import average_state_dicts, random_worker_selection
 
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import Node, NodeID
-    from flight.strategies import NodeState, Params
+    from flight.federation.topologies.node import AggrState, Node, NodeID, NodeState
+    from flox.learn.types import Params
 
 
 class FedSGDCoord(DefaultCoordStrategy):
@@ -39,7 +39,8 @@ class FedSGDCoord(DefaultCoordStrategy):
         Args:
             state (NodeState): State of the coordinator node.
             workers (t.Iterable[Node]): Iterable containing the worker nodes.
-            rng (Generator | None, optional): RNG object used for randomness. Defaults to None.
+            rng (Generator | None, optional): RNG object used for randomness.
+                Defaults to `None`.
 
         Returns:
             t.Sequence[Node]: The selected worker nodes.
@@ -55,25 +56,40 @@ class FedSGDCoord(DefaultCoordStrategy):
 
 
 class FedSGDAggr(DefaultAggrStrategy):
-    """The aggregator and its respective methods for 'FedSGD'.
+    """
+    Standard averaging strategy.
 
     Args:
-        DefaultAggrStrategy: The base class providing the necessary methods for 'FedSGDAggr'.
+        DefaultAggrStrategy: The base class providing the necessary methods for
+            'FedSGDAggr'.
     """
 
     def aggregate_params(
         self,
-        state: NodeState,
+        state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
-        """Method used by aggregator nodes for aggregating the passed node state dictionary.
+        """
+        Performs a simple average of the model parameters returned by the child nodes.
+
+        The average is done by:
+
+        $$
+            w^{t} \\triangleq \\frac{1}{K} \\sum_{k=1}^{K} w_{k}^{t}
+        $$
+
+        where $w^{t}$ is the aggregated model parameters, $K$ is the number of returned
+        model updates, $t$ is the current round, and $w_{k}^{t}$ is the returned model
+        updates from child $k$ at round $t$.
 
         Args:
             state (NodeState): State of the current aggregator node.
-            children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states of the children.
-            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each child to its values.
+            children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states of
+                the children.
+            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each
+                child to its values.
             **kwargs: Key word arguments provided by the user.
 
         Returns:
@@ -84,8 +100,8 @@ class FedSGDAggr(DefaultAggrStrategy):
 
 class FedSGD(Strategy):
     """
-    Implementation of the FedSGD strategy, which uses 'FedSGD' for the coordinator and aggregators, and defaults
-    for the workers and trainer.
+    Implementation of the FedSGD strategy, which uses 'FedSGD' for the coordinator
+    and aggregators, and defaults for the workers and trainer.
     """
 
     def __init__(

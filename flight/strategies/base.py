@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import dataclasses
 import functools
 import typing as t
-
-import pydantic as pyd
 
 from flight.strategies.aggr import AggrStrategy
 from flight.strategies.commons.averaging import average_state_dicts
@@ -34,7 +33,7 @@ class DefaultCoordStrategy:
 
         Args:
             state (NodeState): The state of the coordinator node.
-            workers (t.Iterable[Node]): Iterable object containing all of the worker nodes.
+            workers (t.Iterable[Node]): Iterable object containing all the worker nodes.
             rng (Generator): RNG object used for randomness.
 
         Returns:
@@ -60,8 +59,10 @@ class DefaultAggrStrategy:
 
         Args:
             state (NodeState): The state of the current aggregator node.
-            children_states (t.Mapping[NodeID, NodeState]): A mapping of the current aggregator node's children and their respective states.
-            children_state_dicts (t.Mapping[NodeID, Parmas]): The model parameters of the models to each respective child node.
+            children_states (t.Mapping[NodeID, NodeState]): A mapping of the current
+                aggregator node's children and their respective states.
+            children_state_dicts (t.Mapping[NodeID, Params]): The model parameters of
+                the models to each respective child node.
             **kwargs: Keyword arguments provided by users.
 
         Returns:
@@ -97,7 +98,8 @@ class DefaultWorkerStrategy:
             data (Params): The data associated with the current worker node.
 
         Returns:
-            tuple[NodeState, Params]: A tuple containing the state and data of the worker node at the end of the callback.
+            tuple[NodeState, Params]: A tuple containing the state and data of the
+                worker node at the end of the callback.
         """
         return state, data
 
@@ -108,7 +110,7 @@ class DefaultWorkerStrategy:
 
         Args:
             state (NodeState): The state of the current worker node.
-            optimizer (torch.optim.Optimizer): The PyTorch optimier to be used.
+            optimizer (torch.optim.Optimizer): The PyTorch optimizer to be used.
 
         Returns:
             NodeState: The state of the worker node at the end of the callback.
@@ -116,10 +118,11 @@ class DefaultWorkerStrategy:
         return state
 
     def end_work(self, result: Result) -> Result:
-        """Callback to be ran at the end of the work.
+        """Callback to be run at the end of the work.
 
         Args:
-            result (Result): A Result object used to represent the result of the local training on the current worker node.
+            result (Result): A Result object used to represent the result of the local
+                training on the current worker node.
 
         Returns:
             Result: The result of the worker nodes local training.
@@ -155,24 +158,34 @@ class DefaultTrainerStrategy:
         return loss
 
 
-# TODO: Remove config when all type definitions have been resolved
-@pyd.dataclasses.dataclass(
-    frozen=True, repr=False, config={"arbitrary_types_allowed": True}
-)
+@dataclasses.dataclass(frozen=True, repr=False)
 class Strategy:
     """
-    A 'Strategy' implementation is comprised of the four different type of implementations of strategies
-    to be used on the respective node types throughout the training process.
+    A 'Strategy' implementation is made up of the four different type of
+    implementations of strategies to be used on the respective node types throughout
+    the training process.
     """
 
-    """Implementation of the specific callbacks for the coordinator node."""
-    coord_strategy: CoordStrategy = pyd.Field()
-    """Implementation of the specific callbacks for the aggregator node(s)."""
-    aggr_strategy: AggrStrategy = pyd.Field()
-    """Implementation of the specific callbacks for the worker node(s)."""
-    worker_strategy: WorkerStrategy = pyd.Field()
-    """Implementation of callbacks specific to the execution of the training loop on the worker node(s)."""
-    trainer_strategy: TrainerStrategy = pyd.Field()
+    coord_strategy: CoordStrategy
+    """
+    Implementation of the specific callbacks for the coordinator node.
+    """
+
+    aggr_strategy: AggrStrategy
+    """
+    Implementation of the specific callbacks for the aggregator node(s).
+    """
+
+    worker_strategy: WorkerStrategy
+    """
+    Implementation of the specific callbacks for the worker node(s).
+    """
+
+    trainer_strategy: TrainerStrategy
+    """
+    Implementation of callbacks specific to the execution of the training loop
+    on the worker node(s).
+    """
 
     def __iter__(self) -> t.Iterator[tuple[str, StrategyType]]:
         yield from (
@@ -193,7 +206,7 @@ class Strategy:
             "Signature of '__str__' incompatible with supertype 'object'".
 
         Returns:
-            The string representation of the a Strategy instance.
+            The string representation of the Strategy instance.
         """
         name = self.__class__.__name__
         inner = ", ".join(
@@ -210,7 +223,10 @@ class Strategy:
 
 
 class DefaultStrategy(Strategy):
-    """Implementation of a strategy that uses the default strategy types for each node type."""
+    """
+    Implementation of a strategy that uses the default strategy types for
+    each node type.
+    """
 
     def __init__(self) -> None:
         super().__init__(

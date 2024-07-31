@@ -1,8 +1,7 @@
-import typing as t
-
 import torch
 
-from flight.strategies import AggrStrategy, NodeState
+from flight.federation.topologies.node import NodeState
+from flight.strategies import AggrStrategy
 from flight.strategies.base import DefaultAggrStrategy
 
 

@@ -12,7 +12,7 @@ import flight.federation.topologies.io as io
 
 from .exceptions import NodeNotFoundError, TopologyException
 from .node import Node, NodeID, NodeKind
-from .types import GraphDict, NodeLink
+from .types import GraphDict
 
 if t.TYPE_CHECKING:
     import numpy as np
@@ -63,14 +63,17 @@ class Topology:
                 self._source = source
             case _:
                 raise ValueError(
-                    "Illegal argument kind for `source`. Tip: This should not be set by the user. "
-                    "Leave it to the constructor methods."
+                    "Illegal argument kind for `source`. Tip: This should not be "
+                    "set by the user. Leave it to the constructor methods."
                 )
 
         validate(self)
 
     def __contains__(self, idx: NodeID) -> bool:
-        """Returns `True` if a node with the given ID is in the topology; `False` otherwise."""
+        """
+        Returns `True` if a node with the given ID is in the topology;
+        `False` otherwise.
+        """
         return idx in self._nodes
 
     def __getitem__(self, idx: NodeID) -> Node:
@@ -81,7 +84,8 @@ class Topology:
             idx (NodeID): The ID of the node to return.
 
         Throws:
-            - `NodeNotFound` in the event that the given `NodeID` is not part of the topology.
+            - `NodeNotFound` in the event that the given `NodeID` is not part of
+              the topology.
 
         Returns:
             The requested node.
@@ -105,12 +109,13 @@ class Topology:
         included in the returned iterator.
 
         Args:
-            kind (NodeKind | str | None): The kind of nodes to include in the iterator. If `None`,
-                then all nodes in the topology are included in the returned iterator.
+            kind (NodeKind | str | None): The kind of nodes to include in the iterator.
+                If `None`, then all nodes in the topology are included in the returned
+                iterator.
 
         Raises:
-            - `ValueError` in the event the user provides an illegal `str` for arg `kind`
-              (see docs for `NodeKind` enum).
+            - `ValueError` in the event the user provides an illegal `str` for arg
+              `kind` (see docs for `NodeKind` enum).
 
         Examples:
             >>> nodes: list[Node] = ...
@@ -118,7 +123,8 @@ class Topology:
             >>> topo = Topology(nodes, edges)
             >>> for node in topo.nodes(kind="coordinator"):
             >>>     print(node)
-            idx=0 kind=<NodeKind.COORD: 'coordinator'> globus_comp_id=None proxystore_id=None extra=None
+            idx=0 kind=<NodeKind.COORD: 'coordinator'> globus_comp_id=None
+            proxystore_id=None extra=None
 
         Returns:
             An iterator through the nodes.
@@ -135,14 +141,17 @@ class Topology:
         Returns the parent of the given node.
 
         Args:
-            node_or_idx (Node | NodeID): The `Node` whose parent we wish to return. The given parameter
-                can be either of type `Node` or `NodeID`. Any other value type will result is a `ValueError`.
+            node_or_idx (Node | NodeID): The `Node` whose parent we wish to return.
+                The given parameter can be either of type `Node` or `NodeID`. Any other
+                value type will result is a `ValueError`.
 
         Throws:
-            - `TopologyException` is raised in the event that the user requests the parent of the coordinator.
-            - `ValueError` in the event that the user provides a parameter value that is neither a `Node`
-                nor `NodeID`.
-            - `NodeNotFound` in the event that the given `Node` or `NodeID` is not part of the topology.
+            - `TopologyException` is raised in the event that the user requests the
+              parent of the coordinator.
+            - `ValueError` in the event that the user provides a parameter value that
+              is neither a `Node` nor `NodeID`.
+            - `NodeNotFound` in the event that the given `Node` or `NodeID` is not
+              part of the topology.
 
         Returns:
             The parent node of the given node.
@@ -163,13 +172,15 @@ class Topology:
         Gets an iterator that loops through the children of the given node.
 
         Args:
-            node_or_idx (Node | NodeID): The `Node` whose children we wish to return. The given parameter
-                can be either of type `Node` or `NodeID`. Any other value type will result is a `ValueError`.
+            node_or_idx (Node | NodeID): The `Node` whose children we wish to return.
+                The given parameter can be either of type `Node` or `NodeID`. Any other
+                value type will result is a `ValueError`.
 
         Throws:
-            - `ValueError` in the event that the user provides a parameter value that is neither a `Node`
-                nor `NodeID`.
-            - `NodeNotFound` in the event that the given `Node` or `NodeID` is not part of the topology.
+            - `ValueError` in the event that the user provides a parameter value that
+              is neither a `Node` nor `NodeID`.
+            - `NodeNotFound` in the event that the given `Node` or `NodeID` is not part
+              of the topology.
 
         Returns:
             Iterator that loops through the children of the given Node.
@@ -183,13 +194,14 @@ class Topology:
         Returns the number of nodes in the network (of a designated kind if specified).
 
         Args:
-            kind (NodeKind | str | None): Specifies the kind of nodes to count. This is `None` by default, which
-                will return the total number of nodes in the Topology.
+            kind (NodeKind | str | None): Specifies the kind of nodes to count. This is
+                `None` by default, which will return the total number of nodes in the
+                Topology.
 
         Notes:
-             If you wish to use no argument (i.e., `topo.number_of_nodes()`), it is recommended that you
-             instead use `len()`. The `number_of_nodes()` method iterates through the nodes, whereas
-             the implementation for `len()` does not.
+            If you wish to use no argument (i.e., `topo.number_of_nodes()`), it is
+            recommended that you instead use `len()`. The `number_of_nodes()` method
+            iterates through the nodes, whereas the implementation for `len()` does not.
 
         Returns:
             The number of nodes of a specified kind (if one is given).
@@ -243,9 +255,13 @@ class Topology:
         return TopologyKind.HUB_SPOKE
 
     @classmethod
-    def from_adj_list(cls, adj_list: t.Mapping[NodeID, t.Sequence[NodeID]]) -> Topology:
+    def from_adj_list(
+        cls,
+        adj_list: t.Mapping[NodeID, t.Sequence[NodeID]],
+    ) -> Topology:
         """
-        Creates a Topology instance using [`from_adj_list`][flight.federation.topologies.io.from_adj_list].
+        Creates a Topology instance using
+        [`from_adj_list`][flight.federation.topologies.io.from_adj_list].
 
         Args:
             adj_list (t.Mapping[NodeID, t.Sequence[NodeID]]): Adjacency list.
@@ -258,7 +274,8 @@ class Topology:
     @classmethod
     def from_adj_matrix(cls, adj_matrix: np.ndarray) -> Topology:
         """
-        Creates a Topology instance using [`from_adj_matrix`][flight.federation.topologies.io.from_adj_matrix].
+        Creates a Topology instance using
+        [`from_adj_matrix`][flight.federation.topologies.io.from_adj_matrix].
 
         Args:
             adj_matrix (np.ndarray): Adjacency matrix.
@@ -271,12 +288,13 @@ class Topology:
     @classmethod
     def from_dict(cls, data: GraphDict) -> Topology:
         """
-        Creates a Topology instance from a `dict` using [`from_dict`][flight.federation.topologies.io.from_dict].
+        Creates a Topology instance from a `dict` using
+        [`from_dict`][flight.federation.topologies.io.from_dict].
 
         Args:
-            data (GraphDict): A dictionary where each top-level key is the node ID (`str` or `int`) and the
-                values are Mappings (e.g., dicts) with `str` keys for each input into the `Node` class and
-                the child Node IDs.
+            data (GraphDict): A dictionary where each top-level key is the node ID
+                (`str` or `int`) and the values are Mappings (e.g., dicts) with `str`
+                keys for each input into the `Node` class and the child Node IDs.
 
         Returns:
             A `Topology` instance.
@@ -286,7 +304,8 @@ class Topology:
     @classmethod
     def from_edgelist(cls, path: pathlib.Path | str) -> Topology:
         """
-        Creates a Topology instance using [`from_edgelist`][flight.federation.topologies.io.from_edgelist].
+        Creates a Topology instance using
+        [`from_edgelist`][flight.federation.topologies.io.from_edgelist].
 
         Args:
             path (pathlib.Path | str): Path to edgelist.
@@ -304,8 +323,9 @@ class Topology:
 
         Args:
             path (pathlib.Path | str): Path to the JSON file.
-            safe_load (bool): Will convert node IDs (i.e., top-level keys and children IDs) to strings.
-                Should be set to `True` (default) in most circumstances.
+            safe_load (bool): Will convert node IDs (i.e., top-level keys and
+                children IDs) to strings. Should be set to `True` (default) in most
+                circumstances.
 
         Returns:
             A `Topology` instance.
@@ -315,19 +335,21 @@ class Topology:
     @classmethod
     def from_networkx(cls, graph: nx.DiGraph) -> Topology:
         """
-        Creates a `Topology` instance from a NetworkX directed graph using the utility function
-        [`from_nx`][flight.federation.topologies.io.from_nx].
+        Creates a `Topology` instance from a NetworkX directed graph using the utility
+        function [`from_nx`][flight.federation.topologies.io.from_nx].
 
 
         Args:
             graph (nx.DiGraph): NetworkX directed graph to convert into a Topology.
 
         Notes:
-            Any node-specific features (e.g., Globus Compute UUID) should be stored as attributes on the
-            node itself. Anything besides the standard `Node` features should be stored in `extra`.
+            Any node-specific features (e.g., Globus Compute UUID) should be stored as
+            attributes on the node itself. Anything besides the standard `Node`
+            features should be stored in `extra`.
 
         Throws:
-            - `ValueError` if an undirected `nx.Graph` object is passed instead of a directed `nx.DiGraph`.
+            - `ValueError` if an undirected `nx.Graph` object is passed instead of a
+              directed `nx.DiGraph`.
 
         Returns:
             A `Topology` instance.
@@ -348,8 +370,9 @@ class Topology:
             path (pathlib.Path | str): Path to the YAML file.
 
         Notes:
-            Leverages the implementation of `from_dict`, so be sure to structure the YAML file
-            in a way similar to what is expected of a dictionary formatted as a `GraphDict`.
+            Leverages the implementation of `from_dict`, so be sure to structure the
+            YAML file in a way similar to what is expected of a dictionary formatted
+            as a `GraphDict`.
 
         Returns:
             A `Topology` instance.
@@ -359,21 +382,24 @@ class Topology:
 
 def validate(topo: Topology) -> None:
     """
-    Validates whether the provided topology is structurally legal or not. If the topology is not
-    structurally legal, then `TopologyException` is thrown. If no exception is thrown, then the
-    topology is legal.
+    Validates whether the provided topology is structurally legal or not. If the
+    topology is not structurally legal, then `TopologyException` is thrown. If no
+    exception is thrown, then the topology is legal.
 
     Args:
         topo (Topology): The `Topology` instance to validate.
 
     Throws:
-        - `TopologyException` if an illegal topology has been defined based on Nodes, edges/links,
-            and underlying graph. Exception messages will more explicitly state the exact issue.
-            Refer to the docs for more information about the requirements for a legal Flight topology.
+        - `TopologyException` if an illegal topology has been defined based on Nodes,
+          edges/links, and underlying graph. Exception messages will more explicitly
+          state the exact issue. Refer to the docs for more information about the
+          requirements for a legal Flight topology.
     """
-    nodes: t.Mapping[NodeID, Node] = topo._nodes  # noqa
-    edges: list[NodeLink] = topo._edges  # noqa
-    graph: nx.DiGraph = topo._graph  # noqa
+    # noinspection PyProtectedMember
+    graph: nx.DiGraph = topo._graph
+    # noinspection PyProtectedMember
+    nodes: t.Mapping[NodeID, Node] = topo._nodes
+    # edges: list[NodeLink] = topo._edges
 
     if not isinstance(graph, nx.DiGraph):
         raise TopologyException(
@@ -382,7 +408,8 @@ def validate(topo: Topology) -> None:
 
     if not nx.is_tree(graph):
         raise TopologyException(
-            "Graph structure of a legal `Topology` must be a *tree* (i.e., a connected graph with no  cycles)."
+            "Graph structure of a legal `Topology` must be a *tree* (i.e., a "
+            "connected graph with no  cycles)."
         )
 
     num_kinds = {NodeKind(kind): 0 for kind in NodeKind}
@@ -397,7 +424,8 @@ def validate(topo: Topology) -> None:
 
     if num_kinds[NodeKind.WORKER] == 0:
         raise TopologyException(
-            "Legal Flight topologies must have at least 1 Worker node (of kind `NodeKind.WORKER`)."
+            "Legal Flight topologies must have at least 1 Worker node "
+            "(of kind `NodeKind.WORKER`)."
         )
 
     for node_idx in graph.nodes():

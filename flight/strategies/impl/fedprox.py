@@ -18,8 +18,9 @@ DEVICE = "cpu"
 class FedProxTrainer(DefaultTrainerStrategy):
     """The coordinator and its respective methods for 'FedProx'.
 
-    Args:
-        DefaultTrainerStrategy: The base class providing necessary methods for 'FedProxTrainer'.
+    Extends:
+        DefaultTrainerStrategy: The base class providing necessary
+        methods for 'FedProxTrainer'.
     """
 
     def __init__(self, mu: float = 0.3):
@@ -62,11 +63,22 @@ class FedProxTrainer(DefaultTrainerStrategy):
 
 
 class FedProx(Strategy):
-    """Implementation of the FedProx strategy, which uses
-        'FedAvg' for the workers, 'FedSGD' for the coordinator and aggregators, and 'FedProx' for the trainer.
+    """
+    Implementation of FedAvg with Proximal Term.
 
-    Args:
-        Strategy: The base class providing the necessary attributes for 'FedProx'.
+    This strategy extends ``FedAvg`` and differs from it by computing a "proximal term"
+    and adding it to the computed loss during the training step before doing
+    backpropagation. This proximal term is the norm difference between the parameters
+    of the global model and the worker's locally-updated model. This proximal term is
+    used to make aggregation less sensitive to harshly heterogeneous (i.e., non-iid)
+    data distributions across workers.
+
+    More information on the proximal term and its definition can be found in the
+    docstring for ``FedProx.wrk_after_train_step()`` and in the reference below.
+
+    References:
+        Li, Tian, et al. "Federated optimization in heterogeneous networks."
+        Proceedings of Machine learning and systems 2 (2020): 429-450.
     """
 
     def __init__(

@@ -2,24 +2,28 @@ from __future__ import annotations
 
 import typing as t
 
-import numpy
 import torch
 
-from flight.federation.topologies.node import NodeID
-from flight.learning.types import Params
-
 if t.TYPE_CHECKING:
-    from collections.abc import Mapping
+    from flight.federation.topologies.node import NodeID
+    from flight.learning.types import Params
 
 
 def average_state_dicts(
-    state_dicts: Mapping[NodeID, Params], weights: Mapping[NodeID, float] | None = None
+    state_dicts: t.Mapping[NodeID, Params],
+    weights: t.Mapping[NodeID, float] | None = None,
 ) -> Params:
-    """Helper function used by aggregator nodes for averaging the passed node state dictionary.
+    """
+    Common implementation for averaging model parameters.
+
+    This helper function supports weighted and unweighted averaging. The latter is
+    done when `weights` is set to `None`.
 
     Args:
-        state_dicts (Mapping[NodeID, Params]): A dictionary object mapping nodes to their respective states.
-        weights (Mapping[NodeID, float] | None, optional): Optional dictionary that maps each node to its contribution factor. Defaults to None.
+        state_dicts (t.Mapping[NodeID, Params]): A dictionary object mapping nodes to
+            their respective states.
+        weights (t.Mapping[NodeID, float] | None, optional): Optional dictionary that
+            maps each node to its contribution factor. Defaults to `None`.
 
     Returns:
         Params: The averaged parameters.
@@ -27,7 +31,7 @@ def average_state_dicts(
     num_nodes = len(state_dicts)
 
     if weights is not None:
-        weight_sum = numpy.sum(list(weights.values()))
+        weight_sum = sum(list(weights.values()))
     else:
         weight_sum = None
 

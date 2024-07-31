@@ -11,16 +11,24 @@ if t.TYPE_CHECKING:
 
 @t.runtime_checkable
 class CoordStrategy(t.Protocol):
-    """Template for all coordinator strategies, including those defined in Flight and those defined by Users."""
+    """
+    Protocol for all coordinator strategies, including those defined in Flight and
+    those defined by users.
+    """
 
     def select_workers(
-        self, state: NodeState, workers: t.Iterable[Node], rng: Generator
+        self,
+        state: NodeState,
+        workers: t.Iterable[Node],
+        rng: Generator,
     ) -> t.Sequence[Node]:
-        """Callback that is responsible for selecting a subset of worker nodes to do local training.
+        """
+        Callback that is responsible for selecting a subset of worker nodes
+        to do local training.
 
         Args:
             state (NodeState): The state of the current coordinator node.
-            children (t.Iterable[Node]): The worker nodes in the topology.
+            workers (t.Iterable[Node]): The worker nodes in the topology.
             rng (Generator): The rng used for reproducibility.
 
         Returns:

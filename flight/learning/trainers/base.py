@@ -1,7 +1,7 @@
 import typing as t
 
 from flight.learning.datasets import DataLoadable
-from flight.learning.modules import Trainable
+from flight.learning.modules import HasParameters
 
 
 class Trainer(t.Protocol):
@@ -9,12 +9,12 @@ class Trainer(t.Protocol):
     Object class that is responsible for training `Trainable` objects.
     """
 
-    def fit(self, model: Trainable, data: DataLoadable, *args, **kwargs):
+    def fit(self, model: HasParameters, data: DataLoadable, *args, **kwargs):
         """
         fit
 
         Args:
-            model (Trainable):
+            model (HasParameters):
             data (DataLoadable):
             *args:
             **kwargs:
@@ -23,7 +23,7 @@ class Trainer(t.Protocol):
 
         """
 
-    def test(self, model: Trainable, *args, **kwargs):
+    def test(self, model: HasParameters, *args, **kwargs):
         """
         test
 
@@ -36,7 +36,7 @@ class Trainer(t.Protocol):
 
         """
 
-    def validate(self, model: Trainable, data: DataLoadable, *args, **kwargs):
+    def validate(self, model: HasParameters, data: DataLoadable, *args, **kwargs):
         """
         evaluate
 

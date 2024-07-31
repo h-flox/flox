@@ -2,10 +2,10 @@ import typing as t
 
 import torch
 
+from flight.learning.types import Params
 from flight.strategies import (
     AggrStrategy,
     CoordStrategy,
-    Params,
     TrainerStrategy,
     WorkerStrategy,
 )
@@ -33,8 +33,8 @@ class TestValidFedAvg:
         """Tests the usability of the aggregator strategy for 'FedAvg'"""
         fedavg = FedAvg()
         aggregatorStrat: AggrStrategy = fedavg.aggr_strategy
-        nodestate: NodeState = {}
-        childstates = {
+        node_state: NodeState = {}
+        child_states = {
             1: {"num_data_samples": 1, "other_data": "foo"},
             2: {"num_data_samples": 1, "other_data": "foo"},
         }
@@ -50,7 +50,7 @@ class TestValidFedAvg:
         }
 
         aggregated = aggregatorStrat.aggregate_params(
-            nodestate, childstates, children_state_dicts_pt
+            node_state, child_states, children_state_dicts_pt
         )
 
         assert isinstance(aggregated, dict)

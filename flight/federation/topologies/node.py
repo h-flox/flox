@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pydantic as pyd
 
-from flight.learning.modules.base import Trainable
+from flight.learning.modules.base import HasParameters
 
 NodeID: t.TypeAlias = t.Union[int, str]
 """
@@ -27,9 +27,10 @@ class NodeKind(str, Enum):
 class Node(pyd.BaseModel):
     """A `Node` in Flight.
 
-    An individual `Node` characterizes an endpoint that either takes on the task of aggregating
-    model parameters or performing local training. Their connections are established with the
-    [`Topology`][flight.federation.topologies.topo.Topology] class."""
+    An individual `Node` characterizes an endpoint that either takes on the task of
+    aggregating model parameters or performing local training. Their connections are
+    established with the [`Topology`][flight.federation.topologies.topo.Topology] class.
+    """
 
     idx: NodeID
     """
@@ -53,8 +54,8 @@ class Node(pyd.BaseModel):
 
     extra: dict[str, t.Any] = pyd.Field(default_factory=dict)
     """
-    Any extra parameters users wish to give to Nodes (e.g., parameters or settings around
-    system resource use).
+    Any extra parameters users wish to give to Nodes (e.g., parameters or settings
+    around system resource use).
     """
 
 
@@ -67,7 +68,8 @@ class NodeState:
         idx (NodeID): The ID of the node.
 
     Throws:
-        - TypeError: This class cannot be directly instantiated. Only its children classes can be instantiated.
+        - TypeError: This class cannot be directly instantiated. Only its children
+          classes can be instantiated.
     """
 
     idx: NodeID
@@ -78,9 +80,64 @@ class NodeState:
     def __post_init__(self):
         if type(self) is NodeState:
             raise TypeError(
-                "Cannot instantiate an instance of `NodeState`. "
-                "Instead, you must instantiate instances of `WorkerState` or `AggrState`."
+                "Cannot instantiate an instance of `NodeState`. Instead, you must "
+                "instantiate instances of `WorkerState` or `AggrState`."
             )
+
+    def __getitem__(self, key: str) -> t.Any:
+        """
+        Getter method that fetches a data item from the state's cache by key.
+
+        Args:
+            key (str): Name of item to retrieve from `cache`.
+
+        Raises:
+            - KeyError: Thrown if a key that is not in the `cache`.
+
+        Examples:
+            >>> state = NodeState(0)
+            >>> state["foo"] = "bar"
+            >>> state["foo"]
+            'bar'
+
+        Returns:
+            The cached datum.
+        """
+        return self.cache[key]
+
+    def __setitem__(self, key: str, value: t.Any) -> None:
+        """
+        Setter function that stores a data item into the state's cache by key.
+
+        Args:
+            key (str): The key to store the data in cache for lookup.
+            value (t.Any): The data to store in the cache.
+        """
+        self.cache[key] = value
+
+    def get(self, key: str, backup_value: t.Any = None) -> t.Any:
+        """
+        Implements the same functionality as the standard `dict.get()` method.
+
+        Fetches any data stored at in the cache with the provided key. However, if not
+        such data exists, then the default `backup_value` will be returned instead.
+        If no backup value is given, then `None` is returned.
+
+        Args:
+            key (str): Name of the item to retrieve from `cache`.
+            backup_value (t.Any): The value returned if `key` is not found in `cache`.
+
+        Examples:
+            >>> state = NodeState(0)
+            >>> state.get("foo")
+            None
+            >>> state.get("foo", "bar")
+            'bar'
+
+        Returns:
+            The cached datum or the provided backup value.
+        """
+        return self.cache.get(key, backup_value)
 
 
 @dataclass
@@ -90,11 +147,11 @@ class AggrState(NodeState):
 
     Args:
         children (t.Iterable[Node]): Child nodes in the topology.
-        aggr_model (t.Optional[Trainable]): Aggregated model.
+        aggr_model (t.Optional[HasParameters]): Aggregated model.
     """
 
     children: t.Iterable[Node]
-    aggr_model: t.Optional[Trainable] = None
+    aggr_model: t.Optional[HasParameters] = None
 
 
 @dataclass
@@ -103,9 +160,9 @@ class WorkerState(NodeState):
     The state of a Worker node.
 
     Args:
-        global_model (t.Optional[Trainable]): ...
+        global_model (t.Optional[HasParameters]): ...
         local_model (t.Optional[Trainable]): ...
     """
 
-    global_model: t.Optional[Trainable] = None
-    local_model: t.Optional[Trainable] = None
+    global_model: t.Optional[HasParameters] = None
+    local_model: t.Optional[HasParameters] = None

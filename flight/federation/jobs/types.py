@@ -5,8 +5,7 @@ from concurrent.futures import Future
 from dataclasses import dataclass, field
 
 from flight.federation.topologies.node import Node, NodeState, WorkerState
-from flight.learning.datasets.loadable import DataLoadable
-from flight.learning.modules.base import Record
+from flight.learning.modules.base import DataLoadable, Record
 from flight.learning.modules.torch import FlightModule
 from flight.learning.types import Params
 
@@ -18,15 +17,29 @@ if t.TYPE_CHECKING:
 @dataclass
 class Result:
     node: Node
-    """The node that produced this result during a federation."""
+    """
+    The node that produced this result during a federation.
+    """
+
     node_state: NodeState
-    """The current state of the node that returned a given result during a federation."""
+    """
+    The current state of the node that returned a given result during a federation.
+    """
+
     params: Params
-    """Parameters returned as part of a result from a single Node in a federation."""
+    """
+    Parameters returned as part of a result from a single Node in a federation.
+    """
+
     records: list[Record] = field(default_factory=list)
-    """List of records for model training/aggregation metrics."""
+    """
+    List of records for model training/aggregation metrics.
+    """
+
     extra: dict[str, t.Any] = field(default_factory=dict)
-    """Extra data recorded by a node during the runtime of its job."""
+    """
+    Extra data recorded by a node during the runtime of its job.
+    """
 
 
 # class TrainJob(t.Protocol):

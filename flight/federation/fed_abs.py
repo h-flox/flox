@@ -44,8 +44,9 @@ class Federation(abc.ABC):
         """Starts the federation.
 
         Returns:
-            A tuple that contains the following items, (i) the trained global model hosted on the
-            coordinator and (ii) the results from training during the federation.
+            A tuple that contains the following items, (i) the trained global model
+            hosted on the coordinator and (ii) the results from training during the
+            federation.
         """
 
     @abc.abstractmethod
@@ -56,10 +57,10 @@ class Federation(abc.ABC):
         """
         Prepare and submit the job for the coordinator.
 
-        It will also submit the appropriate job to all the required children nodes. This is based on
-        the selected children. Given the coordinator, $C$, and the set of selected worker nodes $W$,
-        any node that falls on a path between $C$ and every worker $w \\in W$ will be have jobs sent
-        to them.
+        It will also submit the appropriate job to all the required children nodes.
+        This is based on the selected children. Given the coordinator, $C$, and the
+        set of selected worker nodes $W$, any node that falls on a path between $C$
+        and every worker $w \\in W$ will have jobs sent to them.
 
         Args:
             node (Node): The Coordinator node.
@@ -77,7 +78,8 @@ class Federation(abc.ABC):
         """
         Prepare and submit the job to the selected aggregator.
 
-        It will also submit the appropriate job to the *selected* children of the aggregator `node`.
+        It will also submit the appropriate job to the *selected* children of
+        the aggregator `node`.
 
         Args:
             node (Node): The Aggregator node to run the aggregation function on.
@@ -132,11 +134,12 @@ class Federation(abc.ABC):
 
     def _resolve_node(self, node: Node | None) -> Node:
         """
-        Resolves an ambiguous argument. Specifically, given a `Node` or a `None` value, return a `Node.
+        Resolves an ambiguous argument. Specifically, given a `Node` or a `None` value,
+        return a `Node`.
 
         Args:
-            node (Node | None): Either a `Node` instance or `None`. If the value is `None`, then the
-                Coordinator node is returned.
+            node (Node | None): Either a `Node` instance or `None`. If the value is
+                `None`, then the Coordinator node is returned.
 
         Returns:
             The resolved `Node`.
@@ -145,8 +148,9 @@ class Federation(abc.ABC):
             node = self.topology.coordinator
         if not isinstance(node, Node):
             raise ValueError(
-                "Federation._resolve_node() failed to resolve the arg `node` to a `Node` instance. "
-                "Must either be a `Node` instance or `None` (only if intended to be the Coordinator node)."
+                "Federation._resolve_node() failed to resolve the arg `node` to a "
+                "`Node` instance. Must either be a `Node` instance or `None` (only "
+                "if intended to be the Coordinator node)."
             )
 
         return node

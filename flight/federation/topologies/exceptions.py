@@ -1,7 +1,7 @@
 class TopologyException(Exception):
-    """A general exception that is thrown when an exception related to the topology occurs."""
-
-    pass
+    """
+    A general exception that is thrown when an exception related to the topology occurs.
+    """
 
 
 class IllegalTopologyError(Exception):
@@ -10,8 +10,8 @@ class IllegalTopologyError(Exception):
     def __init__(self, message: str | None = None, *args):
         if message is None:
             message = (
-                "The structure of the Topology is not legal. "
-                "Please refer to the docs for more information on the topological requirements."
+                "The structure of the Topology is not legal. Please refer to the docs "
+                "for more information on the topological requirements."
             )
         super().__init__(message, *args)
 

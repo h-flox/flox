@@ -11,7 +11,10 @@ if t.TYPE_CHECKING:
 
 @t.runtime_checkable
 class WorkerStrategy(t.Protocol):
-    """Template for all aggregator strategies, including those defined in Flight and those defined by Users."""
+    """
+    Template for all aggregator strategies, including those defined in
+    Flight and those defined by users.
+    """
 
     def start_work(self, state: NodeState) -> NodeState:
         """Callback to run at the start of the current nodes 'work'.
@@ -24,7 +27,11 @@ class WorkerStrategy(t.Protocol):
         """
         pass
 
-    def before_training(self, state: NodeState, data: t.Any) -> tuple[NodeState, t.Any]:
+    def before_training(
+        self,
+        state: NodeState,
+        data: t.Any,
+    ) -> tuple[NodeState, t.Any]:
         """Callback to run before the current nodes training.
 
         Args:
@@ -32,12 +39,15 @@ class WorkerStrategy(t.Protocol):
             data (t.Any): The data related to the current worker node.
 
         Returns:
-            A tuple containing the state and data of the current worker node after the callback.
+            A tuple containing the state and data of the current worker node
+            after the callback.
         """
         pass
 
     def after_training(
-        self, state: NodeState, optimizer: torch.optim.Optimizer
+        self,
+        state: NodeState,
+        optimizer: torch.optim.Optimizer,
     ) -> NodeState:
         """Callback to run after the current nodes training.
 
@@ -54,7 +64,8 @@ class WorkerStrategy(t.Protocol):
         """Callback to run at the end of the current worker nodes 'work'
 
         Args:
-            result (Result): A Result object used to represent the result of the local training on the current worker node.
+            result (Result): A Result object used to represent the result of the
+                local training on the current worker node.
 
         Returns:
             The result of the worker nodes local training.

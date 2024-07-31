@@ -1,3 +1,3 @@
-from .base import Trainable
+from .base import HasParameters
 
-__all__ = ["Trainable"]
+__all__ = ["HasParameters"]

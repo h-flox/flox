@@ -8,7 +8,10 @@ if t.TYPE_CHECKING:
 
 @t.runtime_checkable
 class TrainerStrategy(t.Protocol):
-    """Template for all trainer strategies, including those defined in Flight and those defined by users."""
+    """
+    Protocol for all trainer strategies, including those defined in
+    Flight and those defined by users.
+    """
 
     def before_backprop(self, state: NodeState, loss: Loss) -> Loss:
         """Callback to run before backpropagation.

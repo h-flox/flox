@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from flight.learning.modules.base import Trainable
+from flight.learning.modules.base import HasParameters
 from flight.learning.modules.torch import FlightModule
 
 
@@ -47,7 +47,7 @@ class TestModelInit:
     def test_valid_model_init(self, valid_module):
         model = valid_module()
         assert isinstance(model, FlightModule)
-        assert isinstance(model, Trainable)
+        assert isinstance(model, HasParameters)
         assert isinstance(model, torch.nn.Module)
 
         x = torch.tensor([[1.0]])
@@ -61,8 +61,8 @@ class TestModelInit:
     def test_model_get_params(self, valid_module):
         model = valid_module()
         try:
-            _ = model.get_params(include_state=False)
-            params = model.get_params(include_state=True)
+            _ = model.get_params()
+            params = model.get_params()
             model.set_params(params)
         except Exception as exc:
             pytest.fail(exc, "Unexpected error/exception.")

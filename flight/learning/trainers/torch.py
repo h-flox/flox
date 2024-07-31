@@ -51,7 +51,8 @@ class TorchTrainer:
         Returns:
 
         """
-        # TODO: Run the argument validation in a separate utility function to keep this function light.
+        # TODO: Run the argument validation in a separate utility function to keep
+        #  this function light.
         if validate_every_n_epochs < 1:
             raise ValueError("Illegal value for argument `validate_every_n_epochs`.")
 
@@ -66,7 +67,7 @@ class TorchTrainer:
             raise TypeError(
                 "Method for argument `data.train_data(.)` must return a `DataLoader`."
             )
-        if not isinstance(valid_dataloader, DataLoader):
+        if not isinstance(valid_dataloader, DataLoader | None):
             raise TypeError(
                 "Method for argument `data.valid_data(.)` must return a `DataLoader`."
             )
@@ -82,16 +83,16 @@ class TorchTrainer:
                 train_dataloader,
                 # train_dataloaders,
             )
-            for l in train_losses:
-                results.append({"epoch": epoch, "train/loss": l.item()})
+            for loss in train_losses:
+                results.append({"epoch": epoch, "train/loss": loss.item()})
 
             to_validate = all(
                 [epoch % validate_every_n_epochs == 0, valid_dataloader is not None]
             )
             if to_validate:
                 val_losses = self.validate(model, valid_dataloader)
-                for l in val_losses:
-                    results.append({"epoch": epoch, "val/loss": l.item()})
+                for loss in val_losses:
+                    results.append({"epoch": epoch, "val/loss": loss.item()})
 
         return results
 
@@ -141,9 +142,18 @@ class TorchTrainer:
         return tuple(items)
         # return tuple(item.to(self._device) for item in batch)
 
-    def _set_train_mode(self, model, mode: True):
-        torch.set_grad_enabled(mode)
-        if mode:
+    @staticmethod
+    def _set_train_mode(model: FlightModule, train_mode: bool = True) -> None:
+        """
+        Hidden utility function that switches the `TorchTrainer` to training or
+        validation mode.
+
+        Args:
+            model (FlightModule): Model to set to training or evaluation mode.
+            train_mode (bool): Training mode flag.
+        """
+        torch.set_grad_enabled(train_mode)
+        if train_mode:
             model.train()
         else:
             model.eval()

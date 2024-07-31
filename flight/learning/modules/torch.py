@@ -16,16 +16,7 @@ if t.TYPE_CHECKING:
 _DEFAULT_INCLUDE_STATE = False
 
 
-# class TorchTrainable:
-#     def __init__(self, module: torch.nn.Module, include_state: bool = False) -> None:
-#         self.module = module
-#         self.include_state = include_state
-
-
 class TorchDataModule(abc.ABC):
-    # def __init__(self, *args, **kwargs):
-    #     pass
-
     @abc.abstractmethod
     def train_data(self, node: Node | None = None) -> DataLoader:
         pass
@@ -44,7 +35,7 @@ class FlightModule(nn.Module, abc.ABC):
     Wrapper class for a PyTorch model (i.e., `torch.nn.Module`).
 
     Based on PyTorch Lightning's
-    [LightningModule](https://lightning.ai/docs/pytorch/stable/_modules/lightning/pytorch/core/module.html#LightningModule).
+    [LightningModule](https://lightning.ai/docs/pytorch/stable/_modules/lightning/pytorch/core/module.html#LightningModule). # noqa
     """
 
     def __init__(self, *args, **kwargs):
@@ -113,23 +104,27 @@ class FlightModule(nn.Module, abc.ABC):
         raise NotImplementedError()
 
     def get_params(self) -> Params:
-        params = self.module.state_dict()
+        params = self.state_dict()
         if not self.include_state:
             params = OrderedDict(
-                [(name, value.data) for (name, value) in params if value.requires_grad]
+                [
+                    (name, value.data)
+                    for (name, value) in params.items()
+                    if value.requires_grad
+                ]
             )
 
         return params
 
     def set_params(self, params: Params) -> None:
         if self.include_state:
-            self.module.load_state_dict(
+            self.load_state_dict(
                 params,
                 strict=True,
                 assign=False,
             )
         else:
-            self.module.load_state_dict(
+            self.load_state_dict(
                 params,
                 strict=False,
                 assign=False,
