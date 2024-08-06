@@ -28,11 +28,29 @@ LearnableData: t.TypeAlias = t.Any
 
 @t.runtime_checkable
 class HasParameters(t.Protocol):
+    """
+    A protocol that simply requires any object to have getter and setter methods for
+    the parameters of an implementing class.
+
+    Specifically, this protocol acts as an interface for any object that could have
+    trainable model parameters (e.g., `torch.nn.Module`).
+    """
+
     def get_params(self) -> Params:
-        pass
+        """
+        Getter method for model parameters.
+
+        Returns:
+            The trainable object's parameters.
+        """
 
     def set_params(self, params: Params) -> None:
-        pass
+        """
+        Setter method for model parameters.
+
+        Args:
+            params (Params): Parameters to copy into this trainable object's parameters.
+        """
 
 
 @t.runtime_checkable

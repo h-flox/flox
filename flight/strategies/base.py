@@ -19,8 +19,14 @@ if t.TYPE_CHECKING:
     from numpy.random import Generator
 
     from flight.federation.jobs.result import Result
-    from flight.federation.topologies.node import Node, NodeID
-    from flight.strategies import Loss, NodeState, Params
+    from flight.federation.topologies.node import (
+        AggrState,
+        Node,
+        NodeID,
+        NodeState,
+        WorkerState,
+    )
+    from flight.learning.types import LocalStepOutput, Params
 
 
 class DefaultCoordStrategy:
@@ -50,7 +56,7 @@ class DefaultAggrStrategy:
 
     def aggregate_params(
         self,
-        state: NodeState,
+        state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
@@ -58,7 +64,7 @@ class DefaultAggrStrategy:
         """Callback that handles the model parameter aggregation step.
 
         Args:
-            state (NodeState): The state of the current aggregator node.
+            state (AggrState): The state of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): A mapping of the current
                 aggregator node's children and their respective states.
             children_state_dicts (t.Mapping[NodeID, Params]): The model parameters of
@@ -77,24 +83,27 @@ class DefaultAggrStrategy:
 class DefaultWorkerStrategy:
     """Default implementation of the strategy for a worker"""
 
-    def start_work(self, state: NodeState) -> NodeState:
-        """Callback to be ran and the start of the current worker nodes work.
+    def start_work(self, state: WorkerState) -> WorkerState:
+        """Callback that is run at the start of the current worker node's work.
 
         Args:
-            state (NodeState): The state of the current worker node.
+            state (WorkerState): The state of the current worker node.
 
         Returns:
-            NodeState: The state of the current worker node at the end of the callback.
+            WorkerState: The state of the current worker node at the end
+                of the callback.
         """
         return state
 
     def before_training(
-        self, state: NodeState, data: Params
-    ) -> tuple[NodeState, Params]:
-        """Callback to be ran before training.
+        self,
+        state: WorkerState,
+        data: Params,  # TODO: Refactor later?
+    ) -> tuple[WorkerState, Params]:
+        """Callback that is run before training.
 
         Args:
-            state (NodeState): The state of the current worker node.
+            state (WorkerState): The state of the current worker node.
             data (Params): The data associated with the current worker node.
 
         Returns:
@@ -104,12 +113,14 @@ class DefaultWorkerStrategy:
         return state, data
 
     def after_training(
-        self, state: NodeState, optimizer: torch.optim.Optimizer
-    ) -> NodeState:
-        """Callback to be ran after training.
+        self,
+        state: WorkerState,
+        optimizer: torch.optim.Optimizer,
+    ) -> WorkerState:
+        """Callback that is run after training.
 
         Args:
-            state (NodeState): The state of the current worker node.
+            state (WorkerState): The state of the current worker node.
             optimizer (torch.optim.Optimizer): The PyTorch optimizer to be used.
 
         Returns:
@@ -133,29 +144,37 @@ class DefaultWorkerStrategy:
 class DefaultTrainerStrategy:
     """Default implementation of a strategy for the trainer."""
 
-    def before_backprop(self, state: NodeState, loss: Loss) -> Loss:
+    def before_backprop(
+        self,
+        state: WorkerState,
+        out: LocalStepOutput,
+    ) -> LocalStepOutput:
         """Callback to run before backpropagation.
 
         Args:
-            state (NodeState): State of the current node.
-            loss (Loss): The calculated loss
+            state (WorkerState): State of the current node.
+            out (LocalStepOutput): The calculated loss
 
         Returns:
             The loss at the end of the callback
         """
-        return loss
+        return out
 
-    def after_backprop(self, state: NodeState, loss: Loss) -> Loss:
+    def after_backprop(
+        self,
+        state: WorkerState,
+        out: LocalStepOutput,
+    ) -> LocalStepOutput:
         """Callback to run after backpropagation.
 
         Args:
-            state (NodeState): State of the current node.
-            loss (Loss): The calculated loss
+            state (WorkerState): State of the current node.
+            out (LocalStepOutput): The calculated loss
 
         Returns:
             The loss at the end of the callback
         """
-        return loss
+        return out
 
 
 @dataclasses.dataclass(frozen=True, repr=False)

@@ -52,11 +52,48 @@ class Node(pyd.BaseModel):
     ProxyStore UUID for data transfer for remote execution with Globus Compute.
     """
 
-    extra: dict[str, t.Any] = pyd.Field(default_factory=dict)
+    extra: dict[str, t.Any] | None = pyd.Field(default=None)
     """
     Any extra parameters users wish to give to Nodes (e.g., parameters or settings
     around system resource use).
     """
+
+    def __getitem__(self, key: str) -> t.Any:
+        """
+
+        Args:
+            key:
+
+        Raises:
+            - KeyError: ...
+
+        Returns:
+
+        """
+        if self.extra is None:
+            raise KeyError("This Node does not have an `extra` cache.")
+        return self.extra[key]
+
+    def __setitem__(self, key: str, value: t.Any) -> None:
+        """
+        Setter method for storing data into the Node's `extra` cache.
+
+        Args:
+            key (str): Key to store datum.
+            value (typing.Any): Datum to store into node's `extra` cache.
+        """
+        print(self.extra)
+        if self.extra is None:
+            self.extra = {}
+        self.extra[key] = value
+
+    def get(self, key: str, backup_value: t.Any) -> t.Any:
+        if self.extra is None:
+            raise KeyError(
+                "This node's `extra` cache is `None`. "
+                "You should initialize this directly via `my_node.extra = {}`."
+            )
+        return self.extra.get(key, backup_value)
 
 
 @dataclass
@@ -111,7 +148,7 @@ class NodeState:
 
         Args:
             key (str): The key to store the data in cache for lookup.
-            value (t.Any): The data to store in the cache.
+            value (typing.Any): The data to store in the cache.
         """
         self.cache[key] = value
 
@@ -125,7 +162,8 @@ class NodeState:
 
         Args:
             key (str): Name of the item to retrieve from `cache`.
-            backup_value (t.Any): The value returned if `key` is not found in `cache`.
+            backup_value (typing.Any): The value returned if `key` is not
+                found in `cache`.
 
         Examples:
             >>> state = NodeState(0)

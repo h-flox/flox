@@ -1,7 +1,6 @@
+'''
 import typing as t
 from concurrent.futures import Future
-
-from flox.runtime import Result
 
 from .fed_abs import Federation
 from .topologies.node import Node
@@ -27,3 +26,4 @@ class AsyncFederation(Federation):
             "This method is not implemented. Async federations only support 2-tier "
             "topologies (i.e., there are no intermediate aggregators)."
         )
+'''

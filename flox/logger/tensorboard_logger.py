@@ -1,15 +1,20 @@
+from __future__ import annotations
+
+import typing as t
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from torch.utils.tensorboard import SummaryWriter
 
-from flox.federation.topologies import Node
+if t.TYPE_CHECKING:
+    from flight.federation.topologies import Node, NodeID
 
 
 class TensorBoardLogger:
     def __init__(
-        self, node: Node | None = None, filename: str | Path | None = None
+        self,
+        node: Node | None = None,
+        filename: str | Path | None = None,
     ) -> None:
         self.records = []
 
@@ -21,8 +26,8 @@ class TensorBoardLogger:
     def log(
         self,
         name: str,
-        value: Any,
-        nodeid: str | None = None,
+        value: t.Any,
+        node_idx: NodeID | None = None,
         epoch: int | None = None,
         time: datetime | None = None,
     ) -> None:
@@ -30,7 +35,7 @@ class TensorBoardLogger:
             {
                 "name": name,
                 "value": value,
-                "nodeid": nodeid,
+                "node_idx": node_idx,
                 "epoch": epoch,
                 "datetime": time,
             }

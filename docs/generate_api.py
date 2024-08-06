@@ -8,10 +8,21 @@ nav = mkdocs_gen_files.Nav()
 
 project_dir = "flight"
 reference_dir = "docs"
+excludes = ["fed_abs.py", "fed_async.py", "fed_sync.py"]
 
 for path in sorted(Path(project_dir).rglob("**/*.py")):
-    print(f"{path=}")
+    skip = False
+    for name in excludes:
+        if name in str(path):
+            skip = True
+
+    if skip:
+        print(f"❯ WARNING: Remember to re-include Path('{path}').")
+        continue
+
+    # print(f"{path=}")
     # module_path = path.relative_to(project_dir).with_suffix("")
+
     module_path = path.with_suffix("")
     doc_path = path.relative_to(project_dir).with_suffix(".md")
     full_doc_path = Path(reference_dir, doc_path)

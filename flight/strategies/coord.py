@@ -5,8 +5,7 @@ import typing as t
 if t.TYPE_CHECKING:
     from numpy.random import Generator
 
-    from flight.federation.topologies.node import Node
-    from flight.strategies import NodeState
+    from flight.federation.topologies.node import Node, NodeState
 
 
 @t.runtime_checkable
@@ -32,5 +31,5 @@ class CoordStrategy(t.Protocol):
             rng (Generator): The rng used for reproducibility.
 
         Returns:
-            The selected worker nodes."""
-        pass
+            The selected worker nodes.
+        """

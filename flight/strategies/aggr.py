@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import NodeID, NodeState
+    from flight.federation.topologies.node import AggrState, NodeID, NodeState
     from flight.learning.types import Params
 
 
@@ -15,12 +15,13 @@ class AggrStrategy(t.Protocol):
     """
 
     def start_round(self):
-        """Callback to run at the start of a round."""
-        pass
+        """
+        Callback to run at the start of a round.
+        """
 
     def aggregate_params(
         self,
-        state: NodeState,
+        state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
@@ -28,7 +29,7 @@ class AggrStrategy(t.Protocol):
         """Callback that handles the model parameter aggregation step.
 
         Args:
-            state (NodeState): The state of the current aggregator node.
+            state (AggrState): The state of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): A mapping of the current
                 aggregator node's children and their respective states.
             children_state_dicts (t.Mapping[NodeID, Params]): The model parameters of
@@ -38,8 +39,8 @@ class AggrStrategy(t.Protocol):
         Returns:
             The aggregated parameters to update the model at the current aggregator.
         """
-        pass
 
     def end_round(self):
-        """Callback to run at the end of a round."""
-        pass
+        """
+        Callback to run at the end of a round.
+        """

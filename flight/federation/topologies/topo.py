@@ -114,8 +114,8 @@ class Topology:
                 iterator.
 
         Raises:
-            - `ValueError` in the event the user provides an illegal `str` for arg
-              `kind` (see docs for `NodeKind` enum).
+            - ValueError: thrown in the event the user provides an illegal `str` for arg
+                `kind` (see docs for `NodeKind` enum).
 
         Examples:
             >>> nodes: list[Node] = ...
@@ -189,7 +189,7 @@ class Topology:
         for child in self._graph.successors(idx):
             yield self[child]
 
-    def number_of_nodes(self, kind: NodeKind | str | None = None):
+    def number_of_nodes(self, kind: NodeKind | str | None = None) -> int:
         """
         Returns the number of nodes in the network (of a designated kind if specified).
 
@@ -391,9 +391,9 @@ def validate(topo: Topology) -> None:
 
     Throws:
         - `TopologyException` if an illegal topology has been defined based on Nodes,
-          edges/links, and underlying graph. Exception messages will more explicitly
-          state the exact issue. Refer to the docs for more information about the
-          requirements for a legal Flight topology.
+            edges/links, and underlying graph. Exception messages will more explicitly
+            state the exact issue. Refer to the docs for more information about the
+            requirements for a legal Flight topology.
     """
     # noinspection PyProtectedMember
     graph: nx.DiGraph = topo._graph

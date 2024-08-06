@@ -56,6 +56,21 @@ class TestNodeInits:
         )
 
 
+class TestNodeUse:
+    def test_node_extra_dicts(self):
+        key, val = "foo", "bar"
+        no_extra_node = Node(idx=0, kind="worker")
+
+        assert no_extra_node.extra is None
+        with pytest.raises(KeyError):
+            _ = no_extra_node.get(key, val) == val
+        with pytest.raises(KeyError):
+            _ = no_extra_node[key]
+
+        no_extra_node[key] = val
+        assert no_extra_node[key] == "bar"
+
+
 class TestNodeState:
     def test_state_init(self):
         with pytest.raises(TypeError):

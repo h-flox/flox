@@ -48,7 +48,7 @@ class NullLogger:
 
 class InMemoryRecordLogger:
     def __init__(self):
-        self.records = []
+        self.records: list[t.Mapping[str, t.Any]] = []
 
     def __enter__(self) -> Self:
         return self
@@ -62,7 +62,7 @@ class InMemoryRecordLogger:
         pass
 
     def log(self, **kwargs: t.Mapping[str, t.Any]) -> None:
-        records = {name: value for name, value in kwargs.items()}
+        records: dict[str, t.Any] = {name: value for name, value in kwargs.items()}
         records.update({DATE_RECORD_KEY: dt.datetime.now()})
         self.records.append(records)
 

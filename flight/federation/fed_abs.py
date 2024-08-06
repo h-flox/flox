@@ -9,15 +9,17 @@ from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-from ..learning.datasets.loadable import DataLoadable
+from ..learning.modules.base import DataLoadable
 from ..types import Record
 from .jobs.types import Result, TrainJob, TrainJobArgs
 from .jobs.work import default_training_job
-from .topologies.node import Node
+from .topologies.node import Node, WorkerState
 from .topologies.topo import Topology
 
+Engine: t.TypeAlias = t.Any
+
 if t.TYPE_CHECKING:
-    from .fed_sync import Engine
+    # from .fed_sync import Engine
 
     Strategy: t.TypeAlias = t.Any
     Module: t.TypeAlias = t.Any
@@ -42,6 +44,9 @@ class Federation(abc.ABC):
     @abc.abstractmethod
     def start(self, rounds: int) -> tuple[Module, list[Record]]:
         """Starts the federation.
+
+        Args:
+            rounds (int): The number of rounds to run the federation.
 
         Returns:
             A tuple that contains the following items, (i) the trained global model
@@ -83,7 +88,8 @@ class Federation(abc.ABC):
 
         Args:
             node (Node): The Aggregator node to run the aggregation function on.
-            selected_children (t.Sequence[Node]): The children nodes of the
+            selected_children (t.Sequence[Node]): The children nodes that will
+                participate in federation for this round and perform local training.
 
         Returns:
             The aggregated result.
@@ -115,15 +121,17 @@ class Federation(abc.ABC):
         the provided control plane via the given `Engine`.
 
         Args:
-            node:
-            parent:
+            node (Node): The worker node.
+            parent (Node): The worker node's parent.
 
         Returns:
-
+            The future of the worker task.
         """
+        state = WorkerState(0)
         args = TrainJobArgs(
             node=node,
             parent=parent,
+            node_state=state,
             model=None,
             data=self.data,
             worker_strategy=self.worker_strategy,

@@ -1,18 +1,21 @@
+"""
 import functools
 import typing as t
 from concurrent.futures import Future
 
+from numpy.random import default_rng
+
+from .fed_abs import Federation
+from .topologies.node import Node, NodeKind, NodeState
+from .topologies.topo import Topology
 from ..learning.modules import HasParameters
 from ..learning.modules.base import DataLoadable
 from ..strategies.base import Strategy
-from .fed_abs import Federation
-from .topologies.node import Node, NodeKind
-from .topologies.topo import Topology
+
+Engine: t.TypeAlias = t.Any
 
 if t.TYPE_CHECKING:
     from .jobs.types import AggrJobArgs, Result
-
-    Engine: t.TypeAlias = t.Any
 
 
 def log(msg: str):
@@ -98,8 +101,9 @@ class SyncFederation(Federation):
         self,
         node: Node,
     ) -> Future[Result]:
+        state = NodeState(0)
         selected_workers = self.coord_strategy.select_workers(
-            state, self.topology.workers, seed=None
+            state, self.topology.workers, default_rng()
         )
 
         # Identify any intermediate aggregators that are on the path between the
@@ -152,3 +156,4 @@ class SyncFederation(Federation):
         for child_future in children_futures:
             child_future.add_done_callback(aggregation_callback)
         return future
+"""

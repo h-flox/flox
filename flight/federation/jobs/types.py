@@ -71,7 +71,7 @@ class TrainJobArgs:
     node: Node
     parent: Node
     node_state: WorkerState
-    model: FlightModule
+    model: FlightModule | None  # TODO: May need to remove the `None` type.
     data: DataLoadable
     worker_strategy: WorkerStrategy
     trainer_strategy: TrainerStrategy

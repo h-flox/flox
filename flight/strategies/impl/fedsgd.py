@@ -15,11 +15,13 @@ from flight.strategies.commons import average_state_dicts, random_worker_selecti
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import AggrState, Node, NodeID, NodeState
-    from flox.learn.types import Params
+    from flight.learning.types import Params
 
 
 class FedSGDCoord(DefaultCoordStrategy):
-    """The coordinator and its respective methods for 'FedSGD'."""
+    """
+    The coordinator and its respective methods for 'FedSGD'.
+    """
 
     def __init__(
         self,
@@ -32,15 +34,17 @@ class FedSGDCoord(DefaultCoordStrategy):
         self.always_include_child_aggregators = always_include_child_aggregators
 
     def select_worker_nodes(
-        self, state: NodeState, workers: t.Iterable[Node], rng: Generator | None = None
+        self,
+        state: NodeState,
+        workers: t.Iterable[Node],
+        rng: Generator,
     ) -> t.Sequence[Node]:
         """Method containing the method for worker selection for 'FedSGD'.
 
         Args:
             state (NodeState): State of the coordinator node.
             workers (t.Iterable[Node]): Iterable containing the worker nodes.
-            rng (Generator | None, optional): RNG object used for randomness.
-                Defaults to `None`.
+            rng (Generator): Generator used for random sampling (if needed).
 
         Returns:
             t.Sequence[Node]: The selected worker nodes.
@@ -58,10 +62,6 @@ class FedSGDCoord(DefaultCoordStrategy):
 class FedSGDAggr(DefaultAggrStrategy):
     """
     Standard averaging strategy.
-
-    Args:
-        DefaultAggrStrategy: The base class providing the necessary methods for
-            'FedSGDAggr'.
     """
 
     def aggregate_params(

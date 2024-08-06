@@ -1,51 +1,51 @@
 from __future__ import annotations
 
-import typing as t
-
 import torch
 
 from flight.strategies.base import DefaultTrainerStrategy, Strategy
 
+from ...federation.topologies.node import WorkerState
+from ...learning.types import LocalStepOutput
 from .fedavg import FedAvgWorker
 from .fedsgd import FedSGDAggr, FedSGDCoord
-
-if t.TYPE_CHECKING:
-    from flight.strategies import Loss, NodeState
 
 DEVICE = "cpu"
 
 
 class FedProxTrainer(DefaultTrainerStrategy):
-    """The coordinator and its respective methods for 'FedProx'.
-
-    Extends:
-        DefaultTrainerStrategy: The base class providing necessary
-        methods for 'FedProxTrainer'.
-    """
+    """The coordinator and its respective methods for 'FedProx'."""
 
     def __init__(self, mu: float = 0.3):
         self.mu = mu
 
-    def before_backprop(self, state: NodeState, loss: Loss) -> Loss:
+    def before_backprop(
+        self, state: WorkerState, loss: LocalStepOutput
+    ) -> LocalStepOutput:
         """Callback to run before backpropagation.
 
         Args:
-            state (NodeState): The state of the current node.
-            loss (Loss): The calculated loss associated with the current node.
+            state (WorkerState): The state of the current node.
+            loss (LocalStepOutput): The calculated loss associated with the
+                current node.
 
         Returns:
-            Loss: The updated loss associated with the current node.
+            The updated local step output (or loss) associated with the current node.
         """
         global_model = state.global_model
         local_model = state.local_model
         assert global_model is not None
         assert local_model is not None
 
+        # TODO: Re-implement this, require that this Strategy only work with PyTorch,
+        #       or implement an abstraction for sending to different devices.
+        assert isinstance(global_model, torch.Tensor)
+        assert isinstance(local_model, torch.Tensor)
+
         global_model = global_model.to(DEVICE)
         local_model = local_model.to(DEVICE)
 
-        params = list(local_model.state_dict().values())
-        params0 = list(global_model.state_dict().values())
+        params = list(local_model.get_params().values())
+        params0 = list(global_model.get_params().values())
 
         proximal_diff = torch.tensor(
             [
@@ -78,7 +78,7 @@ class FedProx(Strategy):
 
     References:
         Li, Tian, et al. "Federated optimization in heterogeneous networks."
-        Proceedings of Machine learning and systems 2 (2020): 429-450.
+        *Proceedings of Machine learning and systems* 2 (2020): 429-450.
     """
 
     def __init__(

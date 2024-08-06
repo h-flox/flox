@@ -12,7 +12,7 @@ from flight.strategies.base import (
 )
 
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import NodeID, NodeState, WorkerState
+    from flight.federation.topologies.node import AggrState, NodeID, NodeState
     from flight.learning.types import Params
 
 
@@ -20,12 +20,17 @@ class FedAsyncAggr(DefaultAggrStrategy):
     """The aggregator for 'FedAsync' and its respective methods."""
 
     def __init__(self, alpha: float = 0.5):
+        """
+
+        Args:
+            alpha (float): The $\\alpha$ parameter from the `FedAsync` paper.
+        """
         assert 0.0 < alpha <= 1.0
         self.alpha = alpha
 
     def aggregate_params(
         self,
-        state: WorkerState,
+        state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
@@ -35,7 +40,7 @@ class FedAsyncAggr(DefaultAggrStrategy):
         dictionary.
 
         Args:
-            state (NodeState): State of the current aggregator node.
+            state (AggrState): State of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states
                 of the children.
             children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each
@@ -48,8 +53,9 @@ class FedAsyncAggr(DefaultAggrStrategy):
         last_updated = kwargs.get("last_updated_node", None)
         assert last_updated is not None
         assert isinstance(last_updated, int | str)
+        assert state.aggr_model is not None
 
-        global_model_params = state.global_model.get_params()
+        global_model_params = state.aggr_model.get_params()
         last_updated_params = children_state_dicts[last_updated]
 
         aggr_params = []

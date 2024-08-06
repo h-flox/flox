@@ -84,7 +84,9 @@ def data_cls() -> type[TorchDataModule]:
 
 class TestTrainer:
     def test_torch_trainer(self, node, worker_state, module_cls, data_cls):
-        """Tests a basic setup of using the `TorchTrainer` class for PyTorch-based models."""
+        """
+        Tests a basic setup of using the `TorchTrainer` class for PyTorch-based models.
+        """
         model = module_cls()
         data = data_cls()
         trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
@@ -99,11 +101,11 @@ class TestTrainer:
         trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
         assert str(trainer._device) == "cpu"
 
-        node.extra["device"] = "cuda"
+        node["device"] = "cuda"
         trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
         assert str(trainer._device) == "cuda"
 
-        node.extra["device"] = "mps"
+        node["device"] = "mps"
         trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
         assert str(trainer._device) == "mps"
 
@@ -129,7 +131,7 @@ class TestTrainer:
                     torch.randn((n_valid, 1)),
                 )
 
-            def train_data(self, node: Node | None = None):
+            def train_data(self, _: Node | None = None):
                 return DataLoader(self.train, batch_size=8)
 
         assert isinstance(Foo().train_data(node), DataLoader)
