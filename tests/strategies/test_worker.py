@@ -1,8 +1,5 @@
 import typing as t
 
-import torch
-
-from flight.federation.jobs.result import Result
 from flight.strategies import WorkerStrategy
 from flight.strategies.base import DefaultWorkerStrategy
 

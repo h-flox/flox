@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 
-from flight.learning.modules.base import SciKitModule
+from flight.learning.modules.prototypes import SciKitModule
 from flight.learning.types import Params
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import WorkerState
+    from flight.federation.topologies.node import Node, WorkerState
     from flight.learning.types import LocalStepOutput
 
 
@@ -13,6 +13,13 @@ class TrainerStrategy(t.Protocol):
     Protocol for all trainer strategies, including those defined in
     Flight and those defined by users.
     """
+
+    def trainer_hparams(
+        self,
+        node: Node | None = None,
+        state: WorkerState | None = None,
+    ) -> dict[str, t.Any]:
+        """..."""
 
     def before_backprop(
         self,

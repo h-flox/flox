@@ -9,7 +9,7 @@ from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-from ..learning.modules.base import DataLoadable
+from ..learning.modules.prototypes import DataLoadable
 from ..types import Record
 from .jobs.types import Result, TrainJob, TrainJobArgs
 from .jobs.work import default_training_job

@@ -25,15 +25,27 @@ class FedSGDCoord(DefaultCoordStrategy):
 
     def __init__(
         self,
-        participation,
-        probabilistic,
-        always_include_child_aggregators: bool,
+        participation: float = 1.0,
+        probabilistic: bool = False,
+        always_include_child_aggregators: bool = True,
     ):
+        """
+
+        Args:
+            participation (float): The proportion of *all* worker nodes in the topology
+                that will participate in a given federation round.
+            probabilistic (bool): Whether the selection of nodes will be probabilistic.
+                If `True`, then each worker node will be selected with probability
+                `participation`; if `False` then a fixed set of $n$ nodes will be
+                selected with where $n = \\max(1, |W| \\cdot \\texttt{participation})$
+                where $|W|$ is the number of workers in the federation's topology.
+            always_include_child_aggregators:
+        """
         self.participation = participation
         self.probabilistic = probabilistic
         self.always_include_child_aggregators = always_include_child_aggregators
 
-    def select_worker_nodes(
+    def select_workers(
         self,
         state: NodeState,
         workers: t.Iterable[Node],
@@ -47,7 +59,7 @@ class FedSGDCoord(DefaultCoordStrategy):
             rng (Generator): Generator used for random sampling (if needed).
 
         Returns:
-            t.Sequence[Node]: The selected worker nodes.
+            Worker nodes selected to participate in a federation round.
         """
         selected_workers = random_worker_selection(
             workers,
@@ -93,7 +105,7 @@ class FedSGDAggr(DefaultAggrStrategy):
             **kwargs: Key word arguments provided by the user.
 
         Returns:
-            Params: The aggregated values.
+            Aggregated parameters.
         """
         return average_state_dicts(children_state_dicts, weights=None)
 

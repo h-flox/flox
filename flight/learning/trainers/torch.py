@@ -6,6 +6,7 @@ import torch
 import tqdm
 from torch.utils.data import DataLoader
 
+from ...types import Record
 from ..modules.torch import FlightModule, TorchDataModule
 
 if t.TYPE_CHECKING:
@@ -46,7 +47,7 @@ class TorchTrainer:
         data: TorchDataModule,
         validate_every_n_epochs: int = 1,
         ckpt_path: _PATH | None = None,
-    ):
+    ) -> list[Record]:
         """
 
         Args:

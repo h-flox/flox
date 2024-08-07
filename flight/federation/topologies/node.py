@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pydantic as pyd
 
-from flight.learning.modules.base import HasParameters
+from flight.learning.modules.prototypes import HasParameters
 
 NodeID: t.TypeAlias = t.Union[int, str]
 """

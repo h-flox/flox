@@ -11,7 +11,12 @@ from flight.strategies.base import (
 from flight.strategies.commons import average_state_dicts
 
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import NodeID, NodeState
+    from flight.federation.topologies.node import (
+        AggrState,
+        NodeID,
+        NodeState,
+        WorkerState,
+    )
 
     from ...learning.types import Params
     from .fedsgd import FedSGDCoord
@@ -24,11 +29,24 @@ class _FedAvgConstMixins:
 
 
 class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
-    """The aggregator for the FedAvg algorithm and its respective methods."""
+    """
+    Performs a weighted average of the model parameters returned by the child nodes.
+
+    The average is done by:
+
+    $$
+        w^{t} \\triangleq \\sum_{k=1}^{K} \\frac{n_{k}}{n} w_{k}^{t}
+    $$
+
+    where $n_{k}$ is the number of data items at worker $k$
+    (and $n \\triangleq \\sum_{k} n_{k}$), $w^{t}$ is the aggregated model parameters,
+    $K$ is the number of returned model updates, $t$ is the current round, and
+    $w_{k}^{t}$ is the returned model updates from child $k$ at round $t$.
+    """
 
     def aggregate_params(
         self,
-        state: NodeState,
+        state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
         children_state_dicts: t.Mapping[NodeID, Params],
         **kwargs,
@@ -60,16 +78,16 @@ class FedAvgWorker(DefaultWorkerStrategy, _FedAvgConstMixins):
     """The worker for 'FedAvg' and its respective methods."""
 
     def before_training(
-        self, state: NodeState, data: Params
-    ) -> tuple[NodeState, Params]:
+        self, state: WorkerState, data: Params
+    ) -> tuple[WorkerState, Params]:
         """Callback to run before the current nodes training.
 
         Args:
-            state (NodeState): State of the current worker node.
+            state (WorkerState): State of the current worker node.
             data (Params): The data related to the current worker node.
 
         Returns:
-            tuple[NodeState, Params]: A tuple containing the updated state of the
+            tuple[WorkerState, Params]: A tuple containing the updated state of the
                 worker node and the data.
         """
         state[FedAvgWorker.NUM_SAMPLES] = len(data)
@@ -78,8 +96,15 @@ class FedAvgWorker(DefaultWorkerStrategy, _FedAvgConstMixins):
 
 class FedAvg(Strategy):
     """
-    Implementation of the FedAvg strategy, which uses default strategies for the
-    trainer, 'FedAvg' for aggregator and workers, and 'FedSGD' for the coordinator.
+    Implementation of the Federated Averaging algorithm.
+
+    This algorithm extends ``FedSGD`` and differs from it by performing a weighted
+    average based on the number of data samples each (sibling) worker has. Worker
+    selection is done randomly, same as ``FedSGD``.
+
+    References:
+        McMahan, Brendan, et al. "Communication-efficient learning of deep networks
+        from decentralized data." *Artificial intelligence and statistics*. PMLR, 2017.
     """
 
     def __init__(
@@ -88,9 +113,18 @@ class FedAvg(Strategy):
         probabilistic: bool = False,
         always_include_child_aggregators: bool = False,
     ):
+        """
+
+        Args:
+            participation:
+            probabilistic:
+            always_include_child_aggregators:
+        """
         super().__init__(
             coord_strategy=FedSGDCoord(
-                participation, probabilistic, always_include_child_aggregators
+                participation,
+                probabilistic,
+                always_include_child_aggregators,
             ),
             aggr_strategy=FedAvgAggr(),
             worker_strategy=FedAvgWorker(),

@@ -124,9 +124,9 @@ plugins:
             docstring_section_style: spacy # list
             docstring_style: google
             group_by_category: true
-            inherited_members: yes
+            # inherited_members: yes
             line_length: 60
-            members_order: source # alphabetical
+            members_order: alphabetical  # source
             merge_init_into_class: yes
             separate_signature: yes
             show_root_full_path: yes

@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
     import torch
     from numpy.random import Generator
 
-    from flight.federation.jobs.result import Result
+    from flight.federation.jobs.types import Result
     from flight.federation.topologies.node import (
         AggrState,
         Node,
@@ -43,7 +43,7 @@ class DefaultCoordStrategy:
             rng (Generator): RNG object used for randomness.
 
         Returns:
-            t.Sequence[Node]: The selected workers.
+            Worker nodes selected to participate in a federation round.
         """
         return list(workers)
 
@@ -72,7 +72,7 @@ class DefaultAggrStrategy:
             **kwargs: Keyword arguments provided by users.
 
         Returns:
-            Params: The aggregated values.
+            Aggregated parameters.
         """
         return average_state_dicts(children_state_dicts, weights=None)
 
@@ -144,6 +144,13 @@ class DefaultWorkerStrategy:
 class DefaultTrainerStrategy:
     """Default implementation of a strategy for the trainer."""
 
+    def trainer_hparams(
+        self,
+        node: Node | None = None,
+        state: WorkerState | None = None,
+    ) -> dict[str, t.Any]:
+        return {}
+
     def before_backprop(
         self,
         state: WorkerState,
@@ -207,12 +214,16 @@ class Strategy:
     """
 
     def __iter__(self) -> t.Iterator[tuple[str, StrategyType]]:
-        yield from (
+        items: list[tuple[str, StrategyType]] = [
             ("coord_strategy", self.coord_strategy),
             ("aggr_strategy", self.aggr_strategy),
             ("worker_strategy", self.worker_strategy),
             ("trainer_strategy", self.trainer_strategy),
-        )
+        ]
+        yield from items
+
+    def __str__(self) -> str:
+        return self._description
 
     def __repr__(self) -> str:
         return str(self)
@@ -236,9 +247,6 @@ class Strategy:
             ]
         )
         return f"{name}({inner})"
-
-    def __str__(self) -> str:
-        return self._description
 
 
 class DefaultStrategy(Strategy):

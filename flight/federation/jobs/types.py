@@ -4,9 +4,11 @@ import typing as t
 from concurrent.futures import Future
 from dataclasses import dataclass, field
 
+from proxystore.proxy import Proxy
+
 from flight.federation.topologies.node import Node, NodeState, WorkerState
-from flight.learning.modules.base import DataLoadable, Record
-from flight.learning.modules.torch import FlightModule
+from flight.learning.modules.prototypes import Record
+from flight.learning.modules.torch import FlightModule, TorchDataModule
 from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
@@ -42,6 +44,12 @@ class Result:
     """
 
 
+AbstractResult: t.TypeAlias = Result | Proxy[Result]
+"""
+Helper type alias for a `Result` or a proxy to a `Result`.
+"""
+
+
 # class TrainJob(t.Protocol):
 #     @staticmethod
 #     def __call__(
@@ -65,20 +73,27 @@ class AggrJobArgs:
 @dataclass(slots=True, frozen=True)
 class TrainJobArgs:
     """
-    ...
+    Arguments for the local training job run on worker nodes in a federation.
+
+    The default implementation for a local training job is given by
+    [`default_training_job`][flight.federation.jobs.work.default_training_job].
     """
 
     node: Node
     parent: Node
     node_state: WorkerState
     model: FlightModule | None  # TODO: May need to remove the `None` type.
-    data: DataLoadable
+    data: TorchDataModule  # DataLoadable
     worker_strategy: WorkerStrategy
     trainer_strategy: TrainerStrategy
 
 
 AggrJob: t.TypeAlias = t.Callable[[AggrJobArgs], Result]
-"""Function signature for aggregation jobs."""
+"""
+Function signature for aggregation jobs.
+"""
 
 TrainJob: t.TypeAlias = t.Callable[[TrainJobArgs], Result]
-"""Function signature for loca training jobs."""
+"""
+Function signature for loca training jobs.
+"""

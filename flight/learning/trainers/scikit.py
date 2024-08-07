@@ -1,5 +1,5 @@
 from flight.learning.datasets import DataLoadable
-from flight.learning.modules.base import SciKitModule
+from flight.learning.modules.prototypes import SciKitModule
 
 
 class ScikitTrainer:

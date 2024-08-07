@@ -8,40 +8,39 @@ if t.TYPE_CHECKING:
 
 # TODO: Test the hell out of this function.
 def default_training_job(args: TrainJobArgs) -> Result:
+    """
+    Default implementation of a local training job that is run on worker nodes in a
+    federation.
+
+    Args:
+        args (TrainJobArgs):
+
+    Returns:
+
+    """
+    import copy
+
     from datetime import datetime
-
-    from torch.utils.data import DataLoader
-
     from flight.learning.trainers.torch import TorchTrainer
+    from flight.federation.jobs.types import Result
 
     hparams = args.trainer_strategy.trainer_hparams()
 
     training_start = datetime.now()
 
-    state = args.worker_strategy.start_work()
-
-    data = {
-        "train": args.data.load(args.node, "train"),
-        "valid": args.data.load(args.node, "valid"),
-    }
-
-    train_dataloader = DataLoader(
-        data["train"],
-        **{key: val for (key, val) in hparams if key.startswith("dataloader.train.")},
+    node = args.node
+    node_state = args.worker_strategy.start_work(args.node_state)
+    trainer = TorchTrainer(
+        node, args.trainer_strategy, max_epochs=3, progress_bar=False
     )
-
-    trainer = TorchTrainer(args.trainer_strategy)
-    local_model = args.model.copy()
-    optimizer = args.model.configure_optimizers()
-    trainer.fit(
+    local_model = copy.deepcopy(args.model)
+    records = trainer.fit(
         args.node_state,
         local_model,
-        optimizer,
-        train_dataloader,
-        **{key: val for (key, val) in hparams if key.startswith("trainer.")},
+        args.data,
     )
 
-    state = args.worker_strategy.end_work()
+    # result = args.worker_strategy.end_work()  # TODO: re-include
 
     training_end = datetime.now()
 
@@ -55,9 +54,9 @@ def default_training_job(args: TrainJobArgs) -> Result:
     }
 
     return Result(
-        node=...,
-        node_state=...,
-        params=...,
-        records=...,
-        extra=...,
+        node=args.node,
+        node_state=node_state,
+        params=local_model.get_params(),
+        records=records,
+        extra={},
     )

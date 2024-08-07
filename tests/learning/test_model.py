@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from flight.learning.modules.base import HasParameters
+from flight.learning.modules.prototypes import HasParameters
 from flight.learning.modules.torch import FlightModule
 
 
