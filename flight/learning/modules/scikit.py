@@ -39,8 +39,7 @@ class ScikitTrainable:
 
     def set_params(self, params: Params):
         param_keys = list(params.keys())
-        layer_nums = map(lambda txt: int(txt.split("_")[-1]), param_keys)
-        layer_nums = set(layer_nums)
+        layer_nums = set(map(lambda txt: int(txt.split("_")[-1]), param_keys))
         num_layers = max(layer_nums) + 1
 
         weights = []

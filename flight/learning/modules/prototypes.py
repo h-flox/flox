@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor # type: ignore
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies import Node
