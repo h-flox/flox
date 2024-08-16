@@ -32,7 +32,7 @@ class LightningTrainer:
         """
 
         Args:
-            node (Node): The node that training is occuring on.
+            node (Node): The node that training is occurring on.
             **kwargs (dict[str, t.Any]): Key word arguments that can be used to customize the PyTorch Lighting trainer.
         """
         self.node = node

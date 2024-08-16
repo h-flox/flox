@@ -177,11 +177,11 @@ def module_cifar_lightning() -> type[LightningModule]:
         def validation_step(self, batch, batch_idx):
             self.val_count += 1
             inputs, labels = batch
-            predicition = self(inputs)
-            loss = F.cross_entropy(predicition, labels)
+            prediction = self(inputs)
+            loss = F.cross_entropy(prediction, labels)
 
-            _, predicition = torch.max(predicition, 1)
-            val_acc = (labels == predicition).float().mean().item()
+            _, prediction = torch.max(prediction, 1)
+            val_acc = (labels == prediction).float().mean().item()
 
             if batch_idx % 20 == 0:
                 self.log(name='val/loss', value=loss)
