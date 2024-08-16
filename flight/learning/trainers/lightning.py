@@ -1,61 +1,75 @@
 import lightning.pytorch as PL
 import typing as t
-import torch
+import warnings
 
 from torch.utils.data import DataLoader
 
-from ..modules.prototypes import DataLoadable
+from lightning_utilities.core.rank_zero import log as device_logger
+
 from ...federation.topologies.node import Node
 
-from lightning.pytorch.loggers import Logger
+import lightning.pytorch as PL
 
 _OUT_DICT: t.TypeAlias = t.Any
 _PATH: t.TypeAlias = t.Any
 _EVALUATE_OUTPUT: t.TypeAlias = t.Any
 
+#TODO: Find a way to incorprate a node into each LightningDataModule, similarly to how a 'DataLoadable' does.
+
 class LightningTrainer:
-    def __init__(
-        self,
-        node: Node,
-        max_epochs: int = 1,
-        log_every_n_steps: int = 1,
-        logger: Logger | None = None,
-    ) -> None:
+    """
+    This is a trainer object that is responsible for the training, testing, and validation processes. This object is a wrapper 
+    class for PyTorch Lightning's ['Trainer'](https://lightning.ai/docs/pytorch/stable/common/trainer.html)
+    that makes interacting with a Lightning Trainer easier within Flight.
+
+    Notes:
+        This class relies on the `LightningDataModule` provided by the PyTorch Lightning framework.
+        Except the local training done by Flight will assume that there is a hidden attribute, `_node`
+        which is used to fetch the train, validation, and test data loaders.
+    """
+
+    def __init__(self, node: Node, **kwargs) -> None:
+        """
+
+        Args:
+            node (Node): The node that training is occuring on.
+            **kwargs (dict[str, t.Any]): Key word arguments that can be used to customize the PyTorch Lighting trainer.
+        """
         self.node = node
-        self.logger = logger
-        self.max_epochs = max_epochs
-        self.log_every_n_steps = log_every_n_steps
+        if "logger" in kwargs.keys():
+            self._pl_logger = True
+        else:
+            self._pl_logger = False
 
-        self.trainer = PL.Trainer(
-            max_epochs=max_epochs,
-            log_every_n_steps=log_every_n_steps,
-            logger=self.logger
-        )
-
-        try:
-            if node.extra:
-                self._device = torch.device(node.extra.get("device", "cpu"))
-            else:
-                self._device = torch.device("cpu")
-        except (AttributeError, TypeError):
-            self._device = torch.device("cpu")
+        device_logger.disabled = True
+        # TODO: There are still issues with silencing deprecation warnings. These will need to be addressed.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.trainer = PL.Trainer(
+                enable_progress_bar=False, enable_model_summary=False, enable_checkpointing=False, **kwargs
+            )
 
     def fit(
         self,
         model: PL.LightningModule,
-        data: DataLoadable,
+        data: PL.LightningDataModule,
         ckpt_path: _PATH | None = None,
     ) -> _OUT_DICT | None:
-        model.to(self._device)
+        """Runs optimization routine on the PyTorch Lightning Trainer, fitting 'model' to the training dataset.
 
-        if self.max_epochs < 1:
-            raise ValueError("Illegal value for argument 'max_epochs'.")
+        Args:
+            model (PL.LightningModule): PyTorch Lightning module that will be trained on a 'LightningDataModule' object's training data.
+            data (PL.LightningDataModule): The data object that provides the training and validation.
+            ckpt_path (_PATH | None, optional): Path/URL of the checkpoint from which training is resumed. Defaults to None.
 
-        if self.log_every_n_steps < 1:
-            raise ValueError("Illegal value for argument 'log_every_n_steps'.")
+        Raises:
+            TypeError: Thrown when training or validation data is not held in a 'DataLoader' object.
 
-        train_dataloader = data.train_data(self.node)
-        valid_dataloader = data.valid_data(self.node)
+        Returns:
+            _OUT_DICT | None: A dictionary containing the metrics sent to loggers if no logger is present. Returns None if a logger is present.
+        """
+        train_dataloader = data.train_dataloader()
+        valid_dataloader = data.valid_dataloader()
 
         if not isinstance(train_dataloader, DataLoader):
             raise TypeError(
@@ -66,41 +80,74 @@ class LightningTrainer:
                 "Method for argument `data.valid_data(.)` must return a `DataLoader` "
                 "or `None`."
             )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.trainer.fit(
+                model=model,
+                train_dataloaders=train_dataloader,
+                val_dataloaders=valid_dataloader,
+                ckpt_path=ckpt_path,
+            )
 
-        self.trainer.fit(
-            model=model,
-            train_dataloaders=train_dataloader,
-            val_dataloaders=valid_dataloader,
-            ckpt_path=ckpt_path,
-        )
-
-        if self.logger:
+        if self._pl_logger:
             return None
         else:
             return self.trainer.logged_metrics
 
     def test(
-        self, model: PL.LightningModule, data: DataLoadable, ckpt_path: _PATH | None = None
+        self,
+        model: PL.LightningModule,
+        data: PL.LightningDataModule,
+        ckpt_path: _PATH | None = None,
     ) -> _EVALUATE_OUTPUT | None:
-        test_dataloader = data.test_data(self.node)
-        records = self.trainer.test(
-            model=model, dataloaders=test_dataloader, ckpt_path=ckpt_path
-        )
+        """Performs one evaluation epoch on the already fitted model with testing data from 'data'.
 
-        if self.logger:
+        Args:
+            model (PL.LightningModule): PyTorch Lightning module that will be tested on a 'LightningDataModule' object's test data.
+            data (PL.LightningDataModule): The data object that provides the testing data.
+            ckpt_path (_PATH | None, optional): Path/URL of the checkpoint from which training is resumed. Defaults to None.
+
+        Returns:
+            _EVALUATE_OUTPUT | None: List of dictionaries with metrics logged during the test phase if no logger is present. Returns None if a logger is present.
+        """
+        test_dataloader = data.test_dataloader()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            records = self.trainer.test(
+                model=model, dataloaders=test_dataloader, ckpt_path=ckpt_path
+            )
+
+        if self._pl_logger:
             return None
         else:
             return records
 
     def validate(
-        self, model: PL.LightningModule, data: DataLoadable, ckpt_path: _PATH | None = None
+        self,
+        model: PL.LightningModule,
+        data: PL.LightningDataModule,
+        ckpt_path: _PATH | None = None,
     ) -> _EVALUATE_OUTPUT | None:
-        valid_dataloader = data.valid_data(self.node)
-        records = self.trainer.validate(
-            model=model, dataloaders=valid_dataloader, ckpt_path=ckpt_path
-        )
-        
-        if self.logger:
+        """Performs one evaluation epoch on the model with validation data from 'data'.
+
+        Args:
+            model (PL.LightningModule): PyTorch Lightning module that will be validated on a 'LightningDataModule' object's validation data.
+            data (PL.LightningModule): The data object that provides the validation data.
+            ckpt_path (_PATH | None, optional): Path/URL of the checkpoint from which training is resumed. Defaults to None.
+
+        Returns:
+            _EVALUATE_OUTPUT | None: List of dictionaries with metrics logged during the test phase if no logger is present. Returns None if a logger is present.
+        """
+        valid_dataloader = data.valid_dataloader()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            records = self.trainer.validate(
+                model=model, dataloaders=valid_dataloader, ckpt_path=ckpt_path
+            )
+
+        if self._pl_logger:
             return None
         else:
             return records
