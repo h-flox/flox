@@ -7,7 +7,7 @@ import tqdm
 from torch.utils.data import DataLoader
 
 from ...types import Record
-from ..modules.torch import FlightModule, TorchDataModule
+from ..modules.torch import TorchDataModule, TorchModule
 
 if t.TYPE_CHECKING:
     from ...federation.topologies.node import Node, WorkerState
@@ -43,7 +43,7 @@ class TorchTrainer:
     def fit(
         self,
         node_state: WorkerState,
-        model: FlightModule,
+        model: TorchModule,
         data: TorchDataModule,
         validate_every_n_epochs: int = 1,
         ckpt_path: _PATH | None = None,
@@ -52,7 +52,7 @@ class TorchTrainer:
 
         Args:
             node_state (WorkerState):
-            model (FlightModule):
+            model (TorchModule):
             data (TorchDataModule):
             validate_every_n_epochs:
             ckpt_path:
@@ -132,7 +132,7 @@ class TorchTrainer:
         self,
         epoch: int,
         node_state: WorkerState,
-        model: FlightModule,
+        model: TorchModule,
         optimizer: torch.optim.Optimizer,
         dataloader: DataLoader,
         pbar: tqdm.tqdm | None,
@@ -169,7 +169,7 @@ class TorchTrainer:
     def validate(
         self,
         epoch: int,
-        model: FlightModule,
+        model: TorchModule,
         dataloader: DataLoader,
         pbar: tqdm.tqdm | None,
         *args,
@@ -208,13 +208,13 @@ class TorchTrainer:
         # return tuple(item.to(self._device) for item in batch)
 
     @staticmethod
-    def _set_train_mode(model: FlightModule, train_mode: bool = True) -> None:
+    def _set_train_mode(model: TorchModule, train_mode: bool = True) -> None:
         """
         Hidden utility function that switches the `TorchTrainer` to training or
         validation mode.
 
         Args:
-            model (FlightModule): Model to set to training or evaluation mode.
+            model (TorchModule): Model to set to training or evaluation mode.
             train_mode (bool): Training mode flag.
         """
         torch.set_grad_enabled(train_mode)

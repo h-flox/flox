@@ -3,12 +3,13 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from flight.federation.jobs.types import TrainJobArgs, Result
-from flight.federation.jobs.work import default_training_job
+from flight.engine.data.base import BaseTransfer
+from flight.federation.jobs.aggr import default_aggr_job
+from flight.federation.jobs.types import Result, AggrJobArgs
 from flight.federation.topologies import Node
-from flight.federation.topologies.node import WorkerState
+from flight.federation.topologies.node import AggrState
 from flight.learning.modules.torch import TorchModule, TorchDataModule
-from flight.strategies.base import DefaultWorkerStrategy, DefaultTrainerStrategy
+from flight.strategies.base import DefaultAggrStrategy
 
 
 @pytest.fixture
@@ -22,8 +23,8 @@ def node() -> Node:
 
 
 @pytest.fixture
-def node_state() -> WorkerState:
-    return WorkerState(0, None, None)
+def aggr_state(node) -> AggrState:
+    return AggrState(0, [node], None)
 
 
 @pytest.fixture
@@ -87,19 +88,28 @@ def data() -> TorchDataModule:
 
 
 @pytest.fixture
-def train_args(node, parent, node_state, model, data) -> TrainJobArgs:
-    return TrainJobArgs(
-        node,
-        parent,
-        node_state,
-        model,
-        data,
-        worker_strategy=DefaultWorkerStrategy(),
-        trainer_strategy=DefaultTrainerStrategy(),
+def result(node, aggr_state) -> Result:
+    return Result(
+        node=node,
+        node_state=aggr_state,
+        params={},
+        records=[],
+        extra={},
+    )
+
+
+@pytest.fixture
+def aggr_args(node, parent, result) -> AggrJobArgs:
+    return AggrJobArgs(
+        node=parent,
+        children=[node],
+        child_results=[result],
+        aggr_strategy=DefaultAggrStrategy(),
+        transfer=BaseTransfer(),
     )
 
 
 class TestWorkerJob:
-    def test_outputs(self, train_args):
-        result = default_training_job(train_args)
+    def test_outputs(self, aggr_args):
+        result = default_aggr_job(aggr_args)
         assert isinstance(result, Result)

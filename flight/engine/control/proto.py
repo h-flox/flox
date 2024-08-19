@@ -7,7 +7,7 @@ if t.TYPE_CHECKING:
 
 
 class ControlPlane(t.Protocol):
-    def submit(self, fn: t.Callable, /, *args, **kwargs) -> Future:
+    def __call__(self, fn: t.Callable, /, *args, **kwargs) -> Future:
         """
         ...
 

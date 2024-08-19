@@ -38,8 +38,8 @@ class FedProxTrainer(DefaultTrainerStrategy):
 
         # TODO: Re-implement this, require that this Strategy only work with PyTorch,
         #       or implement an abstraction for sending to different devices.
-        assert isinstance(global_model, torch.Tensor)
-        assert isinstance(local_model, torch.Tensor)
+        assert isinstance(global_model, torch.nn.Module)
+        assert isinstance(local_model, torch.nn.Module)
 
         global_model = global_model.to(DEVICE)
         local_model = local_model.to(DEVICE)

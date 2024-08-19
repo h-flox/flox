@@ -58,6 +58,7 @@ def fixed_random_worker_selection(
     Returns:
         list[Node]: The selected worker nodes.
     """
+    children = list(children)
     children = array(children)
     num_selected = max(1, int(participation * len(list(children))))
     selected_children = rng.choice(children, size=num_selected, replace=False)

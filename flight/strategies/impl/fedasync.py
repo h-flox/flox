@@ -32,7 +32,7 @@ class FedAsyncAggr(DefaultAggrStrategy):
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_state_dicts: t.Mapping[NodeID, Params],
+        children_params: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
         """
@@ -43,7 +43,7 @@ class FedAsyncAggr(DefaultAggrStrategy):
             state (AggrState): State of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states
                 of the children.
-            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each
+            children_params (t.Mapping[NodeID, Params]): Dictionary mapping each
                 child to its values.
             **kwargs: Key Word arguments provided by the user.
 
@@ -56,7 +56,7 @@ class FedAsyncAggr(DefaultAggrStrategy):
         assert state.aggr_model is not None
 
         global_model_params = state.aggr_model.get_params()
-        last_updated_params = children_state_dicts[last_updated]
+        last_updated_params = children_params[last_updated]
 
         aggr_params = []
         for param in global_model_params:

@@ -23,7 +23,7 @@ class AggrStrategy(t.Protocol):
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_state_dicts: t.Mapping[NodeID, Params],
+        children_params: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
         """Callback that handles the model parameter aggregation step.
@@ -32,7 +32,7 @@ class AggrStrategy(t.Protocol):
             state (AggrState): The state of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): A mapping of the current
                 aggregator node's children and their respective states.
-            children_state_dicts (t.Mapping[NodeID, Params]): The model parameters of
+            children_params (t.Mapping[NodeID, Params]): The model parameters of
                 the models to each respective child node.
             **kwargs: Keyword arguments provided by users.
 

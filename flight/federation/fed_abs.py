@@ -16,10 +16,8 @@ from .jobs.work import default_training_job
 from .topologies.node import Node, WorkerState
 from .topologies.topo import Topology
 
-Engine: t.TypeAlias = t.Any
-
 if t.TYPE_CHECKING:
-    # from .fed_sync import Engine
+    from ..engine import Engine
 
     Strategy: t.TypeAlias = t.Any
     Module: t.TypeAlias = t.Any
@@ -31,6 +29,7 @@ class Federation(abc.ABC):
     data: DataLoadable
     work_fn: TrainJob
     engine: Engine
+    global_model: Module
 
     def __init__(
         self,
@@ -55,7 +54,7 @@ class Federation(abc.ABC):
         """
 
     @abc.abstractmethod
-    def start_coordinator_task(
+    def coordinator_task(
         self,
         node: Node,
     ) -> Future[Result]:
@@ -75,7 +74,7 @@ class Federation(abc.ABC):
         """
 
     @abc.abstractmethod
-    def start_aggregator_task(
+    def aggregator_task(
         self,
         node: Node,
         selected_children: t.Sequence[Node],
@@ -115,7 +114,7 @@ class Federation(abc.ABC):
         """Convenience alias that returns the federation's `TrainerStrategy`."""
         return self.strategy.trainer_strategy
 
-    def start_worker_task(self, node: Node, parent: Node) -> Future[Result]:
+    def worker_task(self, node: Node, parent: Node) -> Future[Result]:
         """
         Prepares the arguments for the worker function and submits the function using
         the provided control plane via the given `Engine`.
@@ -127,18 +126,22 @@ class Federation(abc.ABC):
         Returns:
             The future of the worker task.
         """
-        state = WorkerState(0)
+        state = WorkerState(node.idx)
         args = TrainJobArgs(
             node=node,
             parent=parent,
             node_state=state,
-            model=None,
+            model=self.global_model,
             data=self.data,
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,
         )
         args = self.engine.transfer(args)
-        return self.engine(self.work_fn, args)
+
+        try:
+            return self.engine(self.work_fn, args)
+        except Exception as err:
+            raise err
 
     def _resolve_node(self, node: Node | None) -> Node:
         """

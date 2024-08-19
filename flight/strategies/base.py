@@ -58,7 +58,7 @@ class DefaultAggrStrategy:
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_state_dicts: t.Mapping[NodeID, Params],
+        children_params: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
         """Callback that handles the model parameter aggregation step.
@@ -67,14 +67,14 @@ class DefaultAggrStrategy:
             state (AggrState): The state of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): A mapping of the current
                 aggregator node's children and their respective states.
-            children_state_dicts (t.Mapping[NodeID, Params]): The model parameters of
+            children_params (t.Mapping[NodeID, Params]): The model parameters of
                 the models to each respective child node.
             **kwargs: Keyword arguments provided by users.
 
         Returns:
             Aggregated parameters.
         """
-        return average_state_dicts(children_state_dicts, weights=None)
+        return average_state_dicts(children_params, weights=None)
 
     def end_round(self):
         pass
@@ -144,7 +144,7 @@ class DefaultWorkerStrategy:
 class DefaultTrainerStrategy:
     """Default implementation of a strategy for the trainer."""
 
-    def trainer_hparams(
+    def hparams(
         self,
         node: Node | None = None,
         state: WorkerState | None = None,

@@ -87,6 +87,10 @@ class Node(pyd.BaseModel):
             self.extra = {}
         self.extra[key] = value
 
+    def __hash__(self):
+        # TODO: Re-investigate.
+        return hash(self.idx)
+
     def get(self, key: str, backup_value: t.Any) -> t.Any:
         if self.extra is None:
             raise KeyError(

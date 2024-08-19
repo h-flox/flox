@@ -2,12 +2,12 @@ import pytest
 import torch
 
 from flight.learning.modules.prototypes import HasParameters
-from flight.learning.modules.torch import FlightModule
+from flight.learning.modules.torch import TorchModule
 
 
 @pytest.fixture
 def valid_module():
-    class TestModule(FlightModule):
+    class TestModule(TorchModule):
         def __init__(self):
             super().__init__()
             self.model = torch.nn.Sequential(
@@ -29,7 +29,7 @@ def valid_module():
 
 @pytest.fixture
 def invalid_module():
-    class TestModule(FlightModule):  # noqa
+    class TestModule(TorchModule):  # noqa
         def __init__(self):
             super().__init__()
             self.model = torch.nn.Sequential(
@@ -46,7 +46,7 @@ def invalid_module():
 class TestModelInit:
     def test_valid_model_init(self, valid_module):
         model = valid_module()
-        assert isinstance(model, FlightModule)
+        assert isinstance(model, TorchModule)
         assert isinstance(model, HasParameters)
         assert isinstance(model, torch.nn.Module)
 

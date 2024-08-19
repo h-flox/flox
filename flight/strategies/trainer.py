@@ -14,41 +14,55 @@ class TrainerStrategy(t.Protocol):
     Flight and those defined by users.
     """
 
-    def trainer_hparams(
+    def hparams(
         self,
         node: Node | None = None,
         state: WorkerState | None = None,
     ) -> dict[str, t.Any]:
-        """..."""
+        """
+        Returns the hyperparameters to be used by the ``Trainer`` for local training.
+
+        This can be defined by the user's ``TrainerStrategy`` implementation to take
+        advantage of node-specific data. For instance, if a node has a value cached
+        in its `node.extra` cache, then you can implement logic to incorporate those
+        values for smarter, more complex FL heuristics/algorithms.
+
+        Args:
+            node:
+            state:
+
+        Returns:
+
+        """
 
     def before_backprop(
         self,
         state: WorkerState,
         out: LocalStepOutput,
     ) -> LocalStepOutput:
-        """Callback to run before backpropagation.
+        """
+        Callback to run before backpropagation.
 
         Args:
             state (WorkerState): State of the current node.
             out (LocalStepOutput): The calculated loss
 
         Returns:
-            The loss at the end of the callback
+            Loss after running the callback.
         """
-        pass
 
     def after_backprop(
         self,
         state: WorkerState,
         out: LocalStepOutput,
     ) -> LocalStepOutput:
-        """Callback to run after backpropagation.
+        """
+        Callback to run after backpropagation.
 
         Args:
             state (WorkerState): State of the current node.
             out (LocalStepOutput): The calculated loss
 
         Returns:
-            The loss at the end of the callback
+            Loss after running the callback.
         """
-        pass

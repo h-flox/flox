@@ -24,16 +24,22 @@ def default_training_job(args: TrainJobArgs) -> Result:
     from flight.learning.trainers.torch import TorchTrainer
     from flight.federation.jobs.types import Result
 
-    hparams = args.trainer_strategy.trainer_hparams()
+    hparams = args.trainer_strategy.hparams()
 
     training_start = datetime.now()
 
     node = args.node
     node_state = args.worker_strategy.start_work(args.node_state)
     trainer = TorchTrainer(
-        node, args.trainer_strategy, max_epochs=3, progress_bar=False
+        node,
+        args.trainer_strategy,
+        max_epochs=3,
+        progress_bar=False,
     )
     local_model = copy.deepcopy(args.model)
+
+    args.worker_strategy.before_training(args.node_state, args.data)  # TODO: Reconsider
+
     records = trainer.fit(
         args.node_state,
         local_model,
@@ -53,10 +59,11 @@ def default_training_job(args: TrainJobArgs) -> Result:
         "training_end": training_end,
     }
 
-    return Result(
+    result = Result(
         node=args.node,
         node_state=node_state,
         params=local_model.get_params(),
         records=records,
         extra={},
     )
+    return result

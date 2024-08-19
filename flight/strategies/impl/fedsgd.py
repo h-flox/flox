@@ -80,7 +80,7 @@ class FedSGDAggr(DefaultAggrStrategy):
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_state_dicts: t.Mapping[NodeID, Params],
+        children_params: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
         """
@@ -100,20 +100,24 @@ class FedSGDAggr(DefaultAggrStrategy):
             state (NodeState): State of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states of
                 the children.
-            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each
+            children_params (t.Mapping[NodeID, Params]): Dictionary mapping each
                 child to its values.
             **kwargs: Key word arguments provided by the user.
 
         Returns:
             Aggregated parameters.
         """
-        return average_state_dicts(children_state_dicts, weights=None)
+        return average_state_dicts(children_params, weights=None)
 
 
 class FedSGD(Strategy):
     """
     Implementation of the FedSGD strategy, which uses 'FedSGD' for the coordinator
     and aggregators, and defaults for the workers and trainer.
+
+    References:
+        McMahan, Brendan, et al. "Communication-efficient learning of deep networks
+        from decentralized data." *Artificial intelligence and statistics*. PMLR, 2017.
     """
 
     def __init__(
@@ -122,6 +126,18 @@ class FedSGD(Strategy):
         probabilistic: bool = False,
         always_include_child_aggregators: bool = True,
     ):
+        """
+
+        Args:
+            participation (float): The proportion of *all* worker nodes in the topology
+                that will participate in a given federation round.
+            probabilistic (bool): Whether the selection of nodes will be probabilistic.
+                If `True`, then each worker node will be selected with probability
+                `participation`; if `False` then a fixed set of $n$ nodes will be
+                selected with where $n = \\max(1, |W| \\cdot \\texttt{participation})$
+                where $|W|$ is the number of workers in the federation's topology.
+            always_include_child_aggregators (bool):
+        """
         super().__init__(
             coord_strategy=FedSGDCoord(
                 participation,

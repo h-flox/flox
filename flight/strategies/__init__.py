@@ -49,8 +49,8 @@ def load_strategy(strategy_name: str, **kwargs) -> Strategy:
 
 __all__ = [
     "AggrStrategy",
-    "Strategy",
     "CoordStrategy",
     "TrainerStrategy",
+    "Strategy",
     "WorkerStrategy",
 ]

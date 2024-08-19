@@ -5,7 +5,7 @@ from torch import nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
 from flight.federation.topologies.node import Node, WorkerState
-from flight.learning.modules.torch import FlightModule, TorchDataModule
+from flight.learning.modules.torch import TorchModule, TorchDataModule
 from flight.learning.trainers.torch import TorchTrainer
 from flight.strategies.base import DefaultTrainerStrategy
 
@@ -24,8 +24,8 @@ def worker_state() -> WorkerState:
 
 
 @pytest.fixture
-def module_cls() -> type[FlightModule]:
-    class MyModule(FlightModule):
+def module_cls() -> type[TorchModule]:
+    class MyModule(TorchModule):
         def __init__(self):
             super().__init__()
             self.model = nn.Sequential(
@@ -90,7 +90,7 @@ class TestTrainer:
         model = module_cls()
         data = data_cls()
         trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
-        assert isinstance(model, FlightModule)
+        assert isinstance(model, TorchModule)
         assert isinstance(trainer, TorchTrainer)
 
         results = trainer.fit(worker_state, model, data)
@@ -109,7 +109,7 @@ class TestTrainer:
         trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
         assert str(trainer._device) == "mps"
 
-    def test_temp(self, node):
+    def test_data_module(self, node):
         class Foo(TorchDataModule):
             def __init__(self):
                 super().__init__()

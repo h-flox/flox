@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import typing as t
 
-from flight.strategies.base import (
+from ..base import (
     DefaultAggrStrategy,
     DefaultTrainerStrategy,
     DefaultWorkerStrategy,
     Strategy,
 )
-from flight.strategies.commons import average_state_dicts
+from ..commons.averaging import average_state_dicts
+from .fedsgd import FedSGDCoord
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import (
@@ -17,9 +18,8 @@ if t.TYPE_CHECKING:
         NodeState,
         WorkerState,
     )
-
-    from ...learning.types import Params
-    from .fedsgd import FedSGDCoord
+    from flight.learning.modules.prototypes import DataLoadable
+    from flight.learning.types import Params
 
 
 class _FedAvgConstMixins:
@@ -48,7 +48,7 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_state_dicts: t.Mapping[NodeID, Params],
+        children_params: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
         """
@@ -59,7 +59,7 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
             state (NodeState): State of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states
                 of the children.
-            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each
+            children_params (t.Mapping[NodeID, Params]): Dictionary mapping each
                 child to its values.
             **kwargs: Key word arguments provided by the user.
 
@@ -71,15 +71,15 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
             weights[node] = child_state[FedAvgAggr.NUM_SAMPLES]
 
         state[FedAvgAggr.NUM_SAMPLES] = sum(weights.values())
-        return average_state_dicts(children_state_dicts, weights=weights)
+        return average_state_dicts(children_params, weights=weights)
 
 
 class FedAvgWorker(DefaultWorkerStrategy, _FedAvgConstMixins):
     """The worker for 'FedAvg' and its respective methods."""
 
     def before_training(
-        self, state: WorkerState, data: Params
-    ) -> tuple[WorkerState, Params]:
+        self, state: WorkerState, data: DataLoadable
+    ) -> tuple[WorkerState, DataLoadable]:
         """Callback to run before the current nodes training.
 
         Args:
@@ -90,8 +90,15 @@ class FedAvgWorker(DefaultWorkerStrategy, _FedAvgConstMixins):
             tuple[WorkerState, Params]: A tuple containing the updated state of the
                 worker node and the data.
         """
-        state[FedAvgWorker.NUM_SAMPLES] = len(data)
-        return state, data
+        try:
+            state[FedAvgWorker.NUM_SAMPLES] = data.size(state.idx)  # noqa
+            return state, data
+        except TypeError:
+            raise TypeError(
+                "FedAvgWorker.before_training(): Given `DataLoadable` has not "
+                "overridden `__len__`, which is a requirement for the `FedAvg` "
+                "strategy."
+            )
 
 
 class FedAvg(Strategy):
@@ -116,9 +123,14 @@ class FedAvg(Strategy):
         """
 
         Args:
-            participation:
-            probabilistic:
-            always_include_child_aggregators:
+            participation (float): The proportion of *all* worker nodes in the topology
+                that will participate in a given federation round.
+            probabilistic (bool): Whether the selection of nodes will be probabilistic.
+                If `True`, then each worker node will be selected with probability
+                `participation`; if `False` then a fixed set of $n$ nodes will be
+                selected with where $n = \\max(1, |W| \\cdot \\texttt{participation})$
+                where $|W|$ is the number of workers in the federation's topology.
+            always_include_child_aggregators (bool):
         """
         super().__init__(
             coord_strategy=FedSGDCoord(

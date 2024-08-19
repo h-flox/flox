@@ -25,12 +25,14 @@ class TorchDataModule(abc.ABC):
     def test_data(self, node: Node | None = None) -> DataLoader | None:
         return None
 
-    # noinspection PyMethodMayBeStatic
     def valid_data(self, node: Node | None = None) -> DataLoader | None:
         return None
 
+    def size(self, node: Node | None = None) -> int | None:
+        return None
 
-class FlightModule(nn.Module, abc.ABC):
+
+class TorchModule(nn.Module, abc.ABC):
     """
     Wrapper class for a PyTorch model (i.e., `torch.nn.Module`).
 

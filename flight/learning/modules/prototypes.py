@@ -63,3 +63,6 @@ class DataLoadable(t.Protocol):
 
     def valid_data(self, node: Node | None = None) -> LearnableData | None:
         pass
+
+    def size(self, node: Node | None = None) -> int | None:
+        pass

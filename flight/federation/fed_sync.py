@@ -1,34 +1,39 @@
-"""
+from __future__ import annotations
+
 import functools
 import typing as t
 from concurrent.futures import Future
 
 from numpy.random import default_rng
+from tqdm import tqdm
 
 from .fed_abs import Federation
-from .topologies.node import Node, NodeKind, NodeState
+from .future_callbacks import all_futures_finished
+from .jobs.aggr import default_aggr_job
+from .jobs.types import AggrJobArgs
+from .topologies.node import Node, NodeKind, AggrState
 from .topologies.topo import Topology
+from ..engine import Engine
 from ..learning.modules import HasParameters
-from ..learning.modules.base import DataLoadable
+from ..learning.modules.prototypes import DataLoadable
 from ..strategies.base import Strategy
 
-Engine: t.TypeAlias = t.Any
-
 if t.TYPE_CHECKING:
-    from .jobs.types import AggrJobArgs, Result
+    from .jobs.types import Result
+    from ..learning.types import Params
 
 
 def log(msg: str):
-    print(msg)
+    print(f"\t{msg}")
 
 
 class SyncFederation(Federation):
     def __init__(
         self,
-        module: HasParameters,
-        data: DataLoadable,
         topology: Topology,
         strategy: Strategy,
+        module: HasParameters,
+        data: DataLoadable,
         # engine: Engine,
         #
         logger=None,
@@ -40,68 +45,87 @@ class SyncFederation(Federation):
         self.engine = Engine()
         # self.engine = engine
         self.exceptions = []
-        self.global_model = None
+        self.global_model = module  # None
 
+        self._global_params: Params = module.get_params()
         self.selected_children: t.Mapping[Node, t.Sequence[Node]] | None = None
+        self._when_to_aggr_cbk = all_futures_finished
+        self._aggr_job = default_aggr_job
+        self._pbar: tqdm | None = None
 
     def start(self, rounds: int):
         for round_no in range(rounds):
-            self.federation_round(round_no)
+            print(f"❯ Starting round {round_no+1} out of {rounds}.")
+            res = self.federation_round(round_no)
 
     def federation_round(self, round_no: int):
         log("Starting round")
         global_params = self.global_model.get_params()
         # NOTE: Be sure to wrap `result` calls to handle errors.
         try:
-            round_future = self.federation_step()
+            round_future = self.federation_step(round_no)
             round_results = round_future.result()
+            return round_results
         except Exception as exc:
             self.exceptions.append(exc)
             raise exc
 
-    def federation_step(self) -> Future:
-        self.params = self.global_model.state_dict()
-        step_result = self.traverse_step().result()
-        step_result.history["round"] = round_num
+    def federation_step(self, round_no: int) -> Future:
+        self._global_params = self.global_model.get_params()
+        step_future = self.traverse_step()
+        log("Got the step future.")
+        try:
+            step_result = step_future.result()
+        except Exception as err:
+            raise err
+        log("Got the step result.")
 
-        if not debug_mode:
-            trainer = Trainer()
-            test_results = trainer.test(model, test_dataloader)
-            # test_acc, test_loss = test_model(self.global_model)
-            # step_result.history["test/acc"] = test_acc
-            # step_result.history["test/loss"] = test_loss
+        # step_result.history["round"] = round_no
 
-        histories.append(step_result.history)
-        self.global_model.load_state_dict(step_result.params)
+        # if not debug_mode:
+        #     trainer = TorchTrainer()
+        #     test_results = trainer.test(model, test_dataloader)
+        #     test_acc, test_loss = test_model(self.global_model)
+        #     step_result.history["test/acc"] = test_acc
+        #     step_result.history["test/loss"] = test_loss
 
-        if self.pbar:
-            self.pbar.update()
+        # histories.append(step_result.history)
+        self.global_model.set_params(step_result.params)
+
+        if self._pbar:
+            self._pbar.update()
+
+        return step_future
 
     def traverse_step(
         self,
         node: t.Optional[Node] = None,
         parent: t.Optional[Node] = None,
     ) -> Future[Result]:
-        node = self._resolve_node(node)
+        node: Node = self._resolve_node(node)
+        assert isinstance(node, Node)
+
         match node.kind:
-            case NodeKind.COORDINATOR:
+            case NodeKind.COORD:
                 log(f"Launching task on the {node.kind.title()}.")
-                return self.start_coordinator_task(node)
-            case NodeKind.AGGREGATOR:
+                return self.coordinator_task(node)
+
+            case NodeKind.AGGR:
                 log(
                     f"Launching aggregation task on {node.kind.title()} "
                     f"node {node.idx}."
                 )
-                return self.start_aggregator_task(node, self.selected_children[node])
+                return self.aggregator_task(node, self.selected_children[node])
+
             case NodeKind.WORKER:
                 log(f"Launching worker task on {node.kind.title()} node {node.idx}.")
-                return self.start_worker_task(node, parent)
+                return self.worker_task(node, parent)
 
-    def start_coordinator_task(
-        self,
-        node: Node,
-    ) -> Future[Result]:
-        state = NodeState(0)
+    def coordinator_task(self, node: Node) -> Future[Result]:
+        # state = AggrState(0)  # TODO: Get the ID of the topology's coord.
+
+        coord = self.topology.coordinator
+        state = AggrState(coord.idx, children=self.topology.children(coord))
         selected_workers = self.coord_strategy.select_workers(
             state, self.topology.workers, default_rng()
         )
@@ -131,29 +155,47 @@ class SyncFederation(Federation):
             aggr_children = aggr_children.intersection(included_aggrs_and_workers)
             self.selected_children = list(aggr_children)
 
-        return self.start_aggregator_task(node, self.selected_children[node])
+        future = self.aggregator_task(node, self.selected_children[node])
+        log(f"Finished aggregator task on coordinator -- {future.done()=}.")
+        return future
 
         # Identify which child nodes are necessary in this round of the federation.
         # Necessary nodes are all the selected worker nodes and any other node
 
-    def start_aggregator_task(
+    def aggregator_task(
         self,
         node: Node,
         selected_children: t.Sequence[Node],
     ) -> Future[Result]:
-        future = Future()
-        children_futures = [
-            self.traverse_step(node=child, parent=node) for child in selected_children
-        ]
-        args = AggrJobArgs(
-            # ...,
-            future=future,
-            children=selected_children,
-            children_futures=children_futures,
+        job = self._aggr_job
+        parent_fut: Future = Future()
+
+        child_futs = []
+        for child in selected_children:
+            fut = self.traverse_step(node=child, parent=node)
+            child_futs.append(fut)
+
+        aggr_args = AggrJobArgs(
+            node=node,
+            children=self.topology.children(node),
+            child_results=[],  # Note: this is updated in the callback,
+            aggr_strategy=self.aggr_strategy,
+            transfer=self.engine.data_plane,
         )
 
-        aggregation_callback = functools.partial(..., self.aggr_fn, args)
-        for child_future in children_futures:
-            child_future.add_done_callback(aggregation_callback)
-        return future
-"""
+        cbk = functools.partial(
+            self._when_to_aggr_cbk,
+            job,
+            aggr_args,
+            parent_fut,
+            child_futs,
+            self.engine,
+        )
+
+        log("Before all calls to `add_done_callback(.)`.")
+        for fut in child_futs:
+            fut.add_done_callback(cbk)
+
+        log("After all calls to `add_done_callback(.)`.")
+
+        return parent_fut

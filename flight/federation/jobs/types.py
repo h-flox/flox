@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import typing as t
-from concurrent.futures import Future
 from dataclasses import dataclass, field
 
 from proxystore.proxy import Proxy
 
 from flight.federation.topologies.node import Node, NodeState, WorkerState
 from flight.learning.modules.prototypes import Record
-from flight.learning.modules.torch import FlightModule, TorchDataModule
+from flight.learning.modules.torch import TorchModule, TorchDataModule
 from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
-    from flight.strategies.trainer import TrainerStrategy
-    from flight.strategies.worker import WorkerStrategy
+    from flight.engine.data import TransferProto
+    from flight.strategies import AggrStrategy, TrainerStrategy, WorkerStrategy
 
 
 @dataclass
@@ -44,30 +43,14 @@ class Result:
     """
 
 
-AbstractResult: t.TypeAlias = Result | Proxy[Result]
-"""
-Helper type alias for a `Result` or a proxy to a `Result`.
-"""
-
-
-# class TrainJob(t.Protocol):
-#     @staticmethod
-#     def __call__(
-#         node: Node,
-#         parent: Node,
-#         model: FlightModule,
-#         data: DataLoadable,
-#         worker_strategy: WorkerStrategy,
-#         trainer_strategy: TrainerStrategy,
-#     ) -> Result:
-#         pass
-
-
 @dataclass(slots=True, frozen=True)
 class AggrJobArgs:
-    future: Future
-    children: t.Any
-    children_futures: t.Sequence[Future]
+    # fut: Future
+    node: Node
+    children: t.Iterable[Node]
+    child_results: t.Iterable[Result]
+    aggr_strategy: AggrStrategy
+    transfer: TransferProto
 
 
 @dataclass(slots=True, frozen=True)
@@ -82,11 +65,16 @@ class TrainJobArgs:
     node: Node
     parent: Node
     node_state: WorkerState
-    model: FlightModule | None  # TODO: May need to remove the `None` type.
+    model: TorchModule | None  # TODO: May need to remove the `None` type.
     data: TorchDataModule  # DataLoadable
     worker_strategy: WorkerStrategy
     trainer_strategy: TrainerStrategy
 
+
+AbstractResult: t.TypeAlias = Result | Proxy[Result]
+"""
+Helper type alias for a `Result` or a proxy to a `Result`.
+"""
 
 AggrJob: t.TypeAlias = t.Callable[[AggrJobArgs], Result]
 """
