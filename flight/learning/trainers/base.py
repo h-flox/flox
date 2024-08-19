@@ -1,6 +1,6 @@
 import typing as t
 
-from flight.learning.datasets import DataLoadable
+from flight.learning.modules.prototypes import DataLoadable
 from flight.learning.modules import HasParameters
 
 
