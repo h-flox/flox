@@ -106,17 +106,18 @@ class TorchModule(nn.Module, abc.ABC):
         raise NotImplementedError()
 
     def get_params(self) -> Params:
-        params = self.state_dict()
-        if not self.include_state:
-            params = OrderedDict(
+        state_dict = self.state_dict()
+        if self.include_state:
+            return state_dict
+        else:
+            param_names = dict(self.named_parameters())
+            return OrderedDict(
                 [
                     (name, value.data)
-                    for (name, value) in params.items()
-                    if value.requires_grad
+                    for (name, value) in state_dict.items()
+                    if name in param_names
                 ]
             )
-
-        return params
 
     def set_params(self, params: Params) -> None:
         if self.include_state:

@@ -19,3 +19,6 @@ class ControlPlane(t.Protocol):
         Returns:
 
         """
+
+    def shutdown(self) -> None:
+        """..."""

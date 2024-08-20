@@ -20,11 +20,11 @@ from ..strategies.base import Strategy
 
 if t.TYPE_CHECKING:
     from .jobs.types import Result
-    from ..learning.types import Params
 
 
 def log(msg: str):
-    print(f"\t{msg}")
+    # print(f"\t{msg}")
+    return None
 
 
 class SyncFederation(Federation):
@@ -47,55 +47,38 @@ class SyncFederation(Federation):
         self.exceptions = []
         self.global_model = module  # None
 
-        self._global_params: Params = module.get_params()
         self.selected_children: t.Mapping[Node, t.Sequence[Node]] | None = None
         self._when_to_aggr_cbk = all_futures_finished
         self._aggr_job = default_aggr_job
         self._pbar: tqdm | None = None
+        self._round_num: int | None = None
 
-    def start(self, rounds: int):
-        for round_no in range(rounds):
-            print(f"❯ Starting round {round_no+1} out of {rounds}.")
+    def start(self, rounds: int) -> list[Result]:
+        results = []
+        for round_no in tqdm(range(rounds)):
+            self._round_num = round_no
             res = self.federation_round(round_no)
+            results.append(res)
+        return results
 
-    def federation_round(self, round_no: int):
-        log("Starting round")
-        global_params = self.global_model.get_params()
+    def federation_round(self, round_no: int) -> Result:
+        log(f"Starting round {round_no}")
+        # global_params = self.global_model.get_params()
+        # broadcast_records(result, round_no=round_no)
         # NOTE: Be sure to wrap `result` calls to handle errors.
-        try:
-            round_future = self.federation_step(round_no)
-            round_results = round_future.result()
-            return round_results
-        except Exception as exc:
-            self.exceptions.append(exc)
-            raise exc
+        result = self.federation_step()
+        return result
 
-    def federation_step(self, round_no: int) -> Future:
-        self._global_params = self.global_model.get_params()
+    def federation_step(self) -> Result:
         step_future = self.traverse_step()
-        log("Got the step future.")
         try:
             step_result = step_future.result()
+            self.global_model.set_params(step_result.params)
+            if self._pbar:
+                self._pbar.update()
+            return step_result
         except Exception as err:
             raise err
-        log("Got the step result.")
-
-        # step_result.history["round"] = round_no
-
-        # if not debug_mode:
-        #     trainer = TorchTrainer()
-        #     test_results = trainer.test(model, test_dataloader)
-        #     test_acc, test_loss = test_model(self.global_model)
-        #     step_result.history["test/acc"] = test_acc
-        #     step_result.history["test/loss"] = test_loss
-
-        # histories.append(step_result.history)
-        self.global_model.set_params(step_result.params)
-
-        if self._pbar:
-            self._pbar.update()
-
-        return step_future
 
     def traverse_step(
         self,
@@ -122,8 +105,6 @@ class SyncFederation(Federation):
                 return self.worker_task(node, parent)
 
     def coordinator_task(self, node: Node) -> Future[Result]:
-        # state = AggrState(0)  # TODO: Get the ID of the topology's coord.
-
         coord = self.topology.coordinator
         state = AggrState(coord.idx, children=self.topology.children(coord))
         selected_workers = self.coord_strategy.select_workers(
@@ -143,7 +124,7 @@ class SyncFederation(Federation):
         # of this federation based on the above code.
         worker_set = set(selected_workers)
         coord_children = set(self.topology.children(node))
-        if len(intermediate_aggrs):
+        if len(intermediate_aggrs) > 0:
             selected_children = coord_children.intersection(intermediate_aggrs)
         else:
             selected_children = coord_children.intersection(worker_set)
@@ -176,6 +157,7 @@ class SyncFederation(Federation):
             child_futs.append(fut)
 
         aggr_args = AggrJobArgs(
+            round_num=self._round_num,
             node=node,
             children=self.topology.children(node),
             child_results=[],  # Note: this is updated in the callback,
@@ -192,10 +174,7 @@ class SyncFederation(Federation):
             self.engine,
         )
 
-        log("Before all calls to `add_done_callback(.)`.")
         for fut in child_futs:
             fut.add_done_callback(cbk)
-
-        log("After all calls to `add_done_callback(.)`.")
 
         return parent_fut

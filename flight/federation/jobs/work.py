@@ -18,7 +18,6 @@ def default_training_job(args: TrainJobArgs) -> Result:
     Returns:
 
     """
-    import copy
 
     from datetime import datetime
     from flight.learning.trainers.torch import TorchTrainer
@@ -31,19 +30,19 @@ def default_training_job(args: TrainJobArgs) -> Result:
     node = args.node
     node_state = args.worker_strategy.start_work(args.node_state)
     trainer = TorchTrainer(
-        node,
-        args.trainer_strategy,
-        max_epochs=3,
+        node=node,
+        strategy=args.trainer_strategy,
+        max_epochs=5,
         progress_bar=False,
     )
-    local_model = copy.deepcopy(args.model)
+    local_model = args.model
 
     args.worker_strategy.before_training(args.node_state, args.data)  # TODO: Reconsider
 
     records = trainer.fit(
-        args.node_state,
-        local_model,
-        args.data,
+        node_state=args.node_state,
+        model=local_model,
+        data=args.data,
     )
 
     # result = args.worker_strategy.end_work()  # TODO: re-include

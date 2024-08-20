@@ -46,6 +46,7 @@ class Result:
 @dataclass(slots=True, frozen=True)
 class AggrJobArgs:
     # fut: Future
+    round_num: int
     node: Node
     children: t.Iterable[Node]
     child_results: t.Iterable[Result]

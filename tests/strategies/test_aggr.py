@@ -1,8 +1,14 @@
+import typing as t
+
+import pytest
 import torch
 
 from flight.federation.topologies.node import NodeState
 from flight.strategies import AggrStrategy
 from flight.strategies.base import DefaultAggrStrategy
+from flight.strategies.commons import average_state_dicts
+
+W, B = "weight", "bias"
 
 
 def test_instance():
@@ -43,3 +49,28 @@ def test_aggr_aggregate_params():
     for key, value in avg.items():
         expected = expected_avg[key]
         assert abs(expected - value.item()) < epsilon
+
+
+class TestAveraging:
+    @pytest.fixture
+    def params(self) -> dict[int, dict[str, torch.Tensor]]:
+        return {
+            0: {W: torch.tensor([10.0]), B: torch.tensor([5.0])},
+            1: {W: torch.tensor([15.0]), B: torch.tensor([2.5])},
+        }
+
+    @pytest.fixture
+    def weights(self) -> dict[t, float]:
+        return {
+            0: 0.0,
+            1: 1.0,
+        }
+
+    def test_correct_averaging(self, params, weights):
+        avg_params = average_state_dicts(params)
+        assert avg_params[W].item() == (params[0][W] + params[1][W]) / 2
+        assert avg_params[B].item() == (params[0][B] + params[1][B]) / 2
+
+        avg_params = average_state_dicts(params, weights)
+        assert avg_params[W] == params[1][W]
+        assert avg_params[B] == params[1][B]

@@ -22,9 +22,9 @@ if t.TYPE_CHECKING:
 class TorchTrainer:
     def __init__(
         self,
-        node: Node,
-        strategy: TrainerStrategy,
-        max_epochs: int,
+        max_epochs: int = 1,
+        node: Node | None = None,
+        strategy: TrainerStrategy | None = None,
         progress_bar: bool = True,
     ):
         self.node = node
@@ -33,6 +33,17 @@ class TorchTrainer:
         self._progress_bar = progress_bar
         self._curr_step = 0
         self._results = []
+
+        if self.node is None:
+            from flight.federation.topologies import Node
+
+            self.node = Node(idx=0, kind="worker")
+
+        if self.strategy is None:
+            from flight.strategies.base import DefaultTrainerStrategy
+
+            self.strategy = DefaultTrainerStrategy()
+
         # self._logger =
 
         try:

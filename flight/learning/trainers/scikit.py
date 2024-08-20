@@ -1,21 +1,23 @@
 import typing as t
 
-from flight.learning.modules.prototypes import DataLoadable, SciKitModule
-from flight.learning.modules.scikit import ScikitTrainable
-from flight.federation.topologies.node import Node
-from flight.learning.metrics import RecordLogger
+import numpy as np
 
 # log_los -> MLPClassifier | mean_squared_error -> MLPRegressor
 from sklearn.metrics import log_loss, mean_squared_error  # type: ignore
 from sklearn.neural_network import MLPClassifier, MLPRegressor  # type: ignore
 
-import numpy as np
+from flight.federation.topologies.node import Node
+from flight.learning.metrics import RecordLogger
+from flight.learning.modules.prototypes import DataLoadable
+from flight.learning.modules.scikit import ScikitTrainable
 
 
 class ScikitTrainer:
     """
-    This is a trainer object that is responsible for training, testing, and validating Scikit models.
+    This is a trainer object that is responsible for training, testing, and
+    validating models implemented in Scikit-Learn.
     """
+
     def __init__(
         self,
         node: Node,
@@ -27,11 +29,15 @@ class ScikitTrainer:
         """
 
         Args:
-            node (Node): The node that training is occuring on.
-            partial (bool, optional): If True the Trainer object will perform a partial fit. Defaults to True.
-            log_every_n_steps (int, optional): How often to log within steps. Defaults to 1.
-            logger (RecordLogger | None, optional): Optional logging device to capture learning metrics. Defaults to None.
-            loss_fn (t.Callable[..., float] | None, optional): The function to be used to calculate loss. Defaults to None.
+            node (Node): The node that training is occurring on.
+            partial (bool, optional): If True the Trainer object will perform a
+                partial fit. Defaults to True.
+            log_every_n_steps (int, optional): How often to log within steps.
+                Defaults to 1.
+            logger (RecordLogger | None, optional): Optional logging device to capture
+                learning metrics. Defaults to None.
+            loss_fn (t.Callable[..., float] | None, optional): The function to be used
+                to calculate loss. Defaults to None.
         """
         self.partial = partial
         self._first_partial_fit = True
@@ -41,14 +47,19 @@ class ScikitTrainer:
         self.loss_fn = loss_fn
 
     def fit(self, model: ScikitTrainable, data: DataLoadable) -> None:
-        """Runs full or partial optimization routine on a model using training data from 'data'.
+        """
+        Runs full or partial optimization routine on a model using
+        training data from 'data'.
 
         Args:
-            model (ScikitTrainable): Trainable object that will be used to train a module on the given dataset.
-            data (DataLoadable): Data object that will provide training data necessary for the fitting process.
+            model (ScikitTrainable): Trainable object that will be used to train a
+                module on the given dataset.
+            data (DataLoadable): Data object that will provide training data necessary
+                for the fitting process.
 
-        Raises:
-            ValueError: Thrown if an unequal number of inputs and labels are given from 'data'.
+        Throws:
+            - `ValueError`: Thrown if an unequal number of inputs and labels are
+                given from 'data'.
         """
         self._infer_loss_fn(model)
 
@@ -56,7 +67,8 @@ class ScikitTrainer:
 
         if len(inputs) != len(targets):
             raise ValueError(
-                f"Number of 'inputs'({len(inputs)}) does not match number of 'targets'({len(targets)})."
+                f"Number of 'inputs'({len(inputs)}) does not match number of "
+                f"'targets'({len(targets)})."
             )
 
         if self.partial:
@@ -72,15 +84,20 @@ class ScikitTrainer:
             model.module.fit(inputs, targets)
 
     def test(self, model: ScikitTrainable, data: DataLoadable) -> float:
-        """Performs one evaluation epoch on the already trained model, finding model accuracy.
+        """
+        Performs one evaluation epoch on the already trained model,
+        finding model accuracy.
 
         Args:
-            model (ScikitTrainable): The trained module that will be tested on a set of data.
-            data (DataLoadable): Data object that will provide test data necessary for the testing process.
+            model (ScikitTrainable): The trained module that will be tested on a
+                set of data.
+            data (DataLoadable): Data object that will provide test data necessary
+                for the testing process.
 
-        Raises:
-            AttributeError: Thrown if the 'data.test_data' returns None.
-            ValueError: Thrown if an unequal number of inputs and labels are given from 'data'.
+        Throws:
+            - `AttributeError`: Thrown if the 'data.test_data' returns None.
+            - `ValueError`: Thrown if an unequal number of inputs and labels are given
+                from 'data'.
 
         Returns:
             float: The mean accuracy on the given test data.
@@ -93,7 +110,8 @@ class ScikitTrainer:
 
         if len(inputs) != len(targets):
             raise ValueError(
-                f"Number of 'inputs'({len(inputs)}) does not match number of 'targets'({len(targets)})."
+                f"Number of 'inputs'({len(inputs)}) does not match number of "
+                f"'targets'({len(targets)})."
             )
 
         test_acc = model.module.score(inputs, targets)
@@ -104,16 +122,21 @@ class ScikitTrainer:
 
         return test_acc
 
-    def validate(self, model: ScikitTrainable, data: DataLoadable) -> t.Mapping[str, float]:
-        """Performs one evaluation epoch on a given model to find validation loss.
+    def validate(
+        self, model: ScikitTrainable, data: DataLoadable
+    ) -> t.Mapping[str, float]:
+        """
+        Performs one evaluation epoch on a given model to find validation loss.
 
         Args:
             model (ScikitTrainable): The module that will be validated on a set of data.
-            data (DataLoadable): Data object that will provide validation data necessary for the validation process.
+            data (DataLoadable): Data object that will provide validation data
+                necessary for the validation process.
 
-        Raises:
-            AttributeError: Thrown if the 'data.valid_data' returns None.
-            ValueError: Thrown if an unequal number of inputs and labels are given from 'data'.
+        Throws:
+            - `AttributeError`: Thrown if the 'data.valid_data' returns None.
+            - `ValueError`: Thrown if an unequal number of inputs and labels are given
+                from 'data'.
 
         Returns:
             t.Mapping[str, float]: List containing the metrics sent to loggers.
@@ -126,11 +149,12 @@ class ScikitTrainer:
 
         if len(inputs) != len(targets):
             raise ValueError(
-                f"Number of 'inputs'({len(inputs)}) does not match number of 'targets'({len(targets)})."
+                f"Number of 'inputs'({len(inputs)}) does not match number of "
+                f"'targets'({len(targets)})."
             )
 
         pred = model.module.predict(inputs)
-        
+
         loss = 0.0
         if isinstance(model.module, MLPClassifier):
             loss = log_loss(targets, pred)
@@ -143,10 +167,10 @@ class ScikitTrainer:
 
         return record
 
-    def _infer_loss_fn(self, model: SciKitModule):
+    def _infer_loss_fn(self, model: ScikitTrainable):
         if self.loss_fn is not None:
             return
-        elif self.loss_fn is None and isinstance(model.module, MLPClassifier):
+        elif isinstance(model.module, MLPClassifier):
             self.loss_fn = log_loss
-        elif self.loss_fn is None and isinstance(model.module, MLPRegressor):
+        elif isinstance(model.module, MLPRegressor):
             self.loss_fn = mean_squared_error

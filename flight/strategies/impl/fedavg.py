@@ -71,6 +71,7 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
             weights[node] = child_state[FedAvgAggr.NUM_SAMPLES]
 
         state[FedAvgAggr.NUM_SAMPLES] = sum(weights.values())
+        print(f"{weights=}")
         return average_state_dicts(children_params, weights=weights)
 
 

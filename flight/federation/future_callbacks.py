@@ -6,6 +6,7 @@ from __future__ import annotations
 import collections as c
 import functools
 import typing as t
+from concurrent.futures._base import InvalidStateError
 
 from flight.federation.jobs.types import AggrJobArgs
 
@@ -32,9 +33,8 @@ def set_parent_future(parent_fut: Future, child_fut: Future) -> t.Any:
         result = child_fut.result()
         try:
             parent_fut.set_result(result)
-        except Exception as exc:
-            print(exc)  # TODO: Log better.
-            # raise exc  # TODO: Raising it here causes an issue. Investigate later.
+        except InvalidStateError:
+            pass
         return result
 
 
@@ -52,10 +52,10 @@ def all_futures_finished(
     """
 
     Args:
-        job:
+        job (AggrJob):
         args (AggrJobArgs):
-        parent_fut:
-        child_futs:
+        parent_fut (Future):
+        child_futs (typing.Iterable[Future]):
         engine:
         _:
 
@@ -73,6 +73,7 @@ def all_futures_finished(
 
     if all([fut.done() for fut in child_futs]):
         args = AggrJobArgs(  # TODO: Fix this later.
+            round_num=args.round_num,
             node=args.node,
             children=args.children,
             child_results=[fut.result() for fut in child_futs],

@@ -82,7 +82,6 @@ class Node(pyd.BaseModel):
             key (str): Key to store datum.
             value (typing.Any): Datum to store into node's `extra` cache.
         """
-        print(self.extra)
         if self.extra is None:
             self.extra = {}
         self.extra[key] = value

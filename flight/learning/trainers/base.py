@@ -1,49 +1,55 @@
+from __future__ import annotations
+
 import typing as t
 
-from flight.learning.modules.prototypes import DataLoadable
-from flight.learning.modules import HasParameters
+if t.TYPE_CHECKING:
+    from flight.learning.modules import HasParameters
+    from flight.learning.modules.prototypes import DataLoadable
+    from flight.types import Record
 
 
 class Trainer(t.Protocol):
     """
-    Object class that is responsible for training `Trainable` objects.
+    Object class that is responsible for training *trainable* objects.
     """
 
-    def fit(self, model: HasParameters, data: DataLoadable, *args, **kwargs):
+    def fit(
+        self, model: HasParameters, data: DataLoadable, *args, **kwargs
+    ) -> list[Record]:
         """
         fit
 
         Args:
-            model (HasParameters):
-            data (DataLoadable):
-            *args:
-            **kwargs:
+            model (HasParameters): Trainable model to evaluate.
+            data (DataLoadable): Object with loadable data to evaluate with.
 
         Returns:
 
         """
 
-    def test(self, model: HasParameters, *args, **kwargs):
+    def test(
+        self, model: HasParameters, data: DataLoadable, *args, **kwargs
+    ) -> list[Record]:
         """
         test
 
         Args:
-            model:
-            *args:
-            **kwargs:
+            model (HasParameters): Trainable model to evaluate.
+            data (DataLoadable): Object with loadable data to evaluate with.
 
         Returns:
 
         """
 
-    def validate(self, model: HasParameters, data: DataLoadable, *args, **kwargs):
+    def validate(
+        self, model: HasParameters, data: DataLoadable, *args, **kwargs
+    ) -> list[Record]:
         """
         evaluate
 
         Args:
-            model:
-            *args:
-            **kwargs:
+            model (HasParameters): Trainable model to evaluate.
+            data (DataLoadable): Object with loadable data to evaluate with.
 
         Returns:
 

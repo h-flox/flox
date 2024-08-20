@@ -83,13 +83,25 @@ def data_cls() -> type[TorchDataModule]:
 
 
 class TestTrainer:
-    def test_torch_trainer(self, node, worker_state, module_cls, data_cls):
+    def test_torch_trainer_simple_init(self, node, worker_state, module_cls, data_cls):
+        """
+        Tests a basic setup of using the `TorchTrainer` class for PyTorch-based models.
+        """
+        trainer = TorchTrainer()
+        assert isinstance(trainer, TorchTrainer)
+
+        trainer = TorchTrainer(max_epochs=1)
+        assert isinstance(trainer, TorchTrainer)
+
+    def test_torch_trainer_node_init(self, node, worker_state, module_cls, data_cls):
         """
         Tests a basic setup of using the `TorchTrainer` class for PyTorch-based models.
         """
         model = module_cls()
         data = data_cls()
-        trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
+        trainer = TorchTrainer(
+            node=node, strategy=DefaultTrainerStrategy(), max_epochs=1
+        )
         assert isinstance(model, TorchModule)
         assert isinstance(trainer, TorchTrainer)
 
@@ -98,15 +110,21 @@ class TestTrainer:
 
     def test_node_device_specifier(self, node):
         """Confirms that the device"""
-        trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
+        trainer = TorchTrainer(
+            node=node, strategy=DefaultTrainerStrategy(), max_epochs=1
+        )
         assert str(trainer._device) == "cpu"
 
         node["device"] = "cuda"
-        trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
+        trainer = TorchTrainer(
+            node=node, strategy=DefaultTrainerStrategy(), max_epochs=1
+        )
         assert str(trainer._device) == "cuda"
 
         node["device"] = "mps"
-        trainer = TorchTrainer(node, DefaultTrainerStrategy(), 1)
+        trainer = TorchTrainer(
+            node=node, strategy=DefaultTrainerStrategy(), max_epochs=1
+        )
         assert str(trainer._device) == "mps"
 
     def test_data_module(self, node):

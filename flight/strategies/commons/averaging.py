@@ -26,7 +26,7 @@ def average_state_dicts(
             maps each node to its contribution factor. Defaults to `None`.
 
     Returns:
-        Params: The averaged parameters.
+        The averaged parameters.
     """
     num_nodes = len(state_dicts)
 
@@ -36,6 +36,7 @@ def average_state_dicts(
         weight_sum = sum(list(weights.values()))
         node_weights = {node: weights[node] / weight_sum for node in weights}
 
+    print(f"{node_weights=}")
     with torch.no_grad():
         avg_weights = {}
         for node, state_dict in state_dicts.items():

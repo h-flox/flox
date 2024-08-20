@@ -4,19 +4,20 @@ import torch
 from flight.learning.modules.prototypes import HasParameters
 from flight.learning.modules.torch import TorchModule
 
+SEED = 42
+
 
 @pytest.fixture
 def valid_module():
     class TestModule(TorchModule):
         def __init__(self):
             super().__init__()
-            self.model = torch.nn.Sequential(
-                torch.nn.Linear(1, 10),
-                torch.nn.Linear(10, 1),
-            )
+            torch.manual_seed(SEED)
+            self.m = torch.nn.Parameter(torch.randn(1))
+            self.b = torch.nn.Parameter(torch.randn(1))
 
         def forward(self, x):
-            return self.model(x)
+            return self.m * x + self.b
 
         def training_step(self, batch, batch_nb):
             return self(batch)
@@ -32,13 +33,12 @@ def invalid_module():
     class TestModule(TorchModule):  # noqa
         def __init__(self):
             super().__init__()
-            self.model = torch.nn.Sequential(
-                torch.nn.Linear(1, 10),
-                torch.nn.Linear(10, 1),
-            )
+            torch.manual_seed(SEED)
+            self.m = torch.nn.Parameter(torch.randn(1))
+            self.b = torch.nn.Parameter(torch.randn(1))
 
         def forward(self, x):
-            return self.model(x)
+            return self.m * x + self.b
 
     return TestModule
 
@@ -63,6 +63,10 @@ class TestModelInit:
         try:
             _ = model.get_params()
             params = model.get_params()
+            print(params)
+            assert "m" in params
+            assert "b" in params
             model.set_params(params)
         except Exception as exc:
+            print(exc)
             pytest.fail(exc, "Unexpected error/exception.")

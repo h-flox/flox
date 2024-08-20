@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import copy
 import typing as t
 from concurrent.futures import Future
 
@@ -42,7 +43,8 @@ class Federation(abc.ABC):
 
     @abc.abstractmethod
     def start(self, rounds: int) -> tuple[Module, list[Record]]:
-        """Starts the federation.
+        """
+        Starts the federation.
 
         Args:
             rounds (int): The number of rounds to run the federation.
@@ -131,17 +133,18 @@ class Federation(abc.ABC):
             node=node,
             parent=parent,
             node_state=state,
-            model=self.global_model,
+            model=copy.deepcopy(self.global_model),
             data=self.data,
             worker_strategy=self.worker_strategy,
             trainer_strategy=self.trainer_strategy,
         )
         args = self.engine.transfer(args)
+        return self.engine(self.work_fn, args)
 
-        try:
-            return self.engine(self.work_fn, args)
-        except Exception as err:
-            raise err
+        # try:
+        #     return self.engine(self.work_fn, args)
+        # except Exception as err:
+        #     raise err
 
     def _resolve_node(self, node: Node | None) -> Node:
         """
