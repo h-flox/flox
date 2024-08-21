@@ -1,3 +1,10 @@
+from .fed_abs import Federation
+
+
+class AsyncFederation(Federation):
+    pass
+
+
 '''
 import typing as t
 from concurrent.futures import Future

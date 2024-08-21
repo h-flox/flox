@@ -54,7 +54,7 @@ class HasParameters(t.Protocol):
 
 
 @t.runtime_checkable
-class DataLoadable(t.Protocol):
+class DataModuleProto(t.Protocol):
     def train_data(self, node: Node | None = None) -> LearnableData:
         pass
 

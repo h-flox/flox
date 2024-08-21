@@ -1,25 +1,27 @@
-import pytest
 import numpy as np
+import pytest
+from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor, MLPClassifier
-from sklearn.datasets import make_classification
 
 from flight.federation.topologies.node import Node, NodeKind
-from flight.learning.trainers.scikit import ScikitTrainer
-from flight.learning.modules.prototypes import DataLoadable
-from flight.learning.modules.scikit import ScikitTrainable
 from flight.learning.metrics import InMemoryRecordLogger
+from flight.learning.modules.prototypes import DataModuleProto
+from flight.learning.modules.scikit import ScikitTrainable
+from flight.learning.trainers.scikit import ScikitTrainer
 
 # Seed for random number generation for data resusability
 SEED = 9
+
 
 @pytest.fixture
 def node() -> Node:
     node = Node(idx=0, kind=NodeKind.WORKER)
     return node
 
+
 @pytest.fixture
-def data_scikit_cls() -> type[DataLoadable]:
+def data_scikit_cls() -> type[DataModuleProto]:
     class MySciKitDataModule:
         def __init__(self) -> None:
             self.num_samples = 10_000
@@ -46,25 +48,28 @@ def data_scikit_cls() -> type[DataLoadable]:
 
     return MySciKitDataModule
 
+
 @pytest.fixture
-def data_classification_scikit() -> type[DataLoadable]:
+def data_classification_scikit() -> type[DataModuleProto]:
     class MyClassificationModule:
         def __init__(self):
-            inputs, labels = make_classification(n_samples=10000, n_features=20, random_state=SEED)
+            inputs, labels = make_classification(
+                n_samples=10000, n_features=20, random_state=SEED
+            )
 
             self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
                 inputs, labels, test_size=0.3
             )
-        
+
         def train_data(self, node: Node | None = None):
-            return (self.x_train, self.y_train)
+            return self.x_train, self.y_train
 
         def test_data(self, node: Node | None = None):
-            return (self.x_test, self.y_test)
-        
+            return self.x_test, self.y_test
+
         def valid_data(self, node: Node | None = None):
-            return (self.x_test, self.y_test)
-    
+            return self.x_test, self.y_test
+
     return MyClassificationModule
 
 
@@ -125,7 +130,7 @@ class TestSciKitTrainer:
 
         records = trainer.validate(model, data)
         assert isinstance(records, dict)
-    
+
     def test_scikit_fit(self, node, data_classification_scikit):
         """
         Tests that a 'SciKitTrainable' can train a classifier on some classification dataset.
@@ -135,12 +140,13 @@ class TestSciKitTrainer:
         model = ScikitTrainable(model_instance)
         data = data_classification_scikit()
 
-        trainer = ScikitTrainer(node=node, partial=True, log_every_n_steps=5, logger=logger)
+        trainer = ScikitTrainer(
+            node=node, partial=True, log_every_n_steps=5, logger=logger
+        )
 
-        trainer.fit(model,data)
+        trainer.fit(model, data)
         init_params = model.get_params()
-        trainer.fit(model,data)
+        trainer.fit(model, data)
         fit_params = model.get_params()
 
         assert init_params is not fit_params
-

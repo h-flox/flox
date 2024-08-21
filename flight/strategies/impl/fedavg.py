@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
         NodeState,
         WorkerState,
     )
-    from flight.learning.modules.prototypes import DataLoadable
+    from flight.learning.modules.prototypes import DataModuleProto
     from flight.learning.types import Params
 
 
@@ -71,7 +71,6 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
             weights[node] = child_state[FedAvgAggr.NUM_SAMPLES]
 
         state[FedAvgAggr.NUM_SAMPLES] = sum(weights.values())
-        print(f"{weights=}")
         return average_state_dicts(children_params, weights=weights)
 
 
@@ -79,8 +78,8 @@ class FedAvgWorker(DefaultWorkerStrategy, _FedAvgConstMixins):
     """The worker for 'FedAvg' and its respective methods."""
 
     def before_training(
-        self, state: WorkerState, data: DataLoadable
-    ) -> tuple[WorkerState, DataLoadable]:
+        self, state: WorkerState, data: DataModuleProto
+    ) -> tuple[WorkerState, DataModuleProto]:
         """Callback to run before the current nodes training.
 
         Args:

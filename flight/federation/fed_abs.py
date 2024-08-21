@@ -10,7 +10,8 @@ from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-from ..learning.modules.prototypes import DataLoadable
+from ..learning.modules.prototypes import DataModuleProto, HasParameters
+from ..strategies import Strategy
 from ..types import Record
 from .jobs.types import Result, TrainJob, TrainJobArgs
 from .jobs.work import default_training_job
@@ -20,17 +21,14 @@ from .topologies.topo import Topology
 if t.TYPE_CHECKING:
     from ..engine import Engine
 
-    Strategy: t.TypeAlias = t.Any
-    Module: t.TypeAlias = t.Any
-
 
 class Federation(abc.ABC):
     topology: Topology
     strategy: Strategy
-    data: DataLoadable
+    data: DataModuleProto
     work_fn: TrainJob
     engine: Engine
-    global_model: Module
+    global_model: HasParameters
 
     def __init__(
         self,
@@ -41,8 +39,10 @@ class Federation(abc.ABC):
         self.strategy = strategy
         self.work_fn = default_training_job
 
+    ####################################################################################
+
     @abc.abstractmethod
-    def start(self, rounds: int) -> tuple[Module, list[Record]]:
+    def start(self, rounds: int) -> tuple[HasParameters, list[Record]]:
         """
         Starts the federation.
 
@@ -50,9 +50,10 @@ class Federation(abc.ABC):
             rounds (int): The number of rounds to run the federation.
 
         Returns:
-            A tuple that contains the following items, (i) the trained global model
-            hosted on the coordinator and (ii) the results from training during the
-            federation.
+            A tuple that contains the following items:
+
+                1. the trained global model hosted on the coordinator
+                2. the results from training during the federation.
         """
 
     @abc.abstractmethod
@@ -96,6 +97,8 @@ class Federation(abc.ABC):
             The aggregated result.
         """
 
+    ####################################################################################
+
     @property
     def coord_strategy(self) -> CoordStrategy:
         """Convenience alias that returns the federation's `CoordStrategy`."""
@@ -115,6 +118,8 @@ class Federation(abc.ABC):
     def trainer_strategy(self) -> TrainerStrategy:
         """Convenience alias that returns the federation's `TrainerStrategy`."""
         return self.strategy.trainer_strategy
+
+    ####################################################################################
 
     def worker_task(self, node: Node, parent: Node) -> Future[Result]:
         """
@@ -140,11 +145,6 @@ class Federation(abc.ABC):
         )
         args = self.engine.transfer(args)
         return self.engine(self.work_fn, args)
-
-        # try:
-        #     return self.engine(self.work_fn, args)
-        # except Exception as err:
-        #     raise err
 
     def _resolve_node(self, node: Node | None) -> Node:
         """

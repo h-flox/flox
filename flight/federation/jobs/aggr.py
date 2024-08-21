@@ -10,7 +10,6 @@ def default_aggr_job(args: AggrJobArgs) -> Result:
     from flight.federation.jobs.types import Result
     from flight.federation.records import broadcast_records
     from flight.federation.topologies.node import AggrState
-    from pprint import pprint
 
     node = args.node
     child_results = args.child_results
@@ -29,7 +28,6 @@ def default_aggr_job(args: AggrJobArgs) -> Result:
         child_states[idx] = res.node_state
         child_params[idx] = res.params
 
-    pprint(f"{child_params=}")
     aggr_state = AggrState(node.idx, children=args.children)
     aggr_params = strategy.aggregate_params(
         state=aggr_state,

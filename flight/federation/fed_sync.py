@@ -15,7 +15,7 @@ from .topologies.node import Node, NodeKind, AggrState
 from .topologies.topo import Topology
 from ..engine import Engine
 from ..learning.modules import HasParameters
-from ..learning.modules.prototypes import DataLoadable
+from ..learning.modules.prototypes import DataModuleProto
 from ..strategies.base import Strategy
 
 if t.TYPE_CHECKING:
@@ -33,7 +33,7 @@ class SyncFederation(Federation):
         topology: Topology,
         strategy: Strategy,
         module: HasParameters,
-        data: DataLoadable,
+        data: DataModuleProto,
         # engine: Engine,
         #
         logger=None,
@@ -63,28 +63,50 @@ class SyncFederation(Federation):
 
     def federation_round(self, round_no: int) -> Result:
         log(f"Starting round {round_no}")
-        # global_params = self.global_model.get_params()
-        # broadcast_records(result, round_no=round_no)
-        # NOTE: Be sure to wrap `result` calls to handle errors.
-        result = self.federation_step()
-        return result
+        step_future = self.launch_tasks()
 
-    def federation_step(self) -> Result:
-        step_future = self.traverse_step()
+        # TODO: Reconsider how this is implemented in case there is a communication or
+        #       other execution error.
         try:
             step_result = step_future.result()
-            self.global_model.set_params(step_result.params)
-            if self._pbar:
-                self._pbar.update()
-            return step_result
         except Exception as err:
+            self.engine.control_plane.shutdown()
             raise err
 
-    def traverse_step(
+        self.global_model.set_params(step_result.params)
+        if self._pbar:
+            self._pbar.update()
+
+        return step_result
+
+    def launch_tasks(
         self,
-        node: t.Optional[Node] = None,
-        parent: t.Optional[Node] = None,
+        node: Node | None = None,
+        parent: Node | None = None,
     ) -> Future[Result]:
+        """
+        Launches the proper task on a given `node`.
+
+        This function should only be used internally within the `SyncFederation` class.
+        This is *first* called during a call to `federation_round()`. That first call
+        will give no arguments (i.e., `node=None` and `parent=None`). More simply,
+        this means that the first node to begin launching its task will be the
+        coordinator.
+
+        From there, the function uses a breadth-first traversal to launch the tasks on
+        the other nodes in the topology by traversing down to the leaves of the tree--
+        like topology.
+
+        Args:
+            node (Node | None): The node to start tasks on. If `None`, then the
+                coordinator of the topology (i.e., root node) is used. Defaults to
+                `None`.
+            parent (Node | None): The parent node of the argument `node`.
+                Defaults to `None`.
+
+        Returns:
+            The `Future` returned by the task launched on `node`.
+        """
         node: Node = self._resolve_node(node)
         assert isinstance(node, Node)
 
@@ -153,7 +175,7 @@ class SyncFederation(Federation):
 
         child_futs = []
         for child in selected_children:
-            fut = self.traverse_step(node=child, parent=node)
+            fut = self.launch_tasks(node=child, parent=node)
             child_futs.append(fut)
 
         aggr_args = AggrJobArgs(

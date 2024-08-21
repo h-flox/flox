@@ -4,7 +4,7 @@ import typing as t
 
 if t.TYPE_CHECKING:
     from flight.learning.modules import HasParameters
-    from flight.learning.modules.prototypes import DataLoadable
+    from flight.learning.modules.prototypes import DataModuleProto
     from flight.types import Record
 
 
@@ -14,42 +14,42 @@ class Trainer(t.Protocol):
     """
 
     def fit(
-        self, model: HasParameters, data: DataLoadable, *args, **kwargs
+        self, model: HasParameters, data: DataModuleProto, *args, **kwargs
     ) -> list[Record]:
         """
         fit
 
         Args:
             model (HasParameters): Trainable model to evaluate.
-            data (DataLoadable): Object with loadable data to evaluate with.
+            data (DataModuleProto): Object with loadable data to evaluate with.
 
         Returns:
 
         """
 
     def test(
-        self, model: HasParameters, data: DataLoadable, *args, **kwargs
+        self, model: HasParameters, data: DataModuleProto, *args, **kwargs
     ) -> list[Record]:
         """
         test
 
         Args:
             model (HasParameters): Trainable model to evaluate.
-            data (DataLoadable): Object with loadable data to evaluate with.
+            data (DataModuleProto): Object with loadable data to evaluate with.
 
         Returns:
 
         """
 
     def validate(
-        self, model: HasParameters, data: DataLoadable, *args, **kwargs
+        self, model: HasParameters, data: DataModuleProto, *args, **kwargs
     ) -> list[Record]:
         """
         evaluate
 
         Args:
             model (HasParameters): Trainable model to evaluate.
-            data (DataLoadable): Object with loadable data to evaluate with.
+            data (DataModuleProto): Object with loadable data to evaluate with.
 
         Returns:
 

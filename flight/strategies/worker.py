@@ -7,7 +7,7 @@ if t.TYPE_CHECKING:
 
     from flight.federation.jobs.types import Result
     from flight.federation.topologies.node import WorkerState
-    from flight.learning.modules.prototypes import DataLoadable
+    from flight.learning.modules.prototypes import DataModuleProto
 
 
 @t.runtime_checkable
@@ -30,13 +30,13 @@ class WorkerStrategy(t.Protocol):
     def before_training(
         self,
         state: WorkerState,
-        data: DataLoadable,
+        data: DataModuleProto,
     ) -> tuple[WorkerState, t.Any]:
         """Callback to run before the current nodes training.
 
         Args:
             state (WorkerState): State of the current worker node.
-            data (DataLoadable): The data related to the current worker node.
+            data (DataModuleProto): The data related to the current worker node.
 
         Returns:
             A tuple containing the state and data of the current worker node

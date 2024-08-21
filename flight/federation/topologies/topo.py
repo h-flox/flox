@@ -15,7 +15,7 @@ from .node import Node, NodeID, NodeKind
 from .types import GraphDict
 
 if t.TYPE_CHECKING:
-    import numpy as np
+    from numpy.typing import ArrayLike
 
 
 def resolve_node_or_idx(node_or_idx: Node | NodeID) -> NodeID:
@@ -272,13 +272,13 @@ class Topology:
         return cls(*io.from_adj_list(adj_list))
 
     @classmethod
-    def from_adj_matrix(cls, adj_matrix: np.ndarray) -> Topology:
+    def from_adj_matrix(cls, adj_matrix: ArrayLike[int]) -> Topology:
         """
         Creates a Topology instance using
         [`from_adj_matrix`][flight.federation.topologies.io.from_adj_matrix].
 
         Args:
-            adj_matrix (np.ndarray): Adjacency matrix.
+            adj_matrix (ArrayLike[int]): Adjacency matrix.
 
         Returns:
             A `Topology` instance.
@@ -319,7 +319,7 @@ class Topology:
     def from_json(cls, path: pathlib.Path | str, safe_load: bool = True) -> Topology:
         """
         Creates a Topology instance from a `*.json` file using
-        [`from_adj_matrix`][flight.federation.topologies.io.from_adj_matrix].
+        [`from_json`][flight.federation.topologies.io.from_json].
 
         Args:
             path (pathlib.Path | str): Path to the JSON file.
@@ -336,7 +336,7 @@ class Topology:
     def from_networkx(cls, graph: nx.DiGraph) -> Topology:
         """
         Creates a `Topology` instance from a NetworkX directed graph using the utility
-        function [`from_nx`][flight.federation.topologies.io.from_nx].
+        function [`from_networkx`][flight.federation.topologies.io.from_networkx].
 
 
         Args:
@@ -379,6 +379,21 @@ class Topology:
         """
         return cls(*io.from_yaml(path))
 
+    @classmethod
+    def from_file(cls, path: pathlib.Path | str) -> Topology:
+        if not isinstance(path, pathlib.Path):
+            path = pathlib.Path(path)
+
+        match path.suffix:
+            case ".edgelist":
+                return cls.from_edgelist(path)
+            case ".json":
+                return cls.from_json(path)
+            case ".yaml":
+                return cls.from_yaml(path)
+            case _:
+                raise ValueError(f"File extension '{path.suffix}' is not supported.")
+
 
 def validate(topo: Topology) -> None:
     """
@@ -399,7 +414,6 @@ def validate(topo: Topology) -> None:
     graph: nx.DiGraph = topo._graph
     # noinspection PyProtectedMember
     nodes: t.Mapping[NodeID, Node] = topo._nodes
-    # edges: list[NodeLink] = topo._edges
 
     if not isinstance(graph, nx.DiGraph):
         raise TopologyException(

@@ -8,7 +8,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor  # type: ignore
 
 from flight.federation.topologies.node import Node
 from flight.learning.metrics import RecordLogger
-from flight.learning.modules.prototypes import DataLoadable
+from flight.learning.modules.prototypes import DataModuleProto
 from flight.learning.modules.scikit import ScikitTrainable
 
 
@@ -46,7 +46,7 @@ class ScikitTrainer:
         self.log_every_n_steps = log_every_n_steps
         self.loss_fn = loss_fn
 
-    def fit(self, model: ScikitTrainable, data: DataLoadable) -> None:
+    def fit(self, model: ScikitTrainable, data: DataModuleProto) -> None:
         """
         Runs full or partial optimization routine on a model using
         training data from 'data'.
@@ -54,8 +54,8 @@ class ScikitTrainer:
         Args:
             model (ScikitTrainable): Trainable object that will be used to train a
                 module on the given dataset.
-            data (DataLoadable): Data object that will provide training data necessary
-                for the fitting process.
+            data (DataModuleProto): Data object that will provide training data
+                necessary for the fitting process.
 
         Throws:
             - `ValueError`: Thrown if an unequal number of inputs and labels are
@@ -83,7 +83,7 @@ class ScikitTrainer:
         else:
             model.module.fit(inputs, targets)
 
-    def test(self, model: ScikitTrainable, data: DataLoadable) -> float:
+    def test(self, model: ScikitTrainable, data: DataModuleProto) -> float:
         """
         Performs one evaluation epoch on the already trained model,
         finding model accuracy.
@@ -91,7 +91,7 @@ class ScikitTrainer:
         Args:
             model (ScikitTrainable): The trained module that will be tested on a
                 set of data.
-            data (DataLoadable): Data object that will provide test data necessary
+            data (DataModuleProto): Data object that will provide test data necessary
                 for the testing process.
 
         Throws:
@@ -123,14 +123,14 @@ class ScikitTrainer:
         return test_acc
 
     def validate(
-        self, model: ScikitTrainable, data: DataLoadable
+        self, model: ScikitTrainable, data: DataModuleProto
     ) -> t.Mapping[str, float]:
         """
         Performs one evaluation epoch on a given model to find validation loss.
 
         Args:
             model (ScikitTrainable): The module that will be validated on a set of data.
-            data (DataLoadable): Data object that will provide validation data
+            data (DataModuleProto): Data object that will provide validation data
                 necessary for the validation process.
 
         Throws:

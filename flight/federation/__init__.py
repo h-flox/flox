@@ -15,7 +15,8 @@ flowchart LR
     end
 ```
 """
-
+from .fed_async import AsyncFederation
+from .fed_sync import SyncFederation
 from .topologies.topo import Topology
 
-__all__ = ["Topology"]
+__all__ = ["AsyncFederation", "SyncFederation", "Topology"]
