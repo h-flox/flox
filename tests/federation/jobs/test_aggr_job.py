@@ -8,7 +8,8 @@ from flight.federation.jobs.aggr import default_aggr_job
 from flight.federation.jobs.types import Result, AggrJobArgs
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import AggrState
-from flight.learning.modules.torch import TorchModule, TorchDataModule
+from flight.learning.modules.torch import TorchDataModule
+from flight.learning.torch import TorchModule
 from flight.strategies.base import DefaultAggrStrategy
 
 

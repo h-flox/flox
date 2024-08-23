@@ -2,7 +2,7 @@ import pytest
 import torch
 
 from flight.learning.modules.prototypes import HasParameters
-from flight.learning.modules.torch import TorchModule
+from flight.learning.torch import TorchModule
 
 SEED = 42
 

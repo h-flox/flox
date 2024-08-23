@@ -7,7 +7,8 @@ import tqdm
 from torch.utils.data import DataLoader
 
 from ...types import Record
-from ..modules.torch import TorchDataModule, TorchModule
+from ..modules.torch import TorchDataModule
+from ..torch import TorchModule
 
 if t.TYPE_CHECKING:
     from ...federation.topologies.node import Node, WorkerState

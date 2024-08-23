@@ -2,18 +2,11 @@ from __future__ import annotations
 
 import abc
 import typing as t
-from collections import OrderedDict
 
-import torch
-from torch import nn
 from torch.utils.data import DataLoader
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies import Node
-    from flight.learning.types import LocalStepOutput, Params
-
-
-_DEFAULT_INCLUDE_STATE = False
 
 
 class TorchDataModule(abc.ABC):
@@ -30,105 +23,3 @@ class TorchDataModule(abc.ABC):
 
     def size(self, node: Node | None = None) -> int | None:
         return None
-
-
-class TorchModule(nn.Module, abc.ABC):
-    """
-    Wrapper class for a PyTorch model (i.e., `torch.nn.Module`).
-
-    Based on PyTorch Lightning's
-    [LightningModule](https://lightning.ai/docs/pytorch/stable/_modules/lightning/pytorch/core/module.html#LightningModule). # noqa
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.include_state = kwargs.get("include_state", _DEFAULT_INCLUDE_STATE)
-
-    @abc.abstractmethod
-    def training_step(self, *args: t.Any, **kwargs: t.Any) -> LocalStepOutput:
-        """
-        Hello
-
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-
-    @abc.abstractmethod
-    def configure_optimizers(self) -> torch.optim.Optimizer:
-        """
-        Helo
-
-        Returns:
-
-        """
-
-    def predict_step(self, *args: t.Any, **kwargs: t.Any) -> LocalStepOutput:
-        """
-        Hello
-
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-        raise NotImplementedError()
-
-    def test_step(self, *args: t.Any, **kwargs: t.Any) -> LocalStepOutput:
-        """
-        Hello
-
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-        raise NotImplementedError()
-
-    def validation_step(self, *args: t.Any, **kwargs: t.Any) -> LocalStepOutput:
-        """
-        Hello
-
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-        raise NotImplementedError()
-
-    def get_params(self) -> Params:
-        state_dict = self.state_dict()
-        if self.include_state:
-            return state_dict
-        else:
-            param_names = dict(self.named_parameters())
-            return OrderedDict(
-                [
-                    (name, value.data)
-                    for (name, value) in state_dict.items()
-                    if name in param_names
-                ]
-            )
-
-    def set_params(self, params: Params) -> None:
-        if self.include_state:
-            self.load_state_dict(
-                params,
-                strict=True,
-                assign=False,
-            )
-        else:
-            self.load_state_dict(
-                params,
-                strict=False,
-                assign=False,
-            )

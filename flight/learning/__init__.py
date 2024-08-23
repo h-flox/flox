@@ -5,9 +5,10 @@ functions for loading (and setting up) datasets for Flight federations.
 
 Flight currently provides support for the following deep learning frameworks:
 
-- PyTorch
-- PyTorch Lightning
-- Scikit-Learn (namely, `MLPRegressor` and `MLPClassifier`)
+- [PyTorch](https://pytorch.org)
+- [PyTorch Lightning](https://lightning.ai/pytorch-lightning)
+- [Scikit-Learn](https://scikit-learn.org/stable/) (specifically, its `MLPRegressor`
+  and `MLPClassifier` models).
 
 ## Trainable Models
 ...
@@ -21,4 +22,19 @@ Flight currently provides support for the following deep learning frameworks:
 | ScitkitTrainer | ... |
 | LightningTrainer | ... |
 | CustomTrainer | ... |
+
+
+
+```mermaid
+flowchart TB
+
+AbstractModule-->LightningModule
+AbstractModule-->ScikitModule
+AbstractModule-->TorchModule
+
+AbstractDataModule-->LightningDataModule
+AbstractDataModule-->ScikitDataModule
+AbstractDataModule-->TorchDataModule
+
+```
 """

@@ -6,6 +6,43 @@ if t.TYPE_CHECKING:
     from flight.federation.jobs.types import Result, TrainJobArgs
 
 
+def default_training_job_new(args: TrainJobArgs) -> Result:
+    """
+    Default implementation of a local training job that is run on worker nodes in a
+    federation.
+
+    Args:
+        args (TrainJobArgs):
+
+    Returns:
+        Result of local training job completed by a worker node.
+    """
+
+    node_state = args.worker_strategy.start_work(args.node_state)
+    local_model = args.model
+
+    ####################################################################################
+
+    from flight.learning.torch import TorchModule
+    from flight.learning.modules.scikit import ScikitTrainable
+
+    from flight.learning.trainers.torch import TorchTrainer
+    from flight.learning.trainers.scikit import ScikitTrainer
+
+    if isinstance(args.model, TorchModule):
+        trainer = TorchTrainer()
+        records = trainer.fit(node_state)
+    elif isinstance(args.model, ScikitTrainable):
+        trainer = ScikitTrainer(args.node)  # TODO: Include hyper-params for trainer.
+        records = trainer.fit(local_model)
+    else:
+        raise ValueError("Illegal value type for `model`.")
+
+    ####################################################################################
+
+    ####################################################################################
+
+
 # TODO: Test the hell out of this function.
 def default_training_job(args: TrainJobArgs) -> Result:
     """
