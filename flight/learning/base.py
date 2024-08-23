@@ -10,6 +10,7 @@ if t.TYPE_CHECKING:
 
 Data = t.TypeVar("Data")
 DataKinds = t.Literal["train", "test", "validation"]
+FrameworkKind = t.Literal["lightning", "scikit", "torch"]
 
 
 class AbstractDataModule(abc.ABC):
@@ -24,6 +25,8 @@ class AbstractDataModule(abc.ABC):
     - PyTorch, see [`TorchDataModule`][flight.learning.torch.TorchDataModule].
     - Scikit-Learn, see [`ScikitDataModule`][flight.learning.scikit.ScikitDataModule].
     """
+
+    _KIND: t.Final[str] = "abstract"
 
     @abc.abstractmethod
     def train_data(
@@ -90,6 +93,14 @@ class AbstractModule(abc.ABC):
     def set_params(self, params: Params) -> None:
         """TODO"""
         pass
+
+    @abc.abstractmethod
+    def kind(self) -> FrameworkKind:
+        """
+
+        Returns:
+
+        """
 
 
 class AbstractTrainer(abc.ABC):

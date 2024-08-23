@@ -102,10 +102,11 @@ def result(node, aggr_state) -> Result:
 @pytest.fixture
 def aggr_args(node, parent, result) -> AggrJobArgs:
     return AggrJobArgs(
+        round_num=0,
         node=parent,
         children=[node],
         child_results=[result],
-        aggr_strategy=DefaultAggrStrategy(),
+        aggr_strategy=DefaultAggrStrategy(),  # TODO: We need to resolve this typing.
         transfer=BaseTransfer(),
     )
 

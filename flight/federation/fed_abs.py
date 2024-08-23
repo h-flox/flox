@@ -10,25 +10,25 @@ from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-from ..learning.modules.prototypes import DataModuleProto, HasParameters
-from ..strategies import Strategy
-from ..types import Record
 from .jobs.types import Result, TrainJob, TrainJobArgs
 from .jobs.work import default_training_job
 from .topologies.node import Node, WorkerState
-from .topologies.topo import Topology
 
 if t.TYPE_CHECKING:
     from ..engine import Engine
+    from ..learning.base import AbstractDataModule, AbstractModule
+    from ..strategies import Strategy
+    from ..types import Record
+    from .topologies.topo import Topology
 
 
 class Federation(abc.ABC):
     topology: Topology
     strategy: Strategy
-    data: DataModuleProto
+    data: AbstractDataModule
     work_fn: TrainJob
     engine: Engine
-    global_model: HasParameters
+    global_model: AbstractModule
 
     def __init__(
         self,
@@ -42,7 +42,7 @@ class Federation(abc.ABC):
     ####################################################################################
 
     @abc.abstractmethod
-    def start(self, rounds: int) -> tuple[HasParameters, list[Record]]:
+    def start(self, rounds: int) -> tuple[AbstractDataModule, list[Record]]:
         """
         Starts the federation.
 
@@ -160,11 +160,12 @@ class Federation(abc.ABC):
         """
         if node is None:
             node = self.topology.coordinator
+
         if not isinstance(node, Node):
             raise ValueError(
-                "Federation._resolve_node() failed to resolve the arg `node` to a "
-                "`Node` instance. Must either be a `Node` instance or `None` (only "
-                "if intended to be the Coordinator node)."
+                f"Federation._resolve_node() failed to resolve the arg `{node=}` to a "
+                f"`Node` instance. Must either be a `Node` instance or `None` (only "
+                f"if intended to be the Coordinator node)."
             )
 
         return node

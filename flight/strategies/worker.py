@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import typing as t
 
+from flight.learning.base import AbstractDataModule
+
 if t.TYPE_CHECKING:
     import torch
 
     from flight.federation.jobs.types import Result
     from flight.federation.topologies.node import WorkerState
-    from flight.learning.modules.prototypes import DataModuleProto
 
 
 @t.runtime_checkable
@@ -30,13 +31,13 @@ class WorkerStrategy(t.Protocol):
     def before_training(
         self,
         state: WorkerState,
-        data: DataModuleProto,
+        data: AbstractDataModule,
     ) -> tuple[WorkerState, t.Any]:
         """Callback to run before the current nodes training.
 
         Args:
             state (WorkerState): State of the current worker node.
-            data (DataModuleProto): The data related to the current worker node.
+            data (AbstractDataModule): The data related to the current worker node.
 
         Returns:
             A tuple containing the state and data of the current worker node

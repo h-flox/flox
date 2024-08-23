@@ -5,8 +5,10 @@ import typing as t
 from collections import OrderedDict
 
 import numpy as np
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.utils._testing import ignore_warnings  # noqa
 
-from .base import AbstractDataModule, AbstractModule, AbstractTrainer
+from .base import AbstractDataModule, AbstractModule, AbstractTrainer, FrameworkKind
 
 if t.TYPE_CHECKING:
     from numpy.typing import ArrayLike
@@ -41,6 +43,12 @@ class ScikitModule(AbstractModule):
         self.module = module
         self._dims_initialized = False  # TODO: Check if the scikit object has this.
 
+    ####################################################################################
+
+    # noinspection PyMethodMayBeStatic
+    def kind(self) -> FrameworkKind:
+        return "scikit"
+
     def get_params(self) -> Params:
         params = []
         for i in range(self._n_layers):
@@ -64,6 +72,8 @@ class ScikitModule(AbstractModule):
         self.module.coefs_ = weights
         self.module.intercepts_ = biases
 
+    ####################################################################################
+
     @property
     def _n_layers(self) -> int:
         n = len(self.module.coefs_)
@@ -81,14 +91,15 @@ class ScikitTrainer(AbstractTrainer):
         self,
         node: Node | None = None,
         *,
-        max_epochs: int | None = None,
-        partial: bool = True,
+        max_epochs: int | None = 5,
+        partial: bool = False,
     ):
         super().__init__(node)
         self._partial = partial
         self._max_epochs = max_epochs
         self._first_partial_fit = True
 
+    @ignore_warnings(category=ConvergenceWarning)
     def fit(self, module: ScikitModule, data: ScikitDataModule) -> list[Record]:
         """TODO"""
         inputs, targets = data.train_data(self.node)
@@ -107,6 +118,9 @@ class ScikitTrainer(AbstractTrainer):
             for _ in range(self._max_epochs):
                 module.module.partial_fit(inputs, targets, classes)
         else:
+            if self._max_epochs is not None:
+                module.module.max_iter = self._max_epochs
+
             module.module.fit(inputs, targets)
 
         return self._extract_records(module, mode="train")

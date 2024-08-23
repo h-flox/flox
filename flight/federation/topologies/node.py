@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pydantic as pyd
 
-from flight.learning.modules.prototypes import HasParameters
+from flight.learning.base import AbstractDataModule
 
 NodeID: t.TypeAlias = t.Union[int, str]
 """
@@ -188,11 +188,11 @@ class AggrState(NodeState):
 
     Args:
         children (t.Iterable[Node]): Child nodes in the topology.
-        aggr_model (t.Optional[HasParameters]): Aggregated model.
+        aggr_model (AbstractDataModule | None): Aggregated model.
     """
 
     children: t.Iterable[Node]
-    aggr_model: t.Optional[HasParameters] = None
+    aggr_model: AbstractDataModule | None = None
 
 
 @dataclass
@@ -201,9 +201,9 @@ class WorkerState(NodeState):
     The state of a Worker node.
 
     Args:
-        global_model (t.Optional[HasParameters]): ...
-        local_model (t.Optional[Trainable]): ...
+        global_model (AbstractDataModule | None): ...
+        local_model (AbstractDataModule | None): ...
     """
 
-    global_model: t.Optional[HasParameters] = None
-    local_model: t.Optional[HasParameters] = None
+    global_model: AbstractDataModule | None = None
+    local_model: AbstractDataModule | None = None

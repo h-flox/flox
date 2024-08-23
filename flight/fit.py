@@ -16,7 +16,7 @@ def load_topology(raw_data: Topology | pathlib.Path | str | dict):
     # Load and parse a `Topology` class instance based on the data type provided here.
     match raw_data:
         case Topology():
-            return Topology
+            return raw_data
         case pathlib.Path() | str():
             return Topology.from_file(raw_data)
         case list() | np.ndarray():

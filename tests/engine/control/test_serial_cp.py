@@ -31,5 +31,5 @@ class TestSerialControlPane:
 
     def test_invalid_uses(self, controller):
         fut = controller(self.divide_by_zero, 10)
-        fut = controller(self.divide_by_zero, 10)
-        fut.result()
+        with pytest.raises(ZeroDivisionError):
+            fut.result()

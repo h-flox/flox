@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from proxystore.proxy import Proxy
 
 from flight.federation.topologies.node import Node, NodeState, WorkerState
-from flight.learning.modules.prototypes import Record, HasParameters, DataModuleProto
+from flight.learning.base import AbstractDataModule, AbstractModule
+from flight.learning.modules.prototypes import Record
 from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
@@ -65,8 +66,8 @@ class TrainJobArgs:
     node: Node
     parent: Node
     node_state: WorkerState
-    model: HasParameters | None  # TorchModule | None
-    data: DataModuleProto  # TorchDataModule  # DataLoadable
+    model: AbstractModule | None  # TorchModule | None
+    data: AbstractDataModule  # TorchDataModule  # DataLoadable
     worker_strategy: WorkerStrategy
     trainer_strategy: TrainerStrategy
 

@@ -28,20 +28,20 @@ class TestValidFedSGD:
 
     def test_default_fedsgd_coord(self):
         """Tests the usability of the coordinator strategy for 'FedSGD'"""
-        fedsgd = FedSGD(1, False, True)
-        coordStrat: CoordStrategy = fedsgd.coord_strategy
+        fed_sgd = FedSGD(1, False, True)
+        coord_strategy: CoordStrategy = fed_sgd.coord_strategy
         gen = default_rng()
-        workers = create_children(numWorkers=10)
+        workers = create_children(num_workers=10)
 
-        selected = coordStrat.select_workers("foo", workers, gen)
+        selected = coord_strategy.select_workers("foo", workers, gen)
 
         for worker in workers:
             assert worker in selected
 
     def test_fedsgd_aggr(self):
         """Tests the usability of the aggregator strategy for 'FedSGD'"""
-        fedsgd = FedSGD(1, False, True)
-        aggrStrat: AggrStrategy = fedsgd.aggr_strategy
+        fed_sgd = FedSGD(1, False, True)
+        aggr_strategy: AggrStrategy = fed_sgd.aggr_strategy
 
         state = "foo"
         children = {1: "foo1", 2: "foo2"}
@@ -57,7 +57,7 @@ class TestValidFedSGD:
             },
         }
 
-        avg = aggrStrat.aggregate_params(state, children, children_state_dicts_pt)
+        avg = aggr_strategy.aggregate_params(state, children, children_state_dicts_pt)
 
         assert isinstance(avg, dict)
 

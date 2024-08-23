@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
+import numpy as np
 import torch
 
 if t.TYPE_CHECKING:
@@ -41,7 +42,16 @@ def average_state_dicts(
         for node, state_dict in state_dicts.items():
             w = node_weights[node]
             for name, value in state_dict.items():
-                value = w * torch.clone(value)
+                match value:
+                    # TODO: We need some abstraction for math operations across numpy
+                    #       and tensors.
+                    case torch.Tensor():
+                        value = w * torch.clone(value)
+                    case np.ndarray():
+                        value = w * value
+                    case _:
+                        raise ValueError("Unsupported data type for parameter value.")
+
                 if name not in avg_weights:
                     avg_weights[name] = value
                 else:

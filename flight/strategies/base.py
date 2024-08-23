@@ -4,6 +4,7 @@ import dataclasses
 import functools
 import typing as t
 
+from flight.learning.base import AbstractDataModule
 from flight.strategies.aggr import AggrStrategy
 from flight.strategies.commons.averaging import average_state_dicts
 from flight.strategies.coord import CoordStrategy
@@ -98,7 +99,7 @@ class DefaultWorkerStrategy:
     def before_training(
         self,
         state: WorkerState,
-        data: Params,  # TODO: Refactor later?
+        data: AbstractDataModule,  # TODO: Refactor later?
     ) -> tuple[WorkerState, Params]:
         """Callback that is run before training.
 

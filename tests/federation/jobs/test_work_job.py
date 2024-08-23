@@ -7,7 +7,7 @@ from flight.federation.jobs.types import TrainJobArgs, Result
 from flight.federation.jobs.work import default_training_job
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import WorkerState
-from flight.learning.modules.torch import TorchDataModule
+from flight.learning.torch import TorchDataModule
 from flight.learning.torch import TorchModule
 from flight.strategies.base import DefaultWorkerStrategy, DefaultTrainerStrategy
 

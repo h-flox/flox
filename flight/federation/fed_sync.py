@@ -14,12 +14,11 @@ from .jobs.types import AggrJobArgs
 from .topologies.node import Node, NodeKind, AggrState
 from .topologies.topo import Topology
 from ..engine import Engine
-from ..learning.modules import HasParameters
-from ..learning.modules.prototypes import DataModuleProto
-from ..strategies.base import Strategy
 
 if t.TYPE_CHECKING:
+    from ..strategies.base import Strategy
     from .jobs.types import Result
+    from ..learning.base import AbstractDataModule, AbstractModule
 
 
 def log(msg: str):
@@ -32,8 +31,8 @@ class SyncFederation(Federation):
         self,
         topology: Topology,
         strategy: Strategy,
-        module: HasParameters,
-        data: DataModuleProto,
+        module: AbstractModule,
+        data: AbstractDataModule,
         # engine: Engine,
         #
         logger=None,

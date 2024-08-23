@@ -1,18 +1,13 @@
 import pytest
-import os
-
-from lightning.pytorch import LightningModule, LightningDataModule
-
 import torch
-from torch import nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Subset, TensorDataset
+from lightning.pytorch import LightningModule, LightningDataModule
+from torch import nn
 from torch.optim import SGD
-from torchvision.datasets import CIFAR10
-import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from flight.learning.trainers.lightning import LightningTrainer
 from flight.federation.topologies.node import Node, NodeKind
+from flight.learning.trainers.lightning import LightningTrainer
 
 
 @pytest.fixture
@@ -39,7 +34,7 @@ def module_light_cls() -> type[LightningModule]:
             inputs, targets = batch
             preds = self(inputs)
             loss = F.l1_loss(preds, targets)
-            self.logger.log_metrics({'loss': loss})
+            self.logger.log_metrics({"loss": loss})
             return loss
 
         def validation_step(self, batch, batch_nb):
@@ -89,39 +84,44 @@ def data_light_cls() -> type[LightningDataModule]:
 
     return MyLightningDataModule
 
+
 @pytest.fixture
 def data_cifar_cls() -> type[LightningDataModule]:
     class CifarDataModule(LightningDataModule):
         def __init__(self) -> None:
-            train_data = CIFAR10(root=os.environ["CIFAR_DATASET"], train=True, transform=transforms.ToTensor())
-            self.train_subset = Subset(train_data, list(range(100)))
+            super().__init__()
 
-            test_data = CIFAR10(root=os.environ["CIFAR_DATASET"], train=False, transform=transforms.ToTensor())
-            self.test_subset = Subset(test_data, list(range(100)))
-            self.val_subset = Subset(test_data, list(range(100,200)))
-        
+            g = torch.Generator(device="cpu")
+            g.manual_seed(0)
+
+            self.data = TensorDataset(torch.randn(1_000, 1))
+            self.train_subset = Subset(self.data, indices=list(range(0, 800)))
+            self.test_subset = Subset(self.data, indices=list(range(800, 900)))
+            self.val_subset = Subset(self.data, indices=list(range(900, 1_000)))
+
         def train_dataloader(self):
             return DataLoader(self.train_subset, shuffle=True)
 
         def test_dataloader(self):
             return DataLoader(self.test_subset, shuffle=True)
-        
+
         def valid_dataloader(self):
             return DataLoader(self.val_subset, shuffle=True)
-        
+
     return CifarDataModule
+
 
 @pytest.fixture
 def module_cifar_lightning() -> type[LightningModule]:
     class MyCifarModule(LightningModule):
         def __init__(self):
             super().__init__()
-            self.conv1 = nn.Conv2d(3,6,5)
-            self.pool = nn.MaxPool2d(2,2)
-            self.conv2 = nn.Conv2d(6,16,5)
-            self.fc1 = nn.Linear(16*5*5,120)
-            self.fc2 = nn.Linear(120,84)
-            self.fc3 = nn.Linear(84,10)
+            self.conv1 = nn.Conv2d(3, 6, 5)
+            self.pool = nn.MaxPool2d(2, 2)
+            self.conv2 = nn.Conv2d(6, 16, 5)
+            self.fc1 = nn.Linear(16 * 5 * 5, 120)
+            self.fc2 = nn.Linear(120, 84)
+            self.fc3 = nn.Linear(84, 10)
             self.hidden_activation = nn.ReLU()
 
             self.records = []
@@ -130,7 +130,7 @@ def module_cifar_lightning() -> type[LightningModule]:
             self.test_count = 0
 
             self.running_loss = 0.0
-        
+
         def forward(self, x):
             x = self.conv1(x)
             x = self.hidden_activation(x)
@@ -145,11 +145,10 @@ def module_cifar_lightning() -> type[LightningModule]:
             x = self.fc3(x)
             return x
 
-        
         def training_step(self, batch, batch_idx):
             if batch_idx == 0:
                 self.running_loss = 0.0
-                
+
             self.train_count += 1
             inputs, labels = batch
             prediction = self(inputs)
@@ -157,8 +156,8 @@ def module_cifar_lightning() -> type[LightningModule]:
 
             self.running_loss += loss.item()
             if batch_idx % 20 == 0:
-                self.log(name='train/loss', value=self.running_loss/20)
-                #self.logger.log_metrics({'train/loss': self.running_loss/20.0})
+                self.log(name="train/loss", value=self.running_loss / 20)
+                # self.logger.log_metrics({'train/loss': self.running_loss/20.0})
                 self.running_loss = 0.0
             return loss
 
@@ -171,7 +170,7 @@ def module_cifar_lightning() -> type[LightningModule]:
             _, prediction = torch.max(prediction, 1)
             test_acc = (labels == prediction).float().mean().item()
 
-            self.log(name='test/acc', value=test_acc)
+            self.log(name="test/acc", value=test_acc)
             return loss
 
         def validation_step(self, batch, batch_idx):
@@ -184,19 +183,22 @@ def module_cifar_lightning() -> type[LightningModule]:
             val_acc = (labels == prediction).float().mean().item()
 
             if batch_idx % 20 == 0:
-                self.log(name='val/loss', value=loss)
-                #self.logger.log_metrics({'val/loss': loss}) 
+                self.log(name="val/loss", value=loss)
+                # self.logger.log_metrics({'val/loss': loss})
             return loss
 
         def configure_optimizers(self):
             optimizer = SGD(self.parameters(), lr=0.01)
             return optimizer
+
     return MyCifarModule
+
 
 class TestLightningTrainer:
     def test_lightning_trainer(self, node, module_light_cls, data_light_cls):
         """
-        Tests a basic setup of using the `LightningTrainer` class for PyTorch-based models.
+        Tests a basic setup of using the `LightningTrainer` class for
+        PyTorch-based models.
         """
         model = module_light_cls()
         data = data_light_cls()
@@ -208,7 +210,7 @@ class TestLightningTrainer:
         assert isinstance(data, LightningDataModule)
 
         results = trainer.fit(model, data)
-        
+
         assert isinstance(results, dict)
 
     def test_test_process(self, node, module_light_cls, data_light_cls):
@@ -238,7 +240,7 @@ class TestLightningTrainer:
         records = trainer.validate(model, data)
 
         assert isinstance(records, list)
-    
+
     def test_fit_cifar(self, node, module_cifar_lightning, data_cifar_cls):
         """
         Tests that the 'LightningTrainer' can train a classifier on the CIFAR10 dataset.
@@ -251,7 +253,7 @@ class TestLightningTrainer:
         trainer = LightningTrainer(node, **kwargs)
 
         train_record = trainer.fit(model, data)
-        assert isinstance(train_record['train/loss'], torch.Tensor)
+        assert isinstance(train_record["train/loss"], torch.Tensor)
 
         test_record = trainer.test(model, data)
 
