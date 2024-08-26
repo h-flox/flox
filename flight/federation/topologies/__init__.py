@@ -1,3 +1,4 @@
 from .node import Node
+from .topo import Topology
 
-__all__ = ["Node"]
+__all__ = ["Node", "Topology"]

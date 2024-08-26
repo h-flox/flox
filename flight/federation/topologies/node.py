@@ -65,7 +65,7 @@ class Node(pyd.BaseModel):
             key:
 
         Raises:
-            - KeyError: ...
+            - `KeyError`: ...
 
         Returns:
 

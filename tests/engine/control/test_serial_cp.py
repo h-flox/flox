@@ -1,11 +1,11 @@
 import pytest
 
-from flight.engine.control.serial import SerialCP
+from flight.engine.control.serial import SerialController
 
 
 @pytest.fixture
-def controller() -> SerialCP:
-    return SerialCP()
+def controller() -> SerialController:
+    return SerialController()
 
 
 class TestSerialControlPane:
@@ -23,13 +23,13 @@ class TestSerialControlPane:
 
     def test_valid_uses(self, controller):
         for num in range(0, 100 + 1, 10):
-            fut = controller(self.identity, num)
+            fut = controller(self.identity, num=num)
             assert fut.result() == num
 
-            fut = controller(self.square, num)
+            fut = controller(self.square, num=num)
             assert fut.result() == (num**2)
 
     def test_invalid_uses(self, controller):
-        fut = controller(self.divide_by_zero, 10)
+        fut = controller(self.divide_by_zero, num=10)
         with pytest.raises(ZeroDivisionError):
             fut.result()

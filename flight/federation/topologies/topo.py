@@ -15,6 +15,7 @@ from .node import Node, NodeID, NodeKind
 from .types import GraphDict
 
 if t.TYPE_CHECKING:
+    from matplotlib.axes import Axes
     from numpy.typing import ArrayLike
 
 
@@ -208,6 +209,29 @@ class Topology:
         """
         return sum(1 for _ in self.nodes(kind))
 
+    def draw(
+        self,
+        color_by_kind: bool = True,
+        with_labels: bool = True,
+        label_color: str = "white",
+        prog: str = "dot",
+        node_kind_attrs: dict[NodeKind, dict[str, t.Any]] | None = None,
+        show_axis_border: bool = False,
+        ax: Axes | None = None,
+    ) -> Axes:
+        from .vis import draw
+
+        return draw(
+            self,
+            color_by_kind,
+            with_labels,
+            label_color,
+            prog,
+            node_kind_attrs,
+            show_axis_border,
+            ax,
+        )
+
     @functools.cached_property
     def coordinator(self) -> Node:
         """Returns the *Coordinator* node in the Topology."""
@@ -253,6 +277,10 @@ class Topology:
     def kind(self) -> TopologyKind:
         # TODO: Finish the implementation of this.
         return TopologyKind.HUB_SPOKE
+
+    @property
+    def graph(self) -> nx.DiGraph:
+        return self._graph
 
     @classmethod
     def from_adj_list(

@@ -15,7 +15,17 @@ excludes = [
     # "fed_abs.py",
 ]  # TODO: Change later.
 
-for path in sorted(Path(project_dir).rglob("**/*.py")):
+
+def sort_fn(p: Path) -> str:
+    # TODO: Adjust this such that directories are listed first and all other sorting
+    # is alphabetic.
+    if p.is_dir():
+        return "___" + str(p)
+    return str(p)
+
+
+sorted_paths = sorted(Path(project_dir).rglob("**/*.py"), key=lambda x: -len(x.parents))
+for path in sorted_paths:
     skip = False
     for name in excludes:
         if name in str(path):

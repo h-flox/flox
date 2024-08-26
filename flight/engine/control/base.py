@@ -1,18 +1,20 @@
 from __future__ import annotations
 
+import abc
 import typing as t
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
 
-class ControlPlane(t.Protocol):
-    def __call__(self, fn: t.Callable, /, *args, **kwargs) -> Future:
+class AbstractController(abc.ABC):
+    @abc.abstractmethod
+    def __call__(self, fn: t.Callable, /, **kwargs) -> Future:
         """
         ...
 
         Args:
-            fn:
+            fn (typing.Callable):
             *args:
             **kwargs:
 
@@ -20,5 +22,6 @@ class ControlPlane(t.Protocol):
 
         """
 
+    @abc.abstractmethod
     def shutdown(self) -> None:
-        """..."""
+        """Properly and safely shuts down a controller."""

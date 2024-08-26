@@ -144,7 +144,6 @@ def from_dict(data: GraphDict) -> tuple[list[Node], list[NodeLink]]:
             proxystore_id=node_data.get("proxystore_id", None),
             extra=node_data.get("extra", None),
         )
-
         nodes.append(node)
         for child_idx in node_data.get("children", []):
             edges.append((node_idx, child_idx))
@@ -153,6 +152,9 @@ def from_dict(data: GraphDict) -> tuple[list[Node], list[NodeLink]]:
 
 
 def from_edgelist(path: pathlib.Path | str) -> tuple[list[Node], list[NodeLink]]:
+    """
+    This function is not yet implemented.
+    """
     raise NotImplementedError()
 
 

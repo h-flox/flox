@@ -4,6 +4,9 @@ import pathlib
 
 import numpy as np
 
+from .engine.control.base import AbstractController
+from .engine.control.local import LocalController
+from .engine.control.serial import SerialController
 from .federation import SyncFederation, Topology
 from .federation.jobs.types import Result
 from .learning.modules import HasParameters
@@ -23,6 +26,20 @@ def load_topology(raw_data: Topology | pathlib.Path | str | dict):
             return Topology.from_adj_matrix(raw_data)
         case dict():
             return Topology.from_dict(raw_data)
+
+
+def load_controller(
+    controller_type: str,
+    **controller_config,
+) -> AbstractController:
+    match controller_type:
+        case "serial":
+            return SerialController(**controller_config)
+        case "local":
+            kind = controller_config.get("kind", "thread")
+            return LocalController(kind, **controller_config)
+        case _:
+            raise ValueError
 
 
 def federated_fit(

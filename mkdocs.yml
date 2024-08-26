@@ -132,7 +132,8 @@ plugins:
             show_root_full_path: yes
             show_signature_annotations: yes
             show_source: false
-            show_submodules: no
+            show_submodules: false
+            show_labels: true
             # summary: true
 
 
@@ -173,6 +174,7 @@ markdown_extensions:
 
       # Javascript for math typesetting
 extra_javascript:
+  - https://unpkg.com/browse/mermaid@11.0.2/dist/mermaid.min.js
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
