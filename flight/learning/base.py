@@ -43,7 +43,6 @@ class AbstractDataModule(abc.ABC):
             Data that will be used for training.
         """
 
-    @abc.abstractmethod
     def test_data(self, node: Node | None = None) -> Data | None:
         """
         The **testing data** returned by this data module.
@@ -54,8 +53,8 @@ class AbstractDataModule(abc.ABC):
         Returns:
             Data that will be used for training.
         """
+        return None
 
-    @abc.abstractmethod
     def valid_data(self, node: Node | None = None) -> Data | None:
         """
         The **validation data** returned by this data module.
@@ -66,8 +65,8 @@ class AbstractDataModule(abc.ABC):
         Returns:
             Data that will be used for validation.
         """
+        return None
 
-    # noinspection PyMethodMayBeStatic
     def size(self, node: Node | None = None, kind: DataKinds = "train") -> int | None:
         """
         If implemented, this should return the size of the dataset.

@@ -1,3 +1,3 @@
-from .proto import TransferProto
+from .base import AbstractTransfer
 
-__all__ = ["TransferProto"]
+__all__ = ["AbstractTransfer"]

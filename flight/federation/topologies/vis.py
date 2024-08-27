@@ -31,7 +31,7 @@ def draw(
     color_by_kind: bool = True,
     with_labels: bool = True,
     label_color: str = "white",
-    prog: str = "dot",
+    prog: str = "circo",
     node_kind_attrs: dict[NodeKind, dict[str, t.Any]] | None = None,
     show_axis_border: bool = False,
     ax: Axes | None = None,

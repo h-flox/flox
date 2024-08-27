@@ -4,16 +4,15 @@ import typing as t
 from concurrent.futures import Future
 
 from flight.engine.control.serial import SerialController
-from flight.engine.data.base import BaseTransfer
 
 if t.TYPE_CHECKING:
     from .control.base import AbstractController
-    from .data.proto import TransferProto
+    from .data.base import AbstractTransfer, BaseTransfer
 
 
 class Engine:
     control_plane: AbstractController
-    data_plane: TransferProto
+    data_plane: AbstractTransfer
 
     def __init__(self):
         self.control_plane = SerialController()

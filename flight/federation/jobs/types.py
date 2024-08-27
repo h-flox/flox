@@ -11,7 +11,7 @@ from flight.learning.modules.prototypes import Record
 from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
-    from flight.engine.data import TransferProto
+    from flight.engine.data import AbstractTransfer
     from flight.strategies import AggrStrategy, TrainerStrategy, WorkerStrategy
 
 
@@ -51,7 +51,7 @@ class AggrJobArgs:
     children: t.Iterable[Node]
     child_results: t.Iterable[Result]
     aggr_strategy: AggrStrategy
-    transfer: TransferProto
+    transfer: AbstractTransfer
 
 
 @dataclass(slots=True, frozen=True)
