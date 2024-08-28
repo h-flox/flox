@@ -1,8 +1,9 @@
 from collections.abc import Iterable
 
 from numpy import array
-from numpy.random import Generator, default_rng
+from numpy.random import Generator
 
+from flight.commons import random_generator
 from flight.federation.topologies.node import Node, NodeKind
 
 
@@ -11,7 +12,7 @@ def random_worker_selection(
     participation: float = 1.0,
     probabilistic: bool = False,
     always_include_child_aggregators: bool = True,
-    rng: Generator | None = None,
+    rng: Generator | int | None = None,
 ) -> list[Node]:
     """
     General call for worker selection that will then choose from probabilistic or
@@ -25,14 +26,14 @@ def random_worker_selection(
             fixed (False) selection will be used. Defaults to False.
         always_include_child_aggregators (bool, optional): In probabilistic selection,
             ensures whether all worker nodes are included. Defaults to True.
-        rng (Generator | None, optional): RNG object used for randomness,
-            numpy.random.default_rng will be used if None. Defaults to None.
+        rng (Generator | int | None, optional): Random number generator.
+            This is passed into [random_generator()][flight.commons.random_generator]
+            to create the random number generator. Defaults to `None`.
 
     Returns:
         list[Node]: The selected worker nodes.
     """
-    if rng is None:
-        rng = default_rng()
+    rng = random_generator(rng)
     if probabilistic:
         return prob_random_worker_selection(
             children, rng, participation, always_include_child_aggregators

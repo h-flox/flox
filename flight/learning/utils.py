@@ -14,33 +14,49 @@ from ..federation.topologies.node import Node, NodeID, NodeKind
 from .base import AbstractDataModule, Data
 
 if t.TYPE_CHECKING:
+    from torch.utils.data import Dataset
+
     FloatDouble: t.TypeAlias = tuple[float, float]
     FloatTriple: t.TypeAlias = tuple[float, float, float]
 
 
 class FederatedDataModule(AbstractDataModule):
     """
+    This class defines a DataModule that is split across worker nodes in a federation's
+    topology.
+
+    This is especially helpful for simulation-based federations that are run with
+    Flight. Rather than needing to manually define the logic to load data that is
+    sharded across workers in a federation, this class simply requires the original
+    dataset and the indices for training, testing, and validation data for each worker.
+
+    A good analogy for this class is to think of it as the federated version of
+    PyTorch's [`Subset`](https://pytorch.org/docs/stable/data.html#
+    torch.utils.data.Subset) class.
 
     Notes:
-        Currently, only supports PyTorch `Dataset` objects.
+        ==Currently, only supports PyTorch `Dataset` objects.==
 
     """
 
     def __init__(
         self,
-        dataset: Data,
+        dataset: Dataset,
         train_indices: t.Mapping[NodeID, t.Sequence[int]],
         test_indices: t.Mapping[NodeID, t.Sequence[int]] | None,
         valid_indices: t.Mapping[NodeID, t.Sequence[int]] | None,
-        *,
-        batch_size: int = 32,
+        **dataloader_kwargs,
     ) -> None:
         """
         Args:
-            dataset:
-            train_indices:
-            test_indices:
-            valid_indices:
+            dataset (Dataset): The dataset to split across workers.
+            train_indices (Dataset): The indices for the training data for
+                each worker.
+            test_indices (Dataset): The indices for the test data for each worker.
+            valid_indices (Dataset): The indices for the validation data for
+                each worker.
+            **dataloader_kwargs: Keyword arguments to pass to the `DataLoader` class
+                when calling `train_data()`, `valid_data()`, and `test_data()`.
 
         Throws:
             - `NotImplementedError`: If the dataset is not mappable.
@@ -50,8 +66,7 @@ class FederatedDataModule(AbstractDataModule):
         self.train_indices = train_indices
         self.test_indices = test_indices
         self.valid_indices = valid_indices
-
-        self.batch_size = batch_size
+        self.dataloader_kwargs = dataloader_kwargs
 
         try:
             self.dataset[0]
@@ -59,28 +74,10 @@ class FederatedDataModule(AbstractDataModule):
             pass
         except NotImplementedError as err:
             err.add_note(
-                "Your PyTorch `Dataset` must be mappable "
-                "(i.e., implements `__getitem__`)."
+                "Your PyTorch `Dataset` must be mappable (i.e., implements "
+                "`__getitem__`)."
             )
             raise err
-
-    def train_data(self, node: Node | NodeID | None = None) -> Data:
-        if isinstance(node, Node):
-            node_id = node.idx
-        elif isinstance(node, NodeID):
-            node_id = node
-        else:
-            try:
-                node_id = int(node)
-            except Exception as e:
-                e.add_note(
-                    f"`node` must be an instance of `Node` or `NodeID`, "
-                    f"got {type(node)}."
-                )
-
-        indices = self.train_indices[node_id]
-        subset = Subset(self.dataset, indices)
-        return DataLoader(subset, batch_size=self.batch_size)
 
     def __iter__(self) -> t.Iterator[tuple[NodeID, Data]]:
         """
@@ -102,6 +99,71 @@ class FederatedDataModule(AbstractDataModule):
         """
         return len(self.train_indices)
 
+    def __contains__(self, node_or_idx: Node | NodeID) -> bool:
+        """
+        Checks if a (worker) node exists in the federated data module.
+
+        Args:
+            node_or_idx (Node | NodeID): The node or node index to check exists in the
+                federated data module.
+
+        Returns:
+            `True` if the node exists in the federated data module; `False` otherwise.
+        """
+        if isinstance(node_or_idx, Node):
+            node_idx = node_or_idx.idx
+        elif isinstance(node_or_idx, NodeID):
+            node_idx = node_or_idx
+        else:
+            raise ValueError(
+                f"FedDataModule.__contains__ only accepts arguments of type "
+                f"`Node` or `NodeID`; got `{type(node_or_idx)}`."
+            )
+
+        return node_idx in self.train_indices
+
+    def _get_data(
+        self, node: Node | NodeID | None, indices: t.Mapping[NodeID, t.Sequence[int]]
+    ) -> DataLoader:
+        node_id = self._resolve_node(node)
+        subset = Subset(self.dataset, indices[node_id])
+        return DataLoader(subset, **self.dataloader_kwargs)
+
+    def train_data(self, node: Node | NodeID | None = None) -> DataLoader:
+        return self._get_data(node, self.train_indices)
+
+    def test_data(self, node: Node | NodeID | None = None) -> DataLoader | None:
+        if self.test_indices is None:
+            return None
+        else:
+            return self._get_data(node, self.test_indices)
+
+    def valid_data(self, node: Node | None = None) -> DataLoader | None:
+        if self.valid_indices is None:
+            return None
+        else:
+            return self._get_data(node, self.test_indices)
+
+    def _resolve_node(self, node_or_idx: Node | NodeID | None = None) -> NodeID:
+        if node_or_idx is None:
+            raise ValueError(
+                f"`node` argument for {self.__class__.__name__} cannot be `None`."
+            )
+        elif isinstance(node_or_idx, Node):
+            node_id = node_or_idx.idx
+        elif isinstance(node_or_idx, NodeID):
+            node_id = node_or_idx
+        else:
+            try:
+                node_id = int(node_or_idx)
+            except Exception as e:
+                e.add_note(
+                    f"`node` must be an instance of `Node` or `NodeID`, "
+                    f"got {type(node_or_idx)}."
+                )
+                raise e
+        return node_id
+
 
 def federated_split(
     topo: Topology,
@@ -109,9 +171,10 @@ def federated_split(
     num_labels: int,
     label_alpha: float,
     sample_alpha: float,
-    train_test_valid_split: FloatTriple | FloatDouble | None = None,  # TODO
+    train_test_valid_split: FloatTriple | FloatDouble | None = None,
     ensure_at_least_one_sample: bool = True,
     rng: np.random.Generator | int | None = None,
+    allow_overlapping_samples: bool = False,
 ) -> FederatedDataModule:
     """
     Splits a dataset across a federation of workers.
@@ -135,17 +198,48 @@ def federated_split(
             has at least 1 data sample; `False` if you want no such guarantee. It is
             generally encouraged to ensure at least 1 sample per worker.
         rng (numpy.random.Generator | int | None): Random number generator.
+        allow_overlapping_samples (bool): If `True`, this allows for samples that can
+            be shared across workers; `False` if you want no such sharing.
 
     Returns:
         A federated data module that where the originally provided dataset is now split
-        across the workers following a Dirichlet distribution along classes and samples.
+            across the workers following a Dirichlet distribution along classes and
+            samples.
 
     Examples:
-        >>> ...
+        >>> import torch
+        >>> from torch.utils.data import TensorDataset
+        >>> from flight.federation.topologies.utils import flat_topology
+        >>> from flight.learning.utils import federated_split
+        >>>
+        >>> topo = flat_topology(2)  # flat topology with 2 workers
+        >>> data = TensorDataset(
+        >>>     torch.tensor([1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]),
+        >>>     torch.tensor([0, 1, 0, 1, 0, 1, 0, 1, 0, 1]),
+        >>> )
+        >>> fed_data = federated_split(
+        >>>     topo, data, num_labels=2, label_alpha=1.0, sample_alpha=1.0, rng=1
+        >>> )
+        >>>
+        >>> node_id = next(iter(topo.workers))
+        >>> for mini_batch in fed_data.train_data(node_id):
+        >>>     print(mini_batch)
+        [tensor([1., 3., 5., 6., 7., 8., 9.]), tensor([0, 0, 0, 1, 0, 1, 0])]
 
     Notes:
-        This function assumes that the data is for classification-based tasks
-        (i.e., the data is trying to predict for a discrete set of classes/labels).
+        - This function assumes that the data is for classification-based tasks
+            (i.e., the data is trying to predict for a discrete set of classes/labels).
+        - The `sample_alpha` and `label_alpha` parameters must be greater than 0. The
+            smaller these values are, the less uniform the distribution of samples or
+            labels across workers; the larger these values are, the more uniform. For
+            instance, if `sample_alpha=0.1`, then there will be high variance in the
+            number of samples across each worker; whereas if `sample_alpha=1000.0`,
+            then the number of samples across workers will look very uniform. The
+            distribution of labels behaves similarly.
+        - It is worth experimenting with this function using the
+            [`fed_barplot`][flight.learning.utils.fed_barplot] function to visualize the
+            distribution of the federated data module.
+        - The `allow_overlapping_samples` feature is ==**not yet implemented**==.
 
     Throws:
         - `ValueError`: Is thrown in the case either of the `label_alpha` or
@@ -155,6 +249,7 @@ def federated_split(
             can occur depending on the values of `label_alpha` and `sample_alpha`.
         - `NotImplementedError`: Is thrown if the provided dataset does not have a
             length given by `__len__()`.
+        - `IndexError`: Is thrown if the label is of type `float`.
     """
     if label_alpha <= 0 or sample_alpha <= 0:
         raise ValueError(
@@ -262,22 +357,32 @@ def fed_barplot(
     fed_data: FederatedDataModule,
     num_labels: int,
     width: float = 0.5,
-    *,
     ax: Axes | None = None,
-    edgecolor: str | None = "black",
+    **kwargs,
 ):
     """
+    Plots the distribution of a `FederatedDataModule` instance as a stacked bar plot.
 
     Args:
-        fed_data:
-        num_labels:
-        width:
-        ax:
-        edgecolor:
+        fed_data (FederatedDataModule): Federated data module.
+        num_labels (int): Number of labels in the dataset.
+        width (float): Width of the bars.
+        ax (Axes | None): Axes object to draw onto. If `None` is provided, then one
+            will be created.
+        **kwargs: Keyword arguments to pass to the `ax.bar()` method.
 
     Returns:
+        Axes object that has distribution of federated data module plotted
+            as a stacked bar plot.
 
+    Throws:
+        - `ValueError`: If the number of labels is less than 1.
+        - `TypeError`: If the `fed_data` argument is not an instance of
+            `FederatedDataModule`.
     """
+
+    if num_labels < 1:
+        raise ValueError("The number of labels must be at least 1.")
 
     if not isinstance(fed_data, FederatedDataModule):
         raise TypeError(
@@ -307,7 +412,7 @@ def fed_barplot(
             width,
             bottom=bottom,
             label=label,
-            edgecolor=edgecolor,
+            **kwargs,
         )
         bottom += worker_count
 
