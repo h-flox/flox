@@ -186,3 +186,4 @@ cython_debug/
 #.idea/
 /out/
 examples/quickstart/out/
+Temp Notebook.ipynb
