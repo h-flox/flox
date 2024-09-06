@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import typing as t
 
 if t.TYPE_CHECKING:
@@ -18,13 +19,15 @@ class AggrStrategy(t.Protocol):
         """
         Callback to run at the start of a round.
         """
+        pass
 
+    @abc.abstractmethod
     def aggregate_params(
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
         children_params: t.Mapping[NodeID, Params],
-        **kwargs,
+        **kwargs: dict[str, t.Any],
     ) -> Params:
         """Callback that handles the model parameter aggregation step.
 
@@ -34,7 +37,7 @@ class AggrStrategy(t.Protocol):
                 aggregator node's children and their respective states.
             children_params (t.Mapping[NodeID, Params]): The model parameters of
                 the models to each respective child node.
-            **kwargs: Keyword arguments provided by users.
+            **kwargs (dict[str, t.Any]): Keyword arguments provided by users.
 
         Returns:
             The aggregated parameters to update the model at the current aggregator.
@@ -44,3 +47,4 @@ class AggrStrategy(t.Protocol):
         """
         Callback to run at the end of a round.
         """
+        pass

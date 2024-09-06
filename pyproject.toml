@@ -39,6 +39,11 @@ proxystore = ["proxystore"]
 docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]"]
 all = ["flox[dev,monitoring,proxystore]"]
 
+[tool.mypy]
+plugins = [
+    "numpy.typing.mypy_plugin"
+]
+
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",

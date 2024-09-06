@@ -50,10 +50,12 @@ class SyncFederation(Federation):
         self._when_to_aggr_cbk = all_futures_finished
         self._aggr_job = default_aggr_job
         self._pbar: tqdm | None = None
-        self._round_num: int | None = None
+        self._round_num: int = 0
 
     def start(self, rounds: int) -> list[Result]:
         results = []
+        self._round_num = 0
+
         for round_no in tqdm(range(rounds)):
             self._round_num = round_no
             res = self.federation_round(round_no)
@@ -106,7 +108,7 @@ class SyncFederation(Federation):
         Returns:
             The `Future` returned by the task launched on `node`.
         """
-        node: Node = self._resolve_node(node)
+        node = self._resolve_node(node)
         assert isinstance(node, Node)
 
         match node.kind:

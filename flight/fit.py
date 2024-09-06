@@ -9,8 +9,7 @@ from .engine.control.local import LocalController
 from .engine.control.serial import SerialController
 from .federation import SyncFederation, Topology
 from .federation.jobs.types import Result
-from .learning.modules import HasParameters
-from .learning.modules.prototypes import DataModuleProto
+from .learning.base import AbstractDataModule, AbstractModule
 from .strategies import Strategy
 from .strategies.impl import FedSGD
 
@@ -44,12 +43,13 @@ def load_controller(
 
 def federated_fit(
     topology: Topology | pathlib.Path | str | dict,
-    module: HasParameters,
-    data: DataModuleProto,
+    module: AbstractModule,
+    data: AbstractDataModule,
     rounds: int = 1,
     strategy: Strategy | str = "fedsgd",
     mode: str = "sync",
-) -> tuple[HasParameters, list[Result]]:
+    fast_dev_run: bool = False,
+) -> tuple[AbstractModule, list[Result]]:
     if strategy == "fedsgd":
         strategy = FedSGD()
     else:

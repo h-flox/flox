@@ -5,11 +5,11 @@ import typing as t
 import numpy as np
 
 if t.TYPE_CHECKING:
-    T = t.TypeVar("T")
+    from .types import T
 
 
 def proportion_split(
-    seq: t.Sequence[T], proportion: t.Sequence[float, ...]
+    seq: t.Sequence[T], proportion: t.Sequence[float]
 ) -> tuple[t.Sequence[T], ...]:
     """
     Split a sequence into multiple sequences based on proportions.
@@ -32,15 +32,26 @@ def proportion_split(
         ([0, 1, 2, 3, 4], [5, 6], [7, 8, 9])
 
     Throws:
+        - `ValueError`: If the number of proportions is greater than the number of
+            values in the sequence.
+        - `ValueError`: If the values in `proportion` argument are negative.
         - `ValueError`: If the values in `proportion` argument do not sum to 1.
     """
+    if len(proportion) > len(seq):
+        raise ValueError(
+            "Number of proportions cannot be greater than the number of values in "
+            "the sequence."
+        )
+    if any(p < 0 for p in proportion):
+        raise ValueError("Proportions must be non-negative.")
     if sum(proportion) != 1:
         raise ValueError("Proportions must sum to 1.")
 
     total = len(seq)
     splits = np.cumsum(np.array(proportion) * total).astype(int)
     splits = np.append(np.array([0]), splits)
-    return tuple(seq[splits[i - 1] : splits[i]] for i in range(1, len(splits)))  # noqa
+    gen = (seq[splits[i - 1] : splits[i]] for i in range(1, len(splits)))  # noqa
+    return tuple(gen)
 
 
 def random_generator(
@@ -53,7 +64,7 @@ def random_generator(
         rng (numpy.random.Generator | int | None): Random number generator.
 
     Returns:
-        numpy.random.Generator: Random number generator.
+        Random number generator.
 
     Notes:
         What is returned by this function depends on what is given to the `rng` arg:
@@ -62,10 +73,18 @@ def random_generator(
         2. If `rng` is an integer, it is used to seed the random number generator.
         3. If `rng` is `None`, then a pseudorandom  random number generator is
             returned using `numpy.random.default_rng(None)`.
+
+    Throws:
+        - `ValueError`: Is thrown if an illegal value type is passed in as an argument.
     """
-    if rng is None:
-        return np.random.default_rng()
-    elif isinstance(rng, int):
-        return np.random.default_rng(rng)
-    else:
-        return rng
+    match rng:
+        case np.random.Generator():
+            return rng
+        case int() | None:
+            return np.random.default_rng(rng)
+        case _:
+            raise ValueError(
+                f"Illegal value type for arg `rng`; expected a "
+                f"`numpy.random.Generator`, int, or `None`, got "
+                f"{type(rng)}."
+            )

@@ -5,7 +5,7 @@ import lightning.pytorch as PL
 from lightning_utilities.core.rank_zero import log as device_logger
 from torch.utils.data import DataLoader
 
-from ...federation.topologies.node import Node
+from flight.federation.topologies.node import Node
 
 _OUT_DICT: t.TypeAlias = t.Any
 _PATH: t.TypeAlias = t.Any

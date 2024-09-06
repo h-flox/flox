@@ -6,11 +6,9 @@ from sklearn.neural_network import MLPRegressor, MLPClassifier
 
 from flight.federation.topologies.node import Node, NodeKind
 from flight.learning.metrics import InMemoryRecordLogger
-from flight.learning.modules.prototypes import DataModuleProto
-from flight.learning.modules.scikit import ScikitTrainable
-from flight.learning.trainers.scikit import ScikitTrainer
+from flight.learning.scikit import ScikitDataModule, ScikitModule, ScikitTrainer
 
-# Seed for random number generation for data resusability
+# Seed for random number generation for data reusability
 SEED = 9
 
 
@@ -21,9 +19,10 @@ def node() -> Node:
 
 
 @pytest.fixture
-def data_scikit_cls() -> type[DataModuleProto]:
-    class MySciKitDataModule:
+def data_scikit_cls() -> type[ScikitDataModule]:
+    class MySciKitDataModule(ScikitDataModule):
         def __init__(self) -> None:
+            super().__init__()
             self.num_samples = 10_000
             self.num_features = 1
 
@@ -38,20 +37,20 @@ def data_scikit_cls() -> type[DataModuleProto]:
             )
 
         def train_data(self, node: Node | None = None):
-            return (self.x_train, self.y_train)
+            return self.x_train, self.y_train
 
         def test_data(self, node: Node | None = None):
-            return (self.x_test, self.y_test)
+            return self.x_test, self.y_test
 
         def valid_data(self, node: Node | None = None):
-            return (self.x_val, self.y_val)
+            return self.x_val, self.y_val
 
     return MySciKitDataModule
 
 
 @pytest.fixture
-def data_classification_scikit() -> type[DataModuleProto]:
-    class MyClassificationModule:
+def data_classification_scikit() -> type[ScikitDataModule]:
+    class MyClassificationDataModule(ScikitDataModule):
         def __init__(self):
             inputs, labels = make_classification(
                 n_samples=10000, n_features=20, random_state=SEED
@@ -70,20 +69,21 @@ def data_classification_scikit() -> type[DataModuleProto]:
         def valid_data(self, node: Node | None = None):
             return self.x_test, self.y_test
 
-    return MyClassificationModule
+    return MyClassificationDataModule
 
 
 class TestSciKitTrainer:
     def test_scikit_trainer(self, node, data_scikit_cls):
         """
-        Tests a basic setup of using the `LightningTrainer` class for PyTorch-based models.
+        Tests a basic setup of using the `LightningTrainer` class for
+        PyTorch-based models.
         """
         model_instance = MLPRegressor()
-        model = ScikitTrainable(model_instance)
+        model = ScikitModule(model_instance)
         data = data_scikit_cls()
-        trainer = ScikitTrainer(node, False)
+        trainer = ScikitTrainer(node, partial=False)
 
-        assert isinstance(model, ScikitTrainable)
+        assert isinstance(model, ScikitModule)
         assert isinstance(trainer, ScikitTrainer)
 
         trainer.fit(model, data)
@@ -93,10 +93,10 @@ class TestSciKitTrainer:
         Tests that no errors occur during basic model fitting.
         """
         model_instance = MLPRegressor()
-        model = ScikitTrainable(model_instance)
+        model = ScikitModule(model_instance)
         data = data_scikit_cls()
 
-        trainer = ScikitTrainer(node=node, partial=False, log_every_n_steps=10)
+        trainer = ScikitTrainer(node=node, partial=False)
 
         trainer.fit(model, data)
         assert True
@@ -106,42 +106,49 @@ class TestSciKitTrainer:
         Tests that no errors occur during basic model testing.
         """
         model_instance = MLPRegressor()
-        model = ScikitTrainable(model_instance)
+        model = ScikitModule(model_instance)
         data = data_scikit_cls()
 
-        trainer = ScikitTrainer(node=node, partial=False, log_every_n_steps=10)
+        trainer = ScikitTrainer(node=node, partial=False)
 
         trainer.fit(model, data)
 
-        records = trainer.test(model, data)
-        assert isinstance(records, float)
+        result = trainer.test(model, data)
+        assert isinstance(result, list)
 
     def test_scikit_val(self, node, data_scikit_cls):
         """
         Tests that no errors occur during basic model validation.
         """
         model_instance = MLPRegressor()
-        model = ScikitTrainable(model_instance)
+        model = ScikitModule(model_instance)
         data = data_scikit_cls()
 
-        trainer = ScikitTrainer(node=node, partial=False, log_every_n_steps=10)
+        trainer = ScikitTrainer(
+            node=node,
+            partial=False,
+            # log_every_n_steps=10
+        )
 
         trainer.fit(model, data)
 
         records = trainer.validate(model, data)
-        assert isinstance(records, dict)
+        assert isinstance(records, list)
 
     def test_scikit_fit(self, node, data_classification_scikit):
         """
-        Tests that a 'SciKitTrainable' can train a classifier on some classification dataset.
+        Tests that a 'SciKitTrainable' can train a classifier on some
+        classification dataset.
         """
         logger = InMemoryRecordLogger()
         model_instance = MLPClassifier()
-        model = ScikitTrainable(model_instance)
+        model = ScikitModule(model_instance)
         data = data_classification_scikit()
 
         trainer = ScikitTrainer(
-            node=node, partial=True, log_every_n_steps=5, logger=logger
+            node=node,
+            partial=True,
+            # log_every_n_steps=5, logger=logger
         )
 
         trainer.fit(model, data)

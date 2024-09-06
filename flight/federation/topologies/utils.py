@@ -48,9 +48,8 @@ def flat_topology(n: int, **kwargs) -> Topology:
 
     workers = list(range(1, n + 1))
     data = {0: dict(kind="coordinator", children=workers)}
-    data.update(
-        {i: dict(kind="worker", children=[], extra=dict(**kwargs)) for i in workers}
-    )
+    for i in workers:
+        data[i] = {"kind": "worker", "children": [], "extra": dict(**kwargs)}
     return Topology.from_dict(data)
 
 
@@ -151,18 +150,19 @@ def hierarchical_topology(
 
     def _choose_parents(
         _tree: nx.DiGraph,
-        children: t.Sequence[NodeID],
-        parents: t.Sequence[NodeID],
+        _children: t.Sequence[NodeID],
+        _parents: t.Sequence[NodeID],
+        _rng: np.random.Generator,
     ):
-        children_without_parents = [child for child in children]
+        children_without_parents = [child for child in _children]
 
-        for parent in parents:
-            child = rng.choice(children_without_parents)
+        for parent in _parents:
+            child = _rng.choice(children_without_parents)
             children_without_parents.remove(child)
             tree.add_edge(parent, child)
 
         for child in children_without_parents:
-            parent = rng.choice(parents)
+            parent = _rng.choice(_parents)
             tree.add_edge(parent, child)
 
     # Begin constructing the tree to build the `Topology` instance.
@@ -205,10 +205,10 @@ def hierarchical_topology(
             curr_aggrs.append(aggr_idx)
             aggr_idx += 1
 
-        _choose_parents(tree, curr_aggrs, last_aggrs)
+        _choose_parents(tree, curr_aggrs, last_aggrs, rng)
         last_aggrs = curr_aggrs
 
-    _choose_parents(tree, workers, last_aggrs)
+    _choose_parents(tree, workers, last_aggrs, rng)
 
     return Topology.from_networkx(tree)
 

@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
         NodeState,
         WorkerState,
     )
-    from flight.learning.modules.prototypes import DataModuleProto
+    from flight.learning.base import AbstractDataModule
     from flight.learning.types import Params
 
 
@@ -78,8 +78,10 @@ class FedAvgWorker(DefaultWorkerStrategy, _FedAvgConstMixins):
     """The worker for 'FedAvg' and its respective methods."""
 
     def before_training(
-        self, state: WorkerState, data: DataModuleProto
-    ) -> tuple[WorkerState, DataModuleProto]:
+        self,
+        state: WorkerState,
+        data: AbstractDataModule,
+    ) -> tuple[WorkerState, AbstractDataModule]:
         """Callback to run before the current nodes training.
 
         Args:

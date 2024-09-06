@@ -7,10 +7,10 @@ from proxystore.proxy import Proxy
 
 from flight.federation.topologies.node import Node, NodeState, WorkerState
 from flight.learning.base import AbstractDataModule, AbstractModule
-from flight.learning.modules.prototypes import Record
 from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
+    from flight.types import Record
     from flight.engine.data import AbstractTransfer
     from flight.strategies import AggrStrategy, TrainerStrategy, WorkerStrategy
 
@@ -48,8 +48,8 @@ class AggrJobArgs:
     # fut: Future
     round_num: int
     node: Node
-    children: t.Iterable[Node]
-    child_results: t.Iterable[Result]
+    children: t.Sequence[Node]
+    child_results: t.Sequence[Result]
     aggr_strategy: AggrStrategy
     transfer: AbstractTransfer
 
@@ -66,8 +66,8 @@ class TrainJobArgs:
     node: Node
     parent: Node
     node_state: WorkerState
-    model: AbstractModule | None  # TorchModule | None
-    data: AbstractDataModule  # TorchDataModule  # DataLoadable
+    model: AbstractModule | None
+    data: AbstractDataModule
     worker_strategy: WorkerStrategy
     trainer_strategy: TrainerStrategy
 

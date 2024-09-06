@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pydantic as pyd
 
-from flight.learning.base import AbstractDataModule
+from flight.learning import AbstractDataModule, AbstractModule
 
 NodeID: t.TypeAlias = t.Union[int, str]
 """
@@ -188,11 +188,11 @@ class AggrState(NodeState):
 
     Args:
         children (t.Iterable[Node]): Child nodes in the topology.
-        aggr_model (AbstractDataModule | None): Aggregated model.
+        aggr_model (AbstractModule | None): Aggregated model.
     """
 
-    children: t.Iterable[Node]
-    aggr_model: AbstractDataModule | None = None
+    children: t.Sequence[Node]
+    aggr_model: AbstractModule | None = None
 
 
 @dataclass

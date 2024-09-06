@@ -14,6 +14,7 @@ class TrainerStrategy(t.Protocol):
     Flight and those defined by users.
     """
 
+    # noinspection PyMethodMayBeStatic
     def hparams(
         self,
         node: Node | None = None,
@@ -28,13 +29,19 @@ class TrainerStrategy(t.Protocol):
         values for smarter, more complex FL heuristics/algorithms.
 
         Args:
-            node:
-            state:
+            node (Node | None): The `Node` hyperparameters are loaded on. This can be
+                used for an implementation of this method to use node-specific logic
+                or take advantage of the node's `extra` cache to inform hyperparameters.
+            state (WorkerState | None): The state of the current worker node.
 
         Returns:
-
+            Trainer hyperparameters. What key-value pairs are returned will need to
+            depend on the trainer users plan to use for federations. The default
+            behavior of this method is to return an empty dictionary.
         """
+        return {}
 
+    # noinspection PyMethodMayBeStatic
     def before_backprop(
         self,
         state: WorkerState,
@@ -50,7 +57,9 @@ class TrainerStrategy(t.Protocol):
         Returns:
             Loss after running the callback.
         """
+        return out
 
+    # noinspection PyMethodMayBeStatic
     def after_backprop(
         self,
         state: WorkerState,
@@ -66,3 +75,4 @@ class TrainerStrategy(t.Protocol):
         Returns:
             Loss after running the callback.
         """
+        return out

@@ -6,11 +6,7 @@ import typing as t
 if t.TYPE_CHECKING:
     from ..federation.topologies import Node
     from ..types import Record
-    from .types import Params
-
-Data = t.TypeVar("Data")
-DataKinds = t.Literal["train", "test", "validation"]
-FrameworkKind = t.Literal["lightning", "scikit", "torch"]
+    from .types import Data, DataKinds, FrameworkKind, Params
 
 
 class AbstractDataModule(abc.ABC):
@@ -85,20 +81,31 @@ class AbstractDataModule(abc.ABC):
 class AbstractModule(abc.ABC):
     @abc.abstractmethod
     def get_params(self) -> Params:
-        """TODO"""
-        pass
+        """
+        Getter method for the parameters of a trainable module (i.e., neural network).
+
+        Returns:
+            The parameters of the module.
+        """
 
     @abc.abstractmethod
     def set_params(self, params: Params) -> None:
-        """TODO"""
-        pass
+        """
+        Setter method for the parameters of a trainable module (i.e., neural network).
+
+        Args:
+            params (Params): The parameters to set.
+        """
 
     @abc.abstractmethod
     def kind(self) -> FrameworkKind:
         """
+        Getter method for the kind of framework this module is based on.
+
+        This is an attribute that will be set by any subclass of this abstract class.
 
         Returns:
-
+            The kind of framework this module is based on.
         """
 
 
@@ -108,14 +115,42 @@ class AbstractTrainer(abc.ABC):
 
     @abc.abstractmethod
     def fit(self, module: AbstractModule, data: AbstractDataModule) -> list[Record]:
-        """TODO"""
+        """
+        Fits (or trains) a module on a given data module.
+
+        Args:
+            module (AbstractModule): The module to fit.
+            data (AbstractDataModule): The data module to use for training.
+
+        Returns:
+            A list of records containing the results of the training.
+        """
 
     @abc.abstractmethod
     def test(self, module: AbstractModule, data: AbstractDataModule) -> list[Record]:
-        """TODO"""
+        """
+        Tests a module on a given data module by loading its testing data.
+
+        Args:
+            module (AbstractModule): The module to test
+            data (AbstractDataModule): The data module to use for testing.
+
+        Returns:
+            A list of records containing the results of the testing.
+        """
 
     @abc.abstractmethod
     def validate(
         self, module: AbstractModule, data: AbstractDataModule
     ) -> list[Record]:
-        """TODO"""
+        """
+        Validates (or evaluates) a module on a given data module by loading its
+        validation data.
+
+        Args:
+            module (AbstractModule): The module to validate.
+            data (AbstractDataModule): The data module to use for validation.
+
+        Returns:
+            A list of records containing the results of the validation.
+        """

@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 from ..federation.topologies.node import WorkerState
 from ..strategies import TrainerStrategy
 from ..types import Record
-from .base import AbstractDataModule, AbstractModule, DataKinds, FrameworkKind
-from .types import LocalStepOutput, Params
+from .base import AbstractDataModule, AbstractModule
+from .types import DataKinds, FrameworkKind, LocalStepOutput, Params
 
 if t.TYPE_CHECKING:
     from ..federation.topologies import Node
@@ -155,36 +155,79 @@ class TorchModule(AbstractModule, nn.Module):
     ####################################################################################
 
     # noinspection PyMethodMayBeStatic
+    @t.final
     def kind(self) -> FrameworkKind:
         return "torch"
 
-    def get_params(self) -> Params:
+    def get_params(self, to_numpy: bool = True) -> Params:
+        """
+        Getter method for the parameters of a trainable module (i.e., neural network)
+        implemented in PyTorch.
+
+        Args:
+            to_numpy (bool): Flag to convert the parameters to numpy arrays. Defaults
+                to `True`.
+
+        Returns:
+            The parameters of the module.
+
+        Notes:
+            We recommend not changing the `to_numpy` flag unless you are sure of what
+            you are doing. The default value is set to `True` to allow for standard
+            mathematical operations in aggregation functions across different
+            frameworks.
+        """
+
+        def _parse_params(pair: tuple[str, torch.Tensor]):
+            """
+            Helper hidden function that converts parameters to NumPy `ndarray`s if
+            specified by the `get_params` arg.
+            """
+            if to_numpy:
+                return pair[0], pair[1].data.numpy()
+            else:
+                return pair[0], pair[1].data
+
         state_dict = self.state_dict()
         if self.include_state:
-            return state_dict
+            return OrderedDict(_parse_params(items) for items in state_dict.items())
         else:
             param_names = dict(self.named_parameters())
             return OrderedDict(
-                [
-                    (name, value.data)
-                    for (name, value) in state_dict.items()
-                    if name in param_names
-                ]
+                _parse_params((name, value))
+                for (name, value) in state_dict.items()
+                if name in param_names
             )
 
     def set_params(self, params: Params) -> None:
-        if self.include_state:
-            self.load_state_dict(
-                params,
-                strict=True,
-                assign=False,
-            )
-        else:
-            self.load_state_dict(
-                params,
-                strict=False,
-                assign=False,
-            )
+        """
+        Setter method for the parameters of a trainable module (i.e., neural network)
+        implemented in PyTorch.
+
+        Args:
+            params (Params): The parameters to set.
+
+        Throws:
+            An `Exception` can be thrown. if the parameter cannot be converted to a
+                PyTorch `Tensor`.
+        """
+
+        def _parse_params(pair: tuple[str, torch.Tensor]):
+            """
+            Helper hidden function that converts parameters to PyTorch `Tensor`s if
+            specified by the `get_params` arg.
+            """
+            if isinstance(pair[1], torch.Tensor):
+                return pair[0], pair[1]
+            try:
+                return pair[0], torch.tensor(pair[1])
+            except Exception as err:
+                err.add_note("Failed to convert parameter to PyTorch `Tensor`.")
+                raise err
+
+        strict = self.include_state
+        new_params = OrderedDict(_parse_params(items) for items in params.items())
+        return self.load_state_dict(new_params, strict=strict, assign=False)
 
     ####################################################################################
 
@@ -240,7 +283,6 @@ class TorchModule(AbstractModule, nn.Module):
         Raises:
             - `NotImplementedError`: If the method is not implemented.
         """
-        # TODO: Revise pydoctstrings.
         raise NotImplementedError()
 
     def test_step(self, *args: t.Any, **kwargs) -> LocalStepOutput:
@@ -454,15 +496,17 @@ class TorchTrainer:
         for batch_idx, batch in enumerate(dataloader):
             batch = self._batch_to_device(batch)
             loss = model.validation_step(batch, batch_idx)
-
-            self._results.append(
-                {
-                    "epoch": epoch,
-                    "valid/loss": loss.item(),
-                    "valid/batch_idx": batch_idx,
-                    "valid/step": self._curr_step,
-                }
-            )
+            if loss is not None:
+                self._results.append(
+                    {
+                        "epoch": epoch,
+                        "valid/loss": loss.item(),
+                        "valid/batch_idx": batch_idx,
+                        "valid/step": self._curr_step,
+                    }
+                )
+            else:
+                pass
 
             if pbar is not None:
                 pbar.update()
@@ -478,7 +522,6 @@ class TorchTrainer:
                 pass
             items.append(item)
         return tuple(items)
-        # return tuple(item.to(self._device) for item in batch)
 
     @staticmethod
     def _set_train_mode(model: TorchModule, train_mode: bool = True) -> None:

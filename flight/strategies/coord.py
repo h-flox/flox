@@ -33,3 +33,4 @@ class CoordStrategy(t.Protocol):
         Returns:
             The selected worker nodes.
         """
+        return list(workers)

@@ -8,6 +8,8 @@ from .base import AbstractController
 if t.TYPE_CHECKING:
     from concurrent.futures import Executor
 
+    from flight.types import P, T
+
 
 class LocalController(AbstractController):
     """
@@ -30,7 +32,7 @@ class LocalController(AbstractController):
             case "thread":
                 self.executor = ThreadPoolExecutor(**executor_kwargs)
 
-    def __call__(self, fn: t.Callable, /, **kwargs) -> Future:
+    def __call__(self, fn: t.Callable[P, T], /, **kwargs) -> Future[T]:  # noqa
         return self.executor.submit(fn, **kwargs)
 
     def shutdown(self):

@@ -4,56 +4,49 @@ import dataclasses
 import functools
 import typing as t
 
-from flight.learning.base import AbstractDataModule
 from flight.strategies.aggr import AggrStrategy
-from flight.strategies.commons.averaging import average_state_dicts
+from flight.strategies.commons import average_state_dicts
 from flight.strategies.coord import CoordStrategy
 from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-StrategyType: t.TypeAlias = (
+StrategyTypes: t.TypeAlias = (
     WorkerStrategy | AggrStrategy | CoordStrategy | TrainerStrategy
 )
 
 if t.TYPE_CHECKING:
-    import torch
-    from numpy.random import Generator
-
-    from flight.federation.jobs.types import Result
-    from flight.federation.topologies.node import (
-        AggrState,
-        Node,
-        NodeID,
-        NodeState,
-        WorkerState,
-    )
-    from flight.learning.types import LocalStepOutput, Params
+    from flight.federation.topologies.node import AggrState, NodeID, NodeState
+    from flight.learning.types import Params
 
 
-class DefaultCoordStrategy:
+class DefaultCoordStrategy(CoordStrategy):
     """Default implementation of the strategy for a coordinator."""
 
-    def select_workers(
-        self, state: NodeState, workers: t.Iterable[Node], rng: Generator
-    ) -> t.Sequence[Node]:
-        """Method used for the selection of workers.
+    # def select_workers(
+    #     self, state: NodeState, workers: t.Iterable[Node], rng: Generator
+    # ) -> t.Sequence[Node]:
+    #     """Method used for the selection of workers.
+    #
+    #     Args:
+    #         state (NodeState): The state of the coordinator node.
+    #         workers (t.Iterable[Node]): Iterable object containing all the worker
+    #           nodes.
+    #         rng (Generator): RNG object used for randomness.
+    #
+    #     Returns:
+    #         Worker nodes selected to participate in a federation round.
+    #     """
+    #     return list(workers)
 
-        Args:
-            state (NodeState): The state of the coordinator node.
-            workers (t.Iterable[Node]): Iterable object containing all the worker nodes.
-            rng (Generator): RNG object used for randomness.
 
-        Returns:
-            Worker nodes selected to participate in a federation round.
-        """
-        return list(workers)
-
-
-class DefaultAggrStrategy:
+class DefaultAggrStrategy(AggrStrategy):
     """Default implementation of the strategy for an aggregator."""
 
-    def start_round(self):
-        pass
+    # def start_round(self):
+    #     """
+    #     Callback to run at the start of a round.
+    #     """
+    #     pass
 
     def aggregate_params(
         self,
@@ -77,112 +70,116 @@ class DefaultAggrStrategy:
         """
         return average_state_dicts(children_params, weights=None)
 
-    def end_round(self):
-        pass
+    # def end_round(self):
+    #     """
+    #     Callback to run at the end of a round.
+    #     """
+    #     pass
 
 
-class DefaultWorkerStrategy:
+class DefaultWorkerStrategy(WorkerStrategy):
     """Default implementation of the strategy for a worker"""
 
-    def start_work(self, state: WorkerState) -> WorkerState:
-        """Callback that is run at the start of the current worker node's work.
+    # def start_work(self, state: WorkerState) -> WorkerState:
+    #     """Callback that is run at the start of the current worker node's work.
+    #
+    #     Args:
+    #         state (WorkerState): The state of the current worker node.
+    #
+    #     Returns:
+    #         WorkerState: The state of the current worker node at the end
+    #             of the callback.
+    #     """
+    #     return state
+    #
+    # def before_training(
+    #     self,
+    #     state: WorkerState,
+    #     data: AbstractDataModule,  # TODO: Refactor later?
+    # ) -> tuple[WorkerState, AbstractDataModule]:
+    #     """Callback that is run before training.
+    #
+    #     Args:
+    #         state (WorkerState): The state of the current worker node.
+    #         data (AbstractDataModule): The data associated with the current worker
+    #           node.
+    #
+    #     Returns:
+    #         tuple[NodeState, Params]: A tuple containing the state and data of the
+    #             worker node at the end of the callback.
+    #     """
+    #     return state, data
+    #
+    # def after_training(
+    #     self,
+    #     state: WorkerState,
+    #     optimizer: torch.optim.Optimizer,
+    # ) -> WorkerState:
+    #     """Callback that is run after training.
+    #
+    #     Args:
+    #         state (WorkerState): The state of the current worker node.
+    #         optimizer (torch.optim.Optimizer): The PyTorch optimizer to be used.
+    #
+    #     Returns:
+    #         NodeState: The state of the worker node at the end of the callback.
+    #     """
+    #     return state
+    #
+    # def end_work(self, result: Result) -> Result:
+    #     """Callback to be run at the end of the work.
+    #
+    #     Args:
+    #         result (Result): A Result object used to represent the result of the local
+    #             training on the current worker node.
+    #
+    #     Returns:
+    #         Result: The result of the worker nodes local training.
+    #     """
+    #     return result
 
-        Args:
-            state (WorkerState): The state of the current worker node.
 
-        Returns:
-            WorkerState: The state of the current worker node at the end
-                of the callback.
-        """
-        return state
-
-    def before_training(
-        self,
-        state: WorkerState,
-        data: AbstractDataModule,  # TODO: Refactor later?
-    ) -> tuple[WorkerState, Params]:
-        """Callback that is run before training.
-
-        Args:
-            state (WorkerState): The state of the current worker node.
-            data (Params): The data associated with the current worker node.
-
-        Returns:
-            tuple[NodeState, Params]: A tuple containing the state and data of the
-                worker node at the end of the callback.
-        """
-        return state, data
-
-    def after_training(
-        self,
-        state: WorkerState,
-        optimizer: torch.optim.Optimizer,
-    ) -> WorkerState:
-        """Callback that is run after training.
-
-        Args:
-            state (WorkerState): The state of the current worker node.
-            optimizer (torch.optim.Optimizer): The PyTorch optimizer to be used.
-
-        Returns:
-            NodeState: The state of the worker node at the end of the callback.
-        """
-        return state
-
-    def end_work(self, result: Result) -> Result:
-        """Callback to be run at the end of the work.
-
-        Args:
-            result (Result): A Result object used to represent the result of the local
-                training on the current worker node.
-
-        Returns:
-            Result: The result of the worker nodes local training.
-        """
-        return result
-
-
-class DefaultTrainerStrategy:
+class DefaultTrainerStrategy(TrainerStrategy):
     """Default implementation of a strategy for the trainer."""
 
-    def hparams(
-        self,
-        node: Node | None = None,
-        state: WorkerState | None = None,
-    ) -> dict[str, t.Any]:
-        return {}
-
-    def before_backprop(
-        self,
-        state: WorkerState,
-        out: LocalStepOutput,
-    ) -> LocalStepOutput:
-        """Callback to run before backpropagation.
-
-        Args:
-            state (WorkerState): State of the current node.
-            out (LocalStepOutput): The calculated loss
-
-        Returns:
-            The loss at the end of the callback
-        """
-        return out
-
-    def after_backprop(
-        self,
-        state: WorkerState,
-        out: LocalStepOutput,
-    ) -> LocalStepOutput:
-        """Callback to run after backpropagation.
-
-        Args:
-            state (WorkerState): State of the current node.
-            out (LocalStepOutput): The calculated loss
-
-        Returns:
-            The loss at the end of the callback
-        """
-        return out
+    # def hparams(
+    #     self,
+    #     node: Node | None = None,
+    #     state: WorkerState | None = None,
+    # ) -> dict[str, t.Any]:
+    #     return {}
+    #
+    # def before_backprop(
+    #     self,
+    #     state: WorkerState,
+    #     out: LocalStepOutput,
+    # ) -> LocalStepOutput:
+    #     """Callback to run before backpropagation.
+    #
+    #     Args:
+    #         state (WorkerState): State of the current node.
+    #         out (LocalStepOutput): The calculated loss
+    #
+    #     Returns:
+    #         The loss at the end of the callback
+    #     """
+    #     return out
+    #
+    # def after_backprop(
+    #     self,
+    #     state: WorkerState,
+    #     out: LocalStepOutput,
+    # ) -> LocalStepOutput:
+    #     """Callback to run after backpropagation.
+    #
+    #     Args:
+    #         state (WorkerState): State of the current node.
+    #         out (LocalStepOutput): The calculated loss
+    #
+    #     Returns:
+    #         The loss at the end of the callback
+    #     """
+    #     return out
 
 
 @dataclasses.dataclass(frozen=True, repr=False)
@@ -214,8 +211,8 @@ class Strategy:
     on the worker node(s).
     """
 
-    def __iter__(self) -> t.Iterator[tuple[str, StrategyType]]:
-        items: list[tuple[str, StrategyType]] = [
+    def __iter__(self) -> t.Iterator[tuple[str, StrategyTypes]]:
+        items: list[tuple[str, StrategyTypes]] = [
             ("coord_strategy", self.coord_strategy),
             ("aggr_strategy", self.aggr_strategy),
             ("worker_strategy", self.worker_strategy),

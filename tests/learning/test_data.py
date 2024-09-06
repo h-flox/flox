@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pickle
 import typing as t
 
 import pytest
@@ -7,7 +8,7 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 from flight.federation.topologies import Node
-from flight.learning.modules.torch import TorchDataModule
+from flight.learning.torch import TorchDataModule
 
 NODE_DATA_PATH = "node_data_path"
 
@@ -33,7 +34,7 @@ class InMemoryDataModule(TorchDataModule):
         self.data = data
 
     def train_data(self, node: Node | None = None) -> DataLoader:
-        return DataLoader(self.data)
+        return DataLoader(self.data, shuffle=False)
 
 
 class DiscDataModule(TorchDataModule):
@@ -48,8 +49,8 @@ class DiscDataModule(TorchDataModule):
             root = self.root
 
         with open(root, "rb") as fp:
-            data = torch.load(fp)
-        return DataLoader(data)
+            data = pickle.load(fp)
+        return DataLoader(data, shuffle=False)
 
 
 class TestInMemoryData:
@@ -69,19 +70,25 @@ class TestDiscData:
     """
 
     def test_read_from_disc(self, data, tmp_path):
-        filename = tmp_path / "temp.pt"
+        filename = tmp_path / "temp.pkl"
         with open(filename, "wb") as fp:
-            torch.save(data, fp)
+            pickle.dump(data, fp)
 
         dataset = DiscDataModule(filename)
         assert isinstance(dataset, TorchDataModule)
         assert isinstance(dataset.train_data(), DataLoader)
 
+        first_batch = next(iter(dataset.train_data()))
+        assert first_batch[0].item() == 0
+
     def test_read_from_disc_with_node(self, node, data, tmp_path):
-        node[NODE_DATA_PATH] = tmp_path / "temp.pt"
+        node[NODE_DATA_PATH] = tmp_path / "temp.pkl"
         with open(node[NODE_DATA_PATH], "wb") as fp:
-            torch.save(data, fp)
+            pickle.dump(data, fp)
 
         dataset = DiscDataModule(root=None)
         assert isinstance(dataset, TorchDataModule)
         assert isinstance(dataset.train_data(node), DataLoader)
+
+        first_batch = next(iter(dataset.train_data(node)))
+        assert first_batch[0].item() == 0

@@ -6,7 +6,7 @@ from __future__ import annotations
 import collections as c
 import functools
 import typing as t
-from concurrent.futures._base import InvalidStateError
+from concurrent.futures._base import InvalidStateError  # noqa
 
 from flight.federation.jobs.types import AggrJobArgs
 

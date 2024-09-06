@@ -79,7 +79,7 @@ def default_training_job(args: TrainJobArgs) -> Result:
 
     # worker_strategy.before_training(node_state, data)
     # TODO: These needed calls (^^ and vv) to be included in the trainers!!
-    # worker_strategy.after_training(node_state)
+    # state, optimizer = worker_strategy.after_training(node_state)
 
     training_end = datetime.datetime.now()
 

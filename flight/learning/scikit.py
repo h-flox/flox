@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils._testing import ignore_warnings  # noqa
 
-from .base import AbstractDataModule, AbstractModule, AbstractTrainer, FrameworkKind
+from .base import AbstractDataModule, AbstractModule, AbstractTrainer
 
 if t.TYPE_CHECKING:
     from numpy.typing import ArrayLike
@@ -16,23 +16,48 @@ if t.TYPE_CHECKING:
 
     from ..federation.topologies import Node
     from ..types import Record
-    from .types import Params
-
-Number = t.TypeVar("Number", int, float)
+    from .types import FrameworkKind, Params
 
 
 class ScikitDataModule(AbstractDataModule):
-    @abc.abstractmethod
-    def train_data(self, node: Node | None = None) -> ArrayLike[Number]:
-        """TODO"""
+    WEIGHT_KEY_PREFIX: t.Final[str] = "weight"
+    BIAS_KEY_PREFIX: t.Final[str] = "bias"
 
     @abc.abstractmethod
-    def test_data(self, node: Node | None = None) -> ArrayLike[Number] | None:
-        """TODO"""
+    def train_data(self, node: Node | None = None) -> ArrayLike:
+        """
+        The **training data** returned by this data module.
+
+        Args:
+            node (Node | None): Node on which to load the data on. Defaults to `None`.
+
+        Returns:
+            Data that will be used for training.
+        """
 
     @abc.abstractmethod
-    def valid_data(self, node: Node | None = None) -> ArrayLike[Number] | None:
-        """TODO"""
+    def test_data(self, node: Node | None = None) -> ArrayLike | None:
+        """
+        The **testing data** returned by this data module.
+
+        Args:
+            node (Node | None): Node on which to load the data on. Defaults to `None`.
+
+        Returns:
+            Data that will be used for testing. If `None`, then no testing is done.
+        """
+
+    @abc.abstractmethod
+    def valid_data(self, node: Node | None = None) -> ArrayLike | None:
+        """
+        The **training data** returned by this data module.
+
+        Args:
+            node (Node | None): Node on which to load the data on. Defaults to `None`.
+
+        Returns:
+            Data that will be used for training. If `None`, then no validation is done.
+        """
 
 
 class ScikitModule(AbstractModule):
@@ -46,6 +71,7 @@ class ScikitModule(AbstractModule):
     ####################################################################################
 
     # noinspection PyMethodMayBeStatic
+    @t.final
     def kind(self) -> FrameworkKind:
         return "scikit"
 
@@ -79,7 +105,7 @@ class ScikitModule(AbstractModule):
         n = len(self.module.coefs_)
         if n != len(self.module.intercepts_):
             raise ValueError(
-                "ScikitTrainable - Inconsistent number of layers between "
+                "ScikitModule :: Inconsistent number of layers between "
                 "coefficients/weights and intercepts/biases."
             )
 
@@ -101,7 +127,16 @@ class ScikitTrainer(AbstractTrainer):
 
     @ignore_warnings(category=ConvergenceWarning)
     def fit(self, module: ScikitModule, data: ScikitDataModule) -> list[Record]:
-        """TODO"""
+        """
+        Fits (or trains) a Scikit-Learn module on a given data module.
+
+        Args:
+            module (ScikitModule): The module to fit.
+            data (ScikitDataModule): The data module to use for training.
+
+        Returns:
+            A list of records containing the results of the training.
+        """
         inputs, targets = data.train_data(self.node)
         if len(inputs) != len(targets):
             raise ValueError(
@@ -126,12 +161,31 @@ class ScikitTrainer(AbstractTrainer):
         return self._extract_records(module, mode="train")
 
     def test(self, module: ScikitModule, data: ScikitDataModule) -> list[Record]:
-        """TODO"""
-        pass
+        """
+        Tests a module on a given data module by loading its testing data.
+
+        Args:
+            module (ScikitModule): The module to test.
+            data (ScikitDataModule): The data module to use for testing.
+
+        Returns:
+            A list of records containing the results of the testing.
+        """
+        return []
 
     def validate(self, module: ScikitModule, data: ScikitDataModule) -> list[Record]:
-        """TODO"""
-        pass
+        """
+        Evaluates (or tests) a module on a given data module by loading its
+        validation data.
+
+        Args:
+            module (ScikitModule): The module to validate.
+            data (ScikitDataModule): The data module to use for validation.
+
+        Returns:
+            A list of records containing the results of the validation.
+        """
+        return []
 
     @staticmethod
     def _extract_records(

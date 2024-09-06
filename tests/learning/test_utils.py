@@ -18,8 +18,8 @@ def pair_topo():
 
 @pytest.fixture
 def simple_data() -> tuple[Dataset, NumberOfLabels]:
-    inputs = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
-    targets = torch.tensor([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+    inputs = torch.tensor([float(i) for i in range(1, 100 + 1)])
+    targets = torch.tensor([int(i % 2 == 0) for i in range(1, 100 + 1)])
     return TensorDataset(inputs, targets), 2
 
 

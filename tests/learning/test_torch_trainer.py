@@ -5,7 +5,7 @@ from torch import nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
 from flight.federation.topologies.node import Node, WorkerState
-from flight.learning.modules.torch import TorchDataModule
+from flight.learning.torch import TorchDataModule
 from flight.learning.torch import TorchModule, TorchTrainer
 from flight.strategies.base import DefaultTrainerStrategy
 

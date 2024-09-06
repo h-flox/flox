@@ -11,7 +11,8 @@ from torch.utils.data import DataLoader, Subset
 from ..commons import proportion_split, random_generator
 from ..federation import Topology
 from ..federation.topologies.node import Node, NodeID, NodeKind
-from .base import AbstractDataModule, Data
+from .torch import TorchDataModule
+from .types import Data
 
 if t.TYPE_CHECKING:
     from torch.utils.data import Dataset
@@ -20,7 +21,7 @@ if t.TYPE_CHECKING:
     FloatTriple: t.TypeAlias = tuple[float, float, float]
 
 
-class FederatedDataModule(AbstractDataModule):
+class FederatedDataModule(TorchDataModule):
     """
     This class defines a DataModule that is split across worker nodes in a federation's
     topology.
@@ -79,7 +80,7 @@ class FederatedDataModule(AbstractDataModule):
             )
             raise err
 
-    def __iter__(self) -> t.Iterator[tuple[NodeID, Data]]:
+    def __iter__(self) -> t.Iterator[tuple[NodeID, Dataset]]:
         """
         Returns an iterator over the workers and their respective datasets.
 
@@ -122,27 +123,27 @@ class FederatedDataModule(AbstractDataModule):
 
         return node_idx in self.train_indices
 
+    def train_data(self, node: Node | NodeID | None = None) -> DataLoader:
+        return self._get_data(node, self.train_indices)
+
+    def test_data(self, node: Node | NodeID | None = None) -> DataLoader | None:
+        if self.test_indices is not None:
+            return self._get_data(node, self.test_indices)
+        else:
+            return None
+
+    def valid_data(self, node: Node | None = None) -> DataLoader | None:
+        if self.valid_indices is not None:
+            return self._get_data(node, self.test_indices)
+        else:
+            return None
+
     def _get_data(
         self, node: Node | NodeID | None, indices: t.Mapping[NodeID, t.Sequence[int]]
     ) -> DataLoader:
         node_id = self._resolve_node(node)
         subset = Subset(self.dataset, indices[node_id])
         return DataLoader(subset, **self.dataloader_kwargs)
-
-    def train_data(self, node: Node | NodeID | None = None) -> DataLoader:
-        return self._get_data(node, self.train_indices)
-
-    def test_data(self, node: Node | NodeID | None = None) -> DataLoader | None:
-        if self.test_indices is None:
-            return None
-        else:
-            return self._get_data(node, self.test_indices)
-
-    def valid_data(self, node: Node | None = None) -> DataLoader | None:
-        if self.valid_indices is None:
-            return None
-        else:
-            return self._get_data(node, self.test_indices)
 
     def _resolve_node(self, node_or_idx: Node | NodeID | None = None) -> NodeID:
         if node_or_idx is None:
@@ -218,7 +219,7 @@ def federated_split(
         >>>     torch.tensor([0, 1, 0, 1, 0, 1, 0, 1, 0, 1]),
         >>> )
         >>> fed_data = federated_split(
-        >>>     topo, data, num_labels=2, label_alpha=1.0, sample_alpha=1.0, rng=1
+        >>>     topo, data, num_labels=2, label_alpha=1.0, sample_alpha=1.0, generator=1
         >>> )
         >>>
         >>> node_id = next(iter(topo.workers))
@@ -259,16 +260,17 @@ def federated_split(
         raise ValueError("The number of labels must be at least 1.")
 
     try:
-        train_data_len = len(data)
+        train_data_len = len(data)  # type: ignore
     except NotImplementedError as err:
         err.add_note("The provided dataset must have `__len__()` implemented.")
         raise err
 
-    rng: np.random.Generator = random_generator(rng)
-
+    generator = random_generator(rng)
     num_workers = topo.number_of_nodes(NodeKind.WORKER)
-    sample_distr = rng.dirichlet(np.full(num_workers, sample_alpha))
-    label_distr = rng.dirichlet(np.full(num_labels, label_alpha), size=num_workers)
+    sample_distr = generator.dirichlet(np.full(num_workers, sample_alpha))
+    label_distr = generator.dirichlet(
+        np.full(num_labels, label_alpha), size=num_workers
+    )
     num_samples = (sample_distr * train_data_len).astype(int)
 
     label_probs_per_worker = {}
@@ -303,7 +305,7 @@ def federated_split(
         probs_norm = probs_norm / probs_norm.sum()
 
         if len(temp_workers) > 0:
-            chosen_worker = rng.choice(temp_workers, p=probs_norm)
+            chosen_worker = generator.choice(temp_workers, p=probs_norm)
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
@@ -313,7 +315,7 @@ def federated_split(
         valid_indices = None
 
     elif len(train_test_valid_split) == 2:
-        train_indices, test_indices = ({} for _ in range(2))
+        train_indices, test_indices = dict(), dict()
         valid_indices = None
         for w_idx, w_indices in indices.items():
             train_split, test_split = proportion_split(
@@ -323,7 +325,7 @@ def federated_split(
             test_indices[w_idx] = test_split
 
     elif len(train_test_valid_split) == 3:
-        train_indices, test_indices, valid_indices = ({} for _ in range(3))
+        train_indices, test_indices, valid_indices = dict(), dict(), dict()
         for w_idx, w_indices in indices.items():
             train_split, test_split, valid_split = proportion_split(
                 w_indices, train_test_valid_split
@@ -394,11 +396,14 @@ def fed_barplot(
         label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
     }
 
-    for i, (_, worker_loader) in enumerate(fed_data):
-        for batch in worker_loader:
+    i = 0  # worker index -- we use this instead of the actual worker ID to start at 0
+    for node, _ in fed_data:
+        for batch in fed_data.train_data(node):
             _, labels = batch
             for label in labels:
                 label_counts_per_worker[label.item()][i] += 1
+
+        i += 1  # increment worker index
 
     if ax is None:
         fig, ax = plt.subplots()

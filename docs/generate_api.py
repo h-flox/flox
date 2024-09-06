@@ -11,21 +11,55 @@ reference_dir = "docs"
 excludes = [
     "fit.py",
     "fed_async.py",
-    # "fed_sync.py",
-    # "fed_abs.py",
+    "fed_sync.py",
+    "fed_abs.py",
 ]  # TODO: Change later.
 
 
-def sort_fn(p: Path) -> str:
-    # TODO: Adjust this such that directories are listed first and all other sorting
-    # is alphabetic.
-    if p.is_dir():
-        return "___" + str(p)
-    return str(p)
+def comparator(a: Path, b: Path):
+    are_siblings = a.parent == b.parent
+    if are_siblings:
+        alphabetically_first = sorted([a.stem, b.stem])[0]
+        return -1 if a.stem == alphabetically_first else 1
+    else:
+        return -1
 
 
-sorted_paths = sorted(Path(project_dir).rglob("**/*.py"), key=lambda x: -len(x.parents))
+def cmp_to_key(my_comparator):
+    """Convert a comparator function into a key class for sorting."""
+
+    class K:
+        def __init__(self, obj, *args):
+            self.obj = obj
+
+        def __lt__(self, other):
+            return my_comparator(self.obj, other.obj) < 0
+
+        def __gt__(self, other):
+            return my_comparator(self.obj, other.obj) > 0
+
+        def __eq__(self, other):
+            return my_comparator(self.obj, other.obj) == 0
+
+        def __le__(self, other):
+            return my_comparator(self.obj, other.obj) <= 0
+
+        def __ge__(self, other):
+            return my_comparator(self.obj, other.obj) >= 0
+
+        def __ne__(self, other):
+            return my_comparator(self.obj, other.obj) != 0
+
+    return K
+
+
+sorted_paths = sorted(
+    Path(project_dir).rglob("**/*.py"),
+    key=cmp_to_key(comparator),
+)
+
 for path in sorted_paths:
+    print(f"❯ Processing `{path}`...")
     skip = False
     for name in excludes:
         if name in str(path):
