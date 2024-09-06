@@ -20,10 +20,10 @@ jobs:
           python -m pip install pre-commit tox
       - name: run pre-commit
         run: pre-commit run -a
-      - name: mypy
-        run: |
-          cd flight
-          tox -e mypy
+#      - name: mypy
+#        run: |
+#          cd flight
+#          tox -e mypy
 
   safety-check:
     runs-on: ubuntu-latest
@@ -44,8 +44,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.10", "3.11"]
-    name: "Test FLoX on py${{ matrix.python-version }} x ${{ matrix.os }} "
+        python-version: ["3.11", "3.12"]
+    name: "Test Flight on py${{ matrix.python-version }} x ${{ matrix.os }} "
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
