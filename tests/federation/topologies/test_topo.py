@@ -6,7 +6,6 @@ from flight.federation.topologies.exceptions import TopologyException
 from flight.federation.topologies.node import NodeID, NodeKind
 from flight.federation.topologies.topo import Topology
 from flight.federation.topologies.types import GraphDict
-
 from .fixtures import three_tier_graph, two_tier_graph  # noqa: F401
 
 
@@ -60,7 +59,8 @@ def change_roles(
 
     if not all_disjoint(coords, aggrs, workers):
         raise ValueError(
-            "Overlapping node IDs for `change_roles` helper function in `TestInvalidTopologies` test."
+            "Overlapping node IDs for `change_roles` helper function in "
+            "`TestInvalidTopologies` test."
         )
 
     new_graph_dict = {}

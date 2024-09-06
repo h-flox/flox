@@ -10,7 +10,6 @@ import yaml
 from flight.federation.topologies.node import NodeID, NodeKind
 from flight.federation.topologies.topo import Topology
 from flight.federation.topologies.types import GraphDict
-
 from .fixtures import three_tier_graph, two_tier_graph  # noqa: F401
 
 
@@ -25,6 +24,37 @@ def subtest(topo: Topology, num_nodes: int, num_aggrs: int, num_workers: int):
     assert topo.number_of_nodes(NodeKind.COORD) == topo.number_of_nodes("coordinator")
     assert topo.number_of_nodes(NodeKind.AGGR) == topo.number_of_nodes("aggregator")
     assert topo.number_of_nodes(NodeKind.WORKER) == topo.number_of_nodes("worker")
+
+
+class TestAdjMatrixIO:
+    def test_valid_from_adj_matrix(self):
+        topo = Topology.from_adj_matrix(
+            [
+                [0, 1, 1],
+                [0, 0, 0],
+                [0, 0, 0],
+            ]
+        )
+        subtest(topo, num_nodes=3, num_aggrs=0, num_workers=2)
+
+        topo = Topology.from_adj_matrix(
+            [
+                [0, 1, 0],
+                [0, 0, 1],
+                [0, 0, 0],
+            ]
+        )
+        subtest(topo, num_nodes=3, num_aggrs=1, num_workers=1)
+
+    def test_invalid_from_adj_matrix(self):
+        with pytest.raises(ValueError):
+            Topology.from_adj_matrix(
+                [
+                    [0, 1, 1],
+                    [0, 0, 1],
+                    [0, 0, 0],
+                ]
+            )
 
 
 class TestDictionaryIO:

@@ -4,7 +4,8 @@ from .node import NodeID
 
 NodeLink: t.TypeAlias = tuple[NodeID, NodeID]
 """
-Type alias that represents an edge/link/connection between nodes in the graph defining the Flight `Topology`.
+Type alias that represents an edge/link/connection between nodes in the graph defining
+the Flight `Topology`.
 
 **Example:**
 ```python
@@ -17,8 +18,8 @@ link: NodeLink = (u, v)
 GraphDict: t.TypeAlias = t.Mapping[NodeID, t.Mapping[str, t.Any]]
 """
 A dictionary where each top-level key is the node ID (`str` or `int`) and the
-values are Mappings (e.g., `dict` or `collection.OrderedDict` objects) with `str` keys for each input into the `Node`
-class and the child Node IDs.
+values are Mappings (e.g., `dict` or `collection.OrderedDict` objects) with
+`str` keys for each input into the `Node` class and the child Node IDs.
 
 **Example:**
 ```python

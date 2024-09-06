@@ -1,13 +1,10 @@
-import typing as t
-
 import pytest
 import torch
 
+from flight.federation.topologies.node import NodeState
 from flight.strategies import (
     AggrStrategy,
     CoordStrategy,
-    DefaultStrategy,
-    NodeState,
     TrainerStrategy,
     WorkerStrategy,
 )
@@ -62,6 +59,6 @@ class TestValidFedAsync:
 
 class TestInvalidFedAsync:
     def test_invalid_alpha(self):
-        """Test inputing a value for alpha which is too large."""
+        """Test inputting a value for alpha which is too large."""
         with pytest.raises(AssertionError):
             fedasync = FedAsync(alpha=1.1)

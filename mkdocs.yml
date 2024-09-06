@@ -1,13 +1,12 @@
-site_name: FLoX
+site_name: Flight
 #site_url: https://flox.dev/
-repo_name: nathaniel-hudson/FLoX
-repo_url: https://github.com/nathaniel-hudson/FLoX
+repo_name: h-flox/FLoX
+repo_url: https://github.com/h-flox/FLoX
 
 
 ########################################################################################################################
 # NAVIGATION
 ########################################################################################################################
-
 
 nav:
   - Home:
@@ -16,31 +15,29 @@ nav:
       - home/globus_compute.md
       - home/proxystore.md
   - Getting Started:
-      - getting_started/index.md
+      - getting_started/quickstart.md
       - getting_started/topologies.md
       - Strategies:
-          - getting_started/strategies_depr/index.md
-          - getting_started/strategies_depr/what.md
-          - getting_started/strategies_depr/callbacks.md
-          - getting_started/strategies_depr/custom.md
+          - getting_started/strategies/index.md
+          - getting_started/strategies/what.md
+          - getting_started/strategies/callbacks.md
+          - getting_started/strategies/custom.md
   - FAQ: faq.md
   - Publications: publications/index.md
   - Docs: docs/
 
-
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
-
 copyright:
   Copyright &copy; 2022 - 2024 Globus Labs, University of Chicago.
 
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
 watch:
+  - docs/
+  - flight/
   - mkdocs.yml
   - README.md
-  - docs/
-  - flox/
-  - flight/
 
 extra:
   social:
@@ -94,7 +91,7 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      primary: black # indigo
+      primary: indigo # black
       accent: amber
 
 
@@ -122,19 +119,21 @@ plugins:
             - pytkdocs_tweaks.main()
           paths: [ flox ]
           load_external_modules: true
+          inherited_members: true
           options:
             docstring_section_style: spacy # list
             docstring_style: google
             group_by_category: true
-            inherited_members: yes
+            # inherited_members: yes
             line_length: 60
-            members_order: source # alphabetical
+            members_order: alphabetical  # source
             merge_init_into_class: yes
             separate_signature: yes
             show_root_full_path: yes
             show_signature_annotations: yes
             show_source: false
-            show_submodules: no
+            show_submodules: false
+            show_labels: true
             # summary: true
 
 
@@ -146,7 +145,7 @@ plugins:
 markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
       # Math typesetting
   - pymdownx.arithmatex:
@@ -169,12 +168,10 @@ markdown_extensions:
   - pymdownx.mark
   - footnotes
   - attr_list
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
 
       # Javascript for math typesetting
 extra_javascript:
+  - https://unpkg.com/browse/mermaid@11.0.2/dist/mermaid.min.js
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

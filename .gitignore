@@ -1,12 +1,14 @@
+demos/
 experiments/
 runinfo/
 notebooks/
 examples/
 **/logs.csv
 runs/
+screenlog.*
+
 # macOS system
 .DS_Store
-experiments/
 
 # Parsl-related directories/files to ignore.
 runinfo/

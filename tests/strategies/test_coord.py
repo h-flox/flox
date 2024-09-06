@@ -18,7 +18,7 @@ def test_worker_selection():
     """Tests both fix and probabilistic worker selection on five workers."""
     gen = default_rng()
     for _ in range(5):
-        children = create_children(numWorkers=5)
+        children = create_children(num_workers=5)
         # fixed random
         fixed_random = random_worker_selection(
             children,
@@ -42,10 +42,13 @@ def test_worker_selection():
 
 class TestInvalidFixedSelection:
     def test_fixed_random(self):
-        """Tests an invalid level of participation on fixed selection raises a 'ValueError'"""
+        """
+        Tests to ensure that an invalid level of participation on fixed selection
+        raises a `ValueError`.
+        """
         gen = default_rng()
 
-        children = create_children(numWorkers=5)
+        children = create_children(num_workers=5)
 
         with pytest.raises(ValueError):
             fixed_random = random_worker_selection(
@@ -57,7 +60,10 @@ class TestInvalidFixedSelection:
             )
 
     def test_fixed_random_mix(self):
-        """Tests an invalid level of participation on prob selection raises a 'ValueError'"""
+        """
+        Tests that ensures an invalid level of participation on prob selection
+        raises a `ValueError`.
+        """
         gen = default_rng()
 
         children = create_children(num_workers=1, num_aggrs=2)

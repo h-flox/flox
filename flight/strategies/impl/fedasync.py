@@ -12,34 +12,39 @@ from flight.strategies.base import (
 )
 
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import NodeID
-    from flight.strategies import NodeState, Params
+    from flight.federation.topologies.node import AggrState, NodeID, NodeState
+    from flight.learning.types import Params
 
 
 class FedAsyncAggr(DefaultAggrStrategy):
-    """The aggregator for 'FedAsync' and its respective methods.
-
-    Args:
-        DefaultAggrStrategy: The base class providing necessary methods for FedAsyncAggr.
-    """
+    """The aggregator for 'FedAsync' and its respective methods."""
 
     def __init__(self, alpha: float = 0.5):
+        """
+
+        Args:
+            alpha (float): The $\\alpha$ parameter from the `FedAsync` paper.
+        """
         assert 0.0 < alpha <= 1.0
         self.alpha = alpha
 
     def aggregate_params(
         self,
-        state: NodeState,
+        state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_state_dicts: t.Mapping[NodeID, Params],
+        children_params: t.Mapping[NodeID, Params],
         **kwargs,
     ) -> Params:
-        """Method used by aggregator nodes for aggregating the passed node state dictionary.
+        """
+        Method used by aggregator nodes for aggregating the passed node state
+        dictionary.
 
         Args:
-            state (NodeState): State of the current aggregator node.
-            children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states of the children.
-            children_state_dicts (t.Mapping[NodeID, Params]): Dictionary mapping each child to its values.
+            state (AggrState): State of the current aggregator node.
+            children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states
+                of the children.
+            children_params (t.Mapping[NodeID, Params]): Dictionary mapping each
+                child to its values.
             **kwargs: Key Word arguments provided by the user.
 
         Returns:
@@ -48,9 +53,10 @@ class FedAsyncAggr(DefaultAggrStrategy):
         last_updated = kwargs.get("last_updated_node", None)
         assert last_updated is not None
         assert isinstance(last_updated, int | str)
+        assert state.aggr_model is not None
 
-        global_model_params = state.global_model.state_dict()
-        last_updated_params = children_state_dicts[last_updated]
+        global_model_params = state.aggr_model.get_params()
+        last_updated_params = children_params[last_updated]
 
         aggr_params = []
         for param in global_model_params:
@@ -65,10 +71,11 @@ class FedAsyncAggr(DefaultAggrStrategy):
 
 
 class FedAsync(Strategy):
-    """Implementation of the FedAsync strategy, which uses default strategies for coordinator, workers, and trainer
-        and the 'FedAsyncAggr'.
+    """
+    Implementation of the FedAsync strategy, which uses default strategies for
+    coordinator, workers, and trainer and the 'FedAsyncAggr'.
 
-    Args:
+    Extends:
         Strategy: The base class providing the necessary attributes for 'FedAsync'.
     """
 

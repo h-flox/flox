@@ -9,14 +9,14 @@ GraphFixture = c.namedtuple("GraphFixture", ["graph", "stats"])
 
 @pytest.fixture
 def two_tier_graph() -> GraphFixture:
-    workers = range(1, 11)
+    workers = list(range(1, 11))
     graph = {
         0: {
             "kind": "coordinator",
             "globus_comp_id": None,
             "proxystore_id": None,
             "extra": None,
-            "children": list(workers),
+            "children": workers,
         }
     }
     for i in workers:

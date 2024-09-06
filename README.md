@@ -1,6 +1,9 @@
-# FLoX
+<img src="docs/graphics/flight-logo.png" style="max-width: 400px;">
 
-FLoX is a modular, easy-to-use federated learning framework built on top of Globus Compute,
+# Flight
+
+**Flight** (**F**ederated **L**earning **I**n **G**eneralized **H**ierarchical **T**opologies)
+is a modular, easy-to-use federated learning framework built on top of Globus Compute,
 a federated Function-as-a-Service platform.
 
 ## Installation
