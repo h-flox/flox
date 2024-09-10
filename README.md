@@ -1,4 +1,7 @@
 # FLoX
+
+[![CI/CD](https://github.com/h-flox/flox/actions/workflows/ci.yaml/badge.svg?branch=flight-refactor)](https://github.com/h-flox/flox/actions/workflows/ci.yaml)
+
 FLoX is a modular, easy-to-use federated learning framework built on top of Globus Compute, 
 a federated Function-as-a-Service platform.
 
