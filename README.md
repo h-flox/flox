@@ -1,6 +1,7 @@
 <img src="docs/graphics/flight-logo.png" style="max-width: 400px;">
 
 # Flight
+[![CI/CD](https://github.com/h-flox/flox/actions/workflows/ci.yaml/badge.svg?branch=flight-refactor)](https://github.com/h-flox/flox/actions/workflows/ci.yaml)
 
 **Flight** (**F**ederated **L**earning **I**n **G**eneralized **H**ierarchical **T**opologies)
 is a modular, easy-to-use federated learning framework built on top of Globus Compute,
