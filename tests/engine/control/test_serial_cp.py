@@ -1,35 +1,30 @@
 import pytest
 
-from flight.engine.control.serial import SerialController
+from testing.fixtures import serial_controller
 
 
-@pytest.fixture
-def controller() -> SerialController:
-    return SerialController()
+def fn_divide_by_zero(num: int | float) -> int | float:
+    return num / 0
 
 
-class TestSerialControlPane:
-    @staticmethod
-    def divide_by_zero(num: int | float) -> int | float:
-        return num / 0
+def fn_identity(num: int | float) -> int | float:
+    return num
 
-    @staticmethod
-    def identity(num: int | float) -> int | float:
-        return num
 
-    @staticmethod
-    def square(num: int | float) -> float:
-        return float(num * num)
+def fn_square(num: int | float) -> float:
+    return float(num * num)
 
-    def test_valid_uses(self, controller):
-        for num in range(0, 100 + 1, 10):
-            fut = controller(self.identity, num=num)
-            assert fut.result() == num
 
-            fut = controller(self.square, num=num)
-            assert fut.result() == (num**2)
+def test_valid_uses(serial_controller):
+    for num in range(0, 100 + 1, 10):
+        fut = serial_controller(fn_identity, num=num)
+        assert fut.result() == num
 
-    def test_invalid_uses(self, controller):
-        fut = controller(self.divide_by_zero, num=10)
-        with pytest.raises(ZeroDivisionError):
-            fut.result()
+        fut = serial_controller(fn_square, num=num)
+        assert fut.result() == (num**2)
+
+
+def test_invalid_uses(serial_controller):
+    fut = serial_controller(fn_divide_by_zero, num=10)
+    with pytest.raises(ZeroDivisionError):
+        fut.result()
