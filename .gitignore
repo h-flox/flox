@@ -12,7 +12,7 @@ screenlog.*
 
 # Parsl-related directories/files to ignore.
 runinfo/
-parsl*
+# parsl*
 
 # Compressed data
 *.gz

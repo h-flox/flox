@@ -129,7 +129,8 @@ class SyncFederation(Federation):
 
     def coordinator_task(self, node: Node) -> Future[Result]:
         coord = self.topology.coordinator
-        state = AggrState(coord.idx, children=self.topology.children(coord))
+        children = list(self.topology.children(coord))
+        state = AggrState(coord.idx, children=children)
         selected_workers = self.coord_strategy.select_workers(
             state, self.topology.workers, default_rng()
         )
@@ -179,10 +180,11 @@ class SyncFederation(Federation):
             fut = self.launch_tasks(node=child, parent=node)
             child_futs.append(fut)
 
+        children = list(self.topology.children(node))
         aggr_args = AggrJobArgs(
             round_num=self._round_num,
             node=node,
-            children=self.topology.children(node),
+            children=children,
             child_results=[],  # Note: this is updated in the callback,
             aggr_strategy=self.aggr_strategy,
             transfer=self.engine.data_plane,

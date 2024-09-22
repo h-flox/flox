@@ -461,9 +461,11 @@ class TorchTrainer:
 
             # Perform backpropagation and call trainer strategy callbacks.
             optimizer.zero_grad()
-            loss = self.strategy.before_backprop(node_state, loss)
+            if self.strategy is not None:
+                loss = self.strategy.before_backprop(node_state, loss)
             loss.backward()
-            loss = self.strategy.after_backprop(node_state, loss)
+            if self.strategy is not None:
+                loss = self.strategy.after_backprop(node_state, loss)
             optimizer.step()
 
             self._results.append(

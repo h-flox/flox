@@ -61,7 +61,7 @@ def hierarchical_topology(
     """
     Constructs a hierarchical topology.
 
-    This is a flexible function that allows you to rapidly produce hierarchical
+    This is a flexible function that allows users to rapidly produce hierarchical
     `Topology` object by setting the number of works (`n`) and the shape of
     intermediate aggregators (`aggr_shape`). The `aggr_shape` argument is a
     `typing.Sequence` of integers in *ascending order* that defines the layers of

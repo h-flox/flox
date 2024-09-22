@@ -16,10 +16,10 @@ jobs:
         include:
         - os: ubuntu-latest
           python: '3.11'
-          toxenv: py311
+          tox_env: py311
         - os: ubuntu-latest
           python: '3.12'
-          toxenv: py312
+          tox_env: py312
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -49,4 +49,12 @@ jobs:
 
       - name: Run Tox
         run: |
-          tox -e ${{ matrix.toxenv }} -- -vv -s
+          tox -e ${{ matrix.tox_env }} -- -vv -s
+
+      - name: Run Coveralls
+        run: |
+          pip install coveralls
+          coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
