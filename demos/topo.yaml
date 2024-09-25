@@ -1,0 +1,21 @@
+0:
+  kind: "coordinator"
+  children: [1, 2, 3]
+
+1:
+  kind: "worker"
+  children: []
+  extra:
+    device: "mps"
+
+2:
+  kind: "worker"
+  children: []
+  extra:
+    device: "mps"
+
+3:
+  kind: "worker"
+  children: []
+  extra:
+    device: "mps"
