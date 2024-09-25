@@ -1,15 +1,18 @@
+demos/
 experiments/
 runinfo/
 notebooks/
 examples/
+**/logs.csv
+runs/
+screenlog.*
 
 # macOS system
 .DS_Store
-experiments/
 
 # Parsl-related directories/files to ignore.
 runinfo/
-parsl*
+# parsl*
 
 # Compressed data
 *.gz
@@ -182,4 +185,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 /out/
-quickstart/out/
+examples/quickstart/out/
+Temp Notebook.ipynb

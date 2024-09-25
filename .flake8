@@ -1,6 +1,15 @@
-[flake8]  # black-compatible
+[flake8]
 ignore = W503, W504, E203, B008
-# TODO: reduce this to 88 once `black` is applied to all code
-max-line-length = 120
-exclude:
-  quickstart/
+per-file-ignores =
+    tests/: S101, F401, F811, B011
+
+
+# TODO: Change to 88 later for black
+max-line-length = 88
+exclude =
+  quickstart
+  flox
+  flox_examples
+  flox_tests
+
+

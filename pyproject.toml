@@ -3,18 +3,18 @@ requires = ["setuptools>=64.0", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "flox"
+name = "flight"
 version = "0.1.0"
 
-description = "FLoX is a flexible, easy-to-deploy framework for serverless federated learning, with support for hierarchical and asynchronous federated learning."
+description = "Flight is a flexible, easy-to-deploy framework for serverless federated learning, with support for hierarchical and asynchronous federated learning."
 readme = "README.md"
 
 license = { file = "LICENSE" }
-keywords = ["federated learning", "machine learning", "serverless"]
+keywords = ["federated learning", "deep learning", "machine learning", "serverless computing"]
 
 authors = [
     { name = "Nathaniel Hudson", email = "hudsonn@uchicago.edu" },
-    { name = "Valerie Hayot-Sasson", email = "valeriehayot@gmail.com" }
+    { name = "Globus Labs"},
 ]
 
 maintainers = [
@@ -22,22 +22,61 @@ maintainers = [
     { name = "Valerie Hayot-Sasson", email = "valeriehayot@gmail.com" },
 ]
 
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = [
     "globus-compute-sdk",
-    "torch",
+    "lightning",
+    "matplotlib",
+    "numpy",
     "pandas",
-    #    "pygraphviz",
-    "tqdm",
+    "proxystore",
     "scipy",
+    "scikit-learn",
+    "tqdm",
+    "torch",
+    "pyyaml",
 ]
 
 [project.optional-dependencies]
-dev = ["black", "coverage", "jupyterlab", "matplotlib", "numpy", "pytest", "seaborn", "tensorboard", "torchvision", "matplotlib-stubs", "pandas-stubs", "networkx-stubs"]
+all = ["flight[dev,docs,monitoring,proxystore]"]
+endpoints = [
+    # TODO: Add dependencies for endpoints to run aggregation and worker jobs.
+]
+dev = [
+    "black",
+    "coverage",
+    "jupyterlab",
+    "matplotlib",
+    "numpy",
+    "pytest",
+    "seaborn",
+    "tensorboard",
+    "torchvision",
+    "matplotlib-stubs",
+    "pandas-stubs",
+    "networkx-stubs"
+]
 monitoring = ["tensorboard"]
 proxystore = ["proxystore"]
-docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]"]
-all = ["flox[dev,monitoring,proxystore]"]
+docs = [
+    "mkdocs",
+    "mkdocs-autorefs",
+    "mkdocs-gen-files",
+    "mkdocs-get-deps",
+    "mkdocs-literate-nav",
+    "mkdocs-material",
+    "mkdocs-material-extensions",
+    "mkdocs-mermaid2-plugin",
+    "mkdocs-section-index",
+    "mkdocstrings",
+    "mkdocstrings-crystal",
+    "mkdocstrings-python",
+]
+
+[tool.mypy]
+plugins = [
+    "numpy.typing.mypy_plugin"
+]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -46,5 +85,5 @@ addopts = [
 
 
 [tool.setuptools.packages.find]
-include = ["flox*"]
+include = ["flight*"]
 namespaces = false
