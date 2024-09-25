@@ -1,0 +1,11 @@
+0:
+  kind: leader
+  globus_compute_endpoint: a4cadb2c-68fb-4197-8603-3d04f3b33744 #~
+  proxystore_endpoint: ~
+  children: [ 1 ]
+
+1:
+  kind: worker
+  globus_compute_endpoint: 4b116d3c-1703-4f8f-9f6f-39921e5864df # tutorial endpoint
+  proxystore_endpoint: ~
+  children: [ ]
