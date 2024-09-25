@@ -132,11 +132,18 @@ class FederatedDataModule(TorchDataModule):
         else:
             return None
 
+    # @t.overload
+    # def valid_data(self, node: Node) -> DataLoader:
+    #     pass
+    #
+    # @t.overload
+    # def valid_data(self, node: None) -> None:
+    #     pass
+
     def valid_data(self, node: Node | None = None) -> DataLoader | None:
-        if self.valid_indices is not None:
-            return self._get_data(node, self.test_indices)
-        else:
+        if self.valid_indices is None:
             return None
+        return self._get_data(node, self.test_indices)
 
     def _get_data(
         self, node: Node | NodeID | None, indices: t.Mapping[NodeID, t.Sequence[int]]

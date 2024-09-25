@@ -47,7 +47,9 @@ def flat_topology(n: int, **kwargs) -> Topology:
         raise ValueError("The argument `n` must be greater than or equal to 1.")
 
     workers = list(range(1, n + 1))
-    data = {0: dict(kind="coordinator", children=workers)}
+    data: dict[NodeID, dict[str, t.Any]] = {
+        0: dict(kind="coordinator", children=workers)
+    }
     for i in workers:
         data[i] = {"kind": "worker", "children": [], "extra": dict(**kwargs)}
     return Topology.from_dict(data)
@@ -167,7 +169,7 @@ def hierarchical_topology(
 
     # Begin constructing the tree to build the `Topology` instance.
     coord_idx = 0
-    tree = nx.DiGraph()
+    tree: nx.DiGraph = nx.DiGraph()
     tree.add_node(
         coord_idx,
         kind=NodeKind.COORD,

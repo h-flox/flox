@@ -15,7 +15,7 @@ link: NodeLink = (u, v)
 ```
 """
 
-GraphDict: t.TypeAlias = t.Mapping[NodeID, t.Mapping[str, t.Any]]
+GraphDict: t.TypeAlias = dict[NodeID, dict[str, t.Any]]
 """
 A dictionary where each top-level key is the node ID (`str` or `int`) and the
 values are Mappings (e.g., `dict` or `collection.OrderedDict` objects) with

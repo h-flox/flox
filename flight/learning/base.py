@@ -126,6 +126,14 @@ class AbstractTrainer(abc.ABC):
             A list of records containing the results of the training.
         """
 
+    # @t.overload
+    # def test(self, module: TorchModule, data: TorchDataModule) -> list[Record]:
+    #     pass
+    #
+    # @t.overload
+    # def test(self, module: ScikitModule, data: ScikitDataModule) -> list[Record]:
+    #     pass
+
     @abc.abstractmethod
     def test(self, module: AbstractModule, data: AbstractDataModule) -> list[Record]:
         """

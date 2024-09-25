@@ -2,12 +2,14 @@ import numpy as np
 import pytest
 import torch
 from lightning import LightningDataModule, LightningModule
+from parsl.providers import LocalProvider
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
+from flight.engine.control.parsl import ParslController
 from flight.engine.control.serial import SerialController
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import NodeKind, WorkerState
@@ -54,6 +56,16 @@ def lightning_data_module() -> LightningDataModule:
 @pytest.fixture
 def serial_controller() -> SerialController:
     return SerialController()
+
+
+@pytest.fixture
+def parsl_controller() -> ParslController:
+    config = dict(
+        label="local-htex",
+        max_workers_per_node=1,
+        provider=LocalProvider(),
+    )
+    return ParslController(config, run_dir="", script_dir="")
 
 
 @pytest.fixture
