@@ -16,7 +16,19 @@ TorchLocalStepOutput: t.TypeAlias = t.Optional[Tensor | t.Mapping[str, Tensor]]
 The output of a local training step, which can be a loss or a dictionary of...
 """
 
-Params: t.TypeAlias = t.MutableMapping[str, Tensor | npt.NDArray]
+NpParams: t.TypeAlias = t.Dict[str, npt.NDArray]
+"""
+Type alias for model parameters represented as `numpy` arrays;
+a mapping where the keys are strings and the values are Numpy `ndarray`s.
+"""
+
+TorchParams: t.TypeAlias = t.Dict[str, Tensor]
+"""
+Type alias for model parameters as a mapping where the keys are strings
+and the values are parameters as PyTorch `Tensor`s.
+"""
+
+Params: t.TypeAlias = NpParams | TorchParams
 """
 Type alias for model parameters; a mapping where the keys are strings and the
 values are Tensors.

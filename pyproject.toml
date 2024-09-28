@@ -59,6 +59,7 @@ dev = [
 monitoring = ["tensorboard"]
 proxystore = ["proxystore"]
 docs = [
+    "black",
     "mkdocs",
     "mkdocs-autorefs",
     "mkdocs-gen-files",

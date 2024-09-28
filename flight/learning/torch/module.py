@@ -8,7 +8,7 @@ import torch
 from torch import nn
 
 from flight.learning import AbstractModule
-from flight.learning.types import FrameworkKind, Params
+from flight.learning.types import FrameworkKind, NpParams, Params, TorchParams
 
 from .types import TensorLoss, TensorStepOutput
 
@@ -40,6 +40,14 @@ class TorchModule(AbstractModule, nn.Module):
     def kind(self) -> FrameworkKind:
         return "torch"
 
+    @t.overload
+    def get_params(self, to_numpy: t.Literal[True]) -> NpParams:
+        ...
+
+    @t.overload
+    def get_params(self, to_numpy: t.Literal[False]) -> TorchParams:
+        ...
+
     def get_params(self, to_numpy: bool = True) -> Params:
         """
         Getter method for the parameters of a trainable module (i.e., neural network)
@@ -50,7 +58,9 @@ class TorchModule(AbstractModule, nn.Module):
                 to `True`.
 
         Returns:
-            The parameters of the module.
+            The parameters of the module. If the `to_numpy` flag is set to `True`,
+                then `NpParams` are returned (i.e., values are NumPy `ndarray`s);
+                `TorchParams` are returned (i.e., values are PyTorch `Tensor`s);
 
         Notes:
             We recommend not changing the `to_numpy` flag unless you are sure of what
