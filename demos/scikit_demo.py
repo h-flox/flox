@@ -6,13 +6,12 @@ sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from flight.federation.topologies.utils import flat_topology
-from flight.learning.scikit import ScikitDataModule, ScikitModule, ScikitTrainer
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 
 from flight.federation.topologies import Node
+from flight.learning.scikit import ScikitDataModule, ScikitModule, ScikitTrainer
 
 SEED = 42
 
@@ -43,7 +42,7 @@ class DataModule(ScikitDataModule):
 
 
 def main():
-    topo = flat_topology(10)
+    # topo = flat_topology(10)
     # federation = SyncFederation(
     #     topology=topo,
     #     strategy=FedAvg(),

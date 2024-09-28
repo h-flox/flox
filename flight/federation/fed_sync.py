@@ -153,7 +153,7 @@ class SyncFederation(Federation):
         else:
             selected_children = coord_children.intersection(worker_set)
 
-        self.selected_children = {node: selected_children}
+        self.selected_children = {node: list(selected_children)}
         for aggr in intermediate_aggrs:
             included_aggrs_and_workers = intermediate_aggrs.union(worker_set)
             aggr_children = set(self.topology.children(aggr))

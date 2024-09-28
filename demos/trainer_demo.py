@@ -2,16 +2,16 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from flight.federation.topologies.node import WorkerState
-from flight.learning.torch import TorchDataModule, TorchModule, TorchTrainer
-from flight.learning.types import LocalStepOutput
-from flight.strategies.base import DefaultTrainerStrategy
 from torch import nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
 
 from flight.federation.topologies import Node
+from flight.federation.topologies.node import WorkerState
+from flight.learning.torch import TorchDataModule, TorchModule, TorchTrainer
+from flight.learning.types import LocalStepOutput
+from flight.strategies.base import DefaultTrainerStrategy
 
 
 class MyModule(TorchModule):

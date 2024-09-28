@@ -46,7 +46,7 @@ class Topology:
         source: pathlib.Path | str | None = None,
     ):
         node_dict = {node.idx: node for node in nodes}
-        graph = nx.DiGraph()
+        graph: nx.DiGraph = nx.DiGraph()
         graph.add_nodes_from(list(node_dict))
         graph.add_edges_from(edges)
         # validate_graph(node_dict.values(), edges, graph)
@@ -300,7 +300,7 @@ class Topology:
         return cls(*io.from_adj_list(adj_list))
 
     @classmethod
-    def from_adj_matrix(cls, adj_matrix: ArrayLike[int]) -> Topology:
+    def from_adj_matrix(cls, adj_matrix: ArrayLike) -> Topology:
         """
         Creates a Topology instance using
         [`from_adj_matrix`][flight.federation.topologies.io.from_adj_matrix].

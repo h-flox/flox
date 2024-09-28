@@ -6,10 +6,13 @@ import typing as t
 if t.TYPE_CHECKING:
     from ..federation.topologies import Node
     from ..types import Record
-    from .types import Data, DataKinds, FrameworkKind, Params
+    from .types import Data, DataIterable, DataKinds, FrameworkKind, Params
 
 
-class AbstractDataModule(abc.ABC):
+# DataType = t.TypeVar("DataType", bound="AbstractDataModule")
+
+
+class AbstractDataModule(t.Protocol):
     """
     The standard abstraction for *data modules* in Flight.
 
@@ -28,7 +31,7 @@ class AbstractDataModule(abc.ABC):
     def train_data(
         self,
         node: Node | None = None,
-    ) -> Data:
+    ) -> DataIterable:
         """
         The **training data** returned by this data module.
 

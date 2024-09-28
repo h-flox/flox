@@ -15,10 +15,10 @@ sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from flight.fit import federated_fit
-from flight.learning.scikit import ScikitDataModule, ScikitModule
 
 from flight.federation.topologies import Node
+from flight.fit import federated_fit
+from flight.learning.scikit import ScikitDataModule, ScikitModule
 
 SEED = 42
 

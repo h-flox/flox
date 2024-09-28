@@ -14,8 +14,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import torch
-from flight.fit import federated_fit
-from flight.learning.torch import TorchDataModule, TorchModule
 from torch import nn
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
@@ -23,6 +21,8 @@ from torchvision.datasets import MNIST
 
 from flight.federation import Topology
 from flight.federation.topologies import Node
+from flight.fit import federated_fit
+from flight.learning.torch import TorchDataModule, TorchModule
 
 
 class MyMnistModule(TorchModule):

@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import typing as t
 
-import numpy.typing as npt
+from numpy import typing as npt
 from torch import Tensor
 from torch.utils.data import Dataset
 
 LocalStepOutput: t.TypeAlias = t.Optional[Tensor | t.Mapping[str, t.Any]]
+"""
+The output of a local training step, which can be a loss or a dictionary of...
+"""
+
+TorchLocalStepOutput: t.TypeAlias = t.Optional[Tensor | t.Mapping[str, Tensor]]
 """
 The output of a local training step, which can be a loss or a dictionary of...
 """
@@ -37,3 +42,6 @@ Data = t.Union[
     npt.NDArray,
     Dataset,
 ]
+FloatTriple: t.TypeAlias = tuple[float, float, float]
+FloatDouble: t.TypeAlias = tuple[float, float]
+DataIterable: t.TypeAlias = t.Iterable[Data] | npt.ArrayLike

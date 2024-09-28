@@ -4,9 +4,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import torch
-from flight.federation.fed_sync import SyncFederation
-from flight.learning.torch import TorchDataModule, TorchModule
-from flight.strategies.impl.fedavg import FedAvg
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Subset
@@ -14,7 +11,10 @@ from torchvision import transforms
 from torchvision.datasets import CIFAR10
 
 from flight.federation import Topology
+from flight.federation.fed_sync import SyncFederation
 from flight.federation.topologies import Node
+from flight.learning.torch import TorchDataModule, TorchModule
+from flight.strategies.impl.fedavg import FedAvg
 
 
 class MyCifarModule(TorchModule):

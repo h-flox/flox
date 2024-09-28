@@ -36,4 +36,4 @@ repos:
 
 # TODO: Switch back to including `jobs/` and `fed_sync.py` when we are ready.
 # exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*'
-exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*|flight/federation/jobs/.*|flight/federation/fed_sync.py'
+exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*|flight/federation/jobs/.*|flight/federation/fed_sync.py|demos/.*'

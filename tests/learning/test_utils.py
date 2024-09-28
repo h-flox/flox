@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 
 from flight.federation.topologies.utils import flat_topology
-from flight.learning.utils import federated_split
+from flight.learning.torch.utils import federated_split
 
 NumberOfLabels: t.TypeAlias = int
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from dataclasses import dataclass, field
 from enum import Enum
@@ -5,7 +7,8 @@ from uuid import UUID
 
 import pydantic as pyd
 
-from flight.learning import AbstractDataModule, AbstractModule
+if t.TYPE_CHECKING:
+    from flight.learning import AbstractDataModule, AbstractModule
 
 NodeID: t.TypeAlias = t.Union[int, str]
 """

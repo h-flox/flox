@@ -8,17 +8,16 @@ import numpy as np
 from matplotlib.axes import Axes
 from torch.utils.data import DataLoader, Subset
 
-from ..commons import proportion_split, random_generator
-from ..federation import Topology
-from ..federation.topologies.node import Node, NodeID, NodeKind
-from .torch import TorchDataModule
-from .types import Data
+from flight.commons import proportion_split, random_generator
+from flight.federation.topologies.node import Node, NodeID, NodeKind
+
+from .data import TorchDataModule
 
 if t.TYPE_CHECKING:
     from torch.utils.data import Dataset
 
-    FloatDouble: t.TypeAlias = tuple[float, float]
-    FloatTriple: t.TypeAlias = tuple[float, float, float]
+    from flight.federation import Topology
+    from flight.learning.types import Data, FloatDouble, FloatTriple
 
 
 class FederatedDataModule(TorchDataModule):
@@ -218,7 +217,7 @@ def federated_split(
         >>> import torch
         >>> from torch.utils.data import TensorDataset
         >>> from flight.federation.topologies.utils import flat_topology
-        >>> from flight.learning.utils import federated_split
+        >>> from flight.learning import federated_split
         >>>
         >>> topo = flat_topology(2)  # flat topology with 2 workers
         >>> data = TensorDataset(
