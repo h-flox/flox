@@ -30,7 +30,7 @@ dependencies = [
     "numpy",
     "pandas",
     "parsl",
-    "proxystore",
+    "proxystore>=0.7.1",
     "scipy",
     "scikit-learn",
     "tqdm",
