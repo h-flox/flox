@@ -11,6 +11,7 @@ from .fed_abs import Federation
 from .future_callbacks import all_futures_finished
 from .jobs.aggr import default_aggr_job
 from .jobs.types import AggrJobArgs
+from .records import broadcast_records
 from .topologies.node import Node, NodeKind, AggrState
 from .topologies.topo import Topology
 from ..engine import Engine
@@ -80,6 +81,15 @@ class SyncFederation(Federation):
             self.engine.controller.shutdown()
             raise err
 
+        # TEST THE GLOBAL MODEL.
+        coord = self.topology.coordinator
+        test_data = self.data.test_data(coord)
+        if test_data:
+            _ = self.global_model.test_step(test_data)  # TODO
+            test_results = {"test/acc": -1, "test/loss": -1}
+            broadcast_records(step_result.records, **test_results)
+
+        # UPDATE PROGRESS BAR.
         self.global_model.set_params(step_result.params)
         if self._pbar:
             self._pbar.update()

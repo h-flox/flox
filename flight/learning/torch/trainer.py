@@ -117,6 +117,7 @@ class TorchTrainer(TorchTrainerCallbackMixins):
         ckpt_path: _PATH | None = None,
     ) -> list[Record]:
         """
+        Fits (or trains) a PyTorch module on a given module.
 
         Args:
             node_state (WorkerState):
@@ -143,12 +144,13 @@ class TorchTrainer(TorchTrainerCallbackMixins):
 
         if not isinstance(train_dataloader, DataLoader):
             raise TypeError(
-                "Method for argument `data.train_data(.)` must return a `DataLoader`."
+                "Method for argument `data.train_data(.)` "
+                "must return a `DataLoader`."
             )
         if not isinstance(valid_dataloader, DataLoader | None):
             raise TypeError(
-                "Method for argument `data.valid_data(.)` must return a `DataLoader` "
-                "or `None`."
+                "Method for argument `data.valid_data(.)` "
+                "must return a `DataLoader` or `None`."
             )
 
         pbar_prefix = f"TorchTrainer(NodeID={self.node.idx})"

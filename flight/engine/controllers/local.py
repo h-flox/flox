@@ -14,8 +14,8 @@ if t.TYPE_CHECKING:
 class LocalController(AbstractController):
     """
     A local controller (similar to
-    [`SerialController`][flight.engine.control.serial.SerialController]) that instead
-    runs multiple functions at once using either threads or processes.
+    [`SerialController`][flight.engine.controllers.serial.SerialController]) that
+    instead runs multiple functions at once using either threads or processes.
     """
 
     executor: Executor

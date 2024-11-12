@@ -8,13 +8,13 @@ from proxystore.connectors.endpoint import EndpointConnector
 from proxystore.store import Store
 
 from ...federation.topologies import Topology
-from .base import AbstractTransfer
+from .base import AbstractTransporter
 
 if t.TYPE_CHECKING:
     from proxystore.proxy import Proxy
 
 
-class ProxystoreTransfer(AbstractTransfer):
+class ProxystoreTransfer(AbstractTransporter):
     def __init__(self, topo: Topology, name: str = "default") -> None:
         if not topo.proxystore_ready:
             raise ValueError(

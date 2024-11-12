@@ -150,7 +150,7 @@ class NodeState:
 
     def __setitem__(self, key: str, value: t.Any) -> None:
         """
-        Setter function that stores a data item into the state's cache by key.
+        Setter function that stores a datum into the state's cache by key.
 
         Args:
             key (str): The key to store the data in cache for lookup.

@@ -3,12 +3,12 @@ from __future__ import annotations
 import typing as t
 from concurrent.futures import Future
 
-from .control.serial import SerialController
-from .data.base import AbstractTransfer, BaseTransfer
+from .controllers.serial import SerialController
+from .transporters.base import AbstractTransporter, InMemoryTransporter
 
 if t.TYPE_CHECKING:
     from ..types import P, T
-    from .control.base import AbstractController
+    from .controllers.base import AbstractController
 
 
 class Engine:
@@ -23,7 +23,7 @@ class Engine:
     compute resources (e.g., compute nodes, threads, processes).
     """
 
-    transmitter: AbstractTransfer
+    transmitter: AbstractTransporter
     """
     Object responsible for facilitating data transfer for the execution of jobs.
     This abstraction is used in the case of distributed and remote execution
@@ -33,7 +33,7 @@ class Engine:
     def __init__(
         self,
         controller: AbstractController,
-        transmitter: AbstractTransfer,
+        transmitter: AbstractTransporter,
     ):
         """
         Initializes the engine with the given controller and transmitter.
@@ -41,11 +41,11 @@ class Engine:
         Args:
             controller (AbstractController): The controller responsible for submitting
                 functions to be executed at the appropriate compute resources.
-            transmitter (AbstractTransfer): The object responsible for facilitating data
-                transfers for the execution of jobs.
+            transmitter (AbstractTransporter): The object responsible for facilitating
+                data transfers for the execution of jobs.
         """
         self.controller = SerialController()
-        self.transmitter = BaseTransfer()
+        self.transmitter = InMemoryTransporter()
 
     def submit(self, fn: t.Callable, **kwargs: dict[str, t.Any]) -> Future:
         """
@@ -77,8 +77,8 @@ class Engine:
     @classmethod
     def setup(
         cls,
-        controller_kind: ...,
-        transmitter_kind: ...,
+        controller_kind: AbstractController,
+        transmitter_kind: AbstractTransporter,
         controller_cfg: dict[str, t.Any] | None = None,
         transmitter_cfg: dict[str, t.Any] | None = None,
     ) -> Engine:
@@ -86,8 +86,8 @@ class Engine:
         This helper method prepares a new `Engine` instance.
 
         Args:
-            controller_kind: ...
-            transmitter_kind: ...
+            controller_kind (AbstractController): ...
+            transmitter_kind (AbstractTransporter): ...
             controller_cfg (dict[str, t.Any]): ...
             transmitter_cfg (dict[str, t.Any]): ...
 
@@ -95,6 +95,6 @@ class Engine:
             An `Engine` instance based on the provided configurations.
         """
         # TODO
-        controller: AbstractController = None
-        transmitter: AbstractTransfer = None
+        controller: AbstractController = None  # noqa
+        transmitter: AbstractTransporter = None  # noqa
         return cls(controller, transmitter)

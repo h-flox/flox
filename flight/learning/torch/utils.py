@@ -26,9 +26,10 @@ class FederatedDataModule(TorchDataModule):
     topology.
 
     This is especially helpful for simulation-based federations that are run with
-    Flight. Rather than needing to manually define the logic to load data that is
+    Flight. Rather than needing to manually define the logic to load data that are
     sharded across workers in a federation, this class simply requires the original
-    dataset and the indices for training, testing, and validation data for each worker.
+    dataset and the indices for training, testing, and validation data for each
+    worker.
 
     A good analogy for this class is to think of it as the federated version of
     PyTorch's [`Subset`](https://pytorch.org/docs/stable/data.html#
