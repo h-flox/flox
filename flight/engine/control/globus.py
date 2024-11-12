@@ -25,23 +25,24 @@ class GlobusController(AbstractController):
         if self._globus_compute_executor is None:
             self._globus_compute_executor = globus_compute_sdk.Executor()
 
-    def __call__(self, fn: t.Callable[P, T], /, **kwargs) -> Future[T]:  # noqa
+    def submit(self, fn: t.Callable[P, T], /, **kwargs) -> Future[T]:  # noqa
         """
         Submits a function to be executed on a remote endpoint using the
         [Globus Compute](https://globus-compute.readthedocs.io/en/latest/index.html)
         Function-as-a-Service (FaaS) platform.
 
         Args:
-            fn:
-            **kwargs:
+            fn (Callable[P, T]): Function to be executed on the remote endpoint.
+            **kwargs: Keyword arguments to be passed to the function.
 
         Returns:
-            ...
+            Future object representing the asynchronous execution of the function.
 
         Notes:
-            Globus Compute enforces a data transfer limit of roughly 5MB per function.
-            To avoid this limitation, it is recommended to use
-            [ProxyStore](https://docs.proxystore.dev/).
+            - Globus Compute enforces a data transfer limit of roughly 5MB per function.
+              To avoid this limitation, it is recommended to use
+              [ProxyStore](https://docs.proxystore.dev/).
+            - Arguments to function can *only* be passed via keyword arguments.
         """
         if not isinstance(self._globus_compute_executor, globus_compute_sdk.Executor):
             raise ValueError("Executor is not a Globus Computer Executor.")
@@ -60,6 +61,9 @@ class GlobusController(AbstractController):
         return future
 
     def shutdown(self) -> None:
+        """
+        Shuts down the Globus Compute Executor.
+        """
         if self._globus_compute_executor is not None:
             self._globus_compute_executor.shutdown()
         else:

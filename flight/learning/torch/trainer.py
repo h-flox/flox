@@ -19,7 +19,60 @@ if t.TYPE_CHECKING:
     _PATH: t.TypeAlias = pathlib.Path | str
 
 
-class TorchTrainer:
+class TorchTrainerCallbackMixins:
+    # noinspection PyMethodMayBeStatic
+    def hyperparameters(self, state: WorkerState) -> dict[str, t.Any]:
+        """
+        Returns the hyperparameters to be used by the ``Trainer`` for local training.
+
+        Args:
+            state (WorkerState): The state of the current worker node.
+
+        Returns:
+            Trainer hyperparameters. What key-value pairs are returned will need to
+                depend on the trainer users plan to use for federations. The default
+                behavior of this method is to return an empty dictionary.
+        """
+        return {}
+
+    # noinspection PyMethodMayBeStatic
+    def before_backprop(
+        self,
+        state: WorkerState,
+        out: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Callback to run before backpropagation.
+
+        Args:
+            state (WorkerState): State of the current node.
+            out (torch.Tensor): The calculated loss
+
+        Returns:
+            Loss after running the callback.
+        """
+        return out
+
+    # noinspection PyMethodMayBeStatic
+    def after_backprop(
+        self,
+        state: WorkerState,
+        out: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Callback to run after backpropagation.
+
+        Args:
+            state (WorkerState): State of the current node.
+            out (torch.Tensor): The calculated loss
+
+        Returns:
+            Loss after running the callback.
+        """
+        return out
+
+
+class TorchTrainer(TorchTrainerCallbackMixins):
     node: Node
     strategy: TrainerStrategy
 

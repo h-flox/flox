@@ -3,17 +3,16 @@ from __future__ import annotations
 import typing as t
 
 import numpy as np
-import torch
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import NodeID
-    from flight.learning.types import Params
+    from flight.learning.types import NpParams
 
 
 def average_state_dicts(
-    state_dicts: t.Mapping[NodeID, Params],
+    state_dicts: t.Mapping[NodeID, NpParams],
     weights: t.Mapping[NodeID, float] | None = None,
-) -> Params:
+) -> NpParams:
     """
     Common implementation for averaging model parameters.
 
@@ -37,24 +36,33 @@ def average_state_dicts(
         weight_sum = sum(list(weights.values()))
         node_weights = {node: weights[node] / weight_sum for node in weights}
 
-    with torch.no_grad():
-        avg_weights = {}
-        for node, state_dict in state_dicts.items():
-            w = node_weights[node]
-            for name, value in state_dict.items():
-                match value:
-                    # TODO: We need some abstraction for math operations across numpy
-                    #       and tensors.
-                    case torch.Tensor():
-                        value = w * torch.clone(value)
-                    case np.ndarray():
-                        value = w * value
-                    case _:
-                        raise ValueError("Unsupported data type for parameter value.")
+    avg_weights = {}
+    for node, state_dict in state_dicts.items():
+        w = node_weights[node]
+        for name, value in state_dict.items():
+            if name not in avg_weights:
+                avg_weights[name] = w * np.copy(value)
+            else:
+                avg_weights[name] += w * np.copy(value)
 
-                if name not in avg_weights:
-                    avg_weights[name] = value
-                else:
-                    avg_weights[name] += value
+    # with torch.no_grad():
+    #     avg_weights = {}
+    #     for node, state_dict in state_dicts.items():
+    #         w = node_weights[node]
+    #         for name, value in state_dict.items():
+    #             match value:
+    #                 # TODO: We need some abstraction for math operations across numpy
+    #                 #       and tensors.
+    #                 case torch.Tensor():
+    #                     value = w * torch.clone(value)
+    #                 case np.ndarray():
+    #                     value = w * value
+    #                 case _:
+    #                     raise ValueError("Unsupported data type for parameter value.")
+    #
+    #             if name not in avg_weights:
+    #                 avg_weights[name] = value
+    #             else:
+    #                 avg_weights[name] += value
 
     return avg_weights

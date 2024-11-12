@@ -32,6 +32,13 @@ class Result:
     Parameters returned as part of a result from a single Node in a federation.
     """
 
+    module: AbstractModule | None = field(default=None)
+    """
+    The model module that was returned as part of this result. For *Workers*, these
+    are locally-trained model updates. For *Aggregators*, these are the aggregated
+    modules.
+    """
+
     records: list[Record] = field(default_factory=list)
     """
     List of records for model training/aggregation metrics.

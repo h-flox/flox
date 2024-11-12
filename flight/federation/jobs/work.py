@@ -102,6 +102,7 @@ def default_training_job(args: TrainJobArgs) -> Result:
         node=node,
         node_state=node_state,
         params=local_model.get_params(),
+        module=local_model,
         records=records,
         extra={},
     )

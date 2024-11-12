@@ -9,10 +9,12 @@ if t.TYPE_CHECKING:
 
 class AbstractTransfer(abc.ABC):
     @abc.abstractmethod
-    def __call__(self, data: t.Any) -> t.Any:
-        pass
+    def transfer(self, data: t.Any) -> t.Any:
+        """
+        Abstract method to facilitate data transfer.
+        """
 
 
 class BaseTransfer(AbstractTransfer):
-    def __call__(self, data: t.Any) -> t.Any:
+    def transfer(self, data: t.Any) -> t.Any:
         return data

@@ -21,11 +21,13 @@ def _platform_info() -> str:
 
 class ParslController(AbstractController):
     """
-    Controller implementation for using the Parsl workflow manager.
+    Controller implementation for using the **Parsl** workflow manager.
 
     This class is especially useful for high-throughput simulations of Federated
-    Learning on a *high-performance computing* (HPC) system. More information about how
-    Parsl can be used to parallelize workflows across HPC systems can be found
+    Learning on a *high-performance computing* (HPC) system.
+
+    More information about how Parsl can be used to parallelize workflows across
+    HPC systems can be found
     [here](https://parsl.readthedocs.io/en/stable/userguide/configuring.html).
     """
 
@@ -60,10 +62,10 @@ class ParslController(AbstractController):
         self._executor.start()
 
         if priming:
-            fut = self(_platform_info)
+            fut = self.submit(_platform_info)
             fut.result()
 
-    def __call__(self, fn: t.Callable[P, T], /, **kwargs) -> Future[T]:  # noqa
+    def submit(self, fn: t.Callable[P, T], /, **kwargs) -> Future[T]:  # noqa
         future = self._executor.submit(fn, {}, **kwargs)
         return future
 

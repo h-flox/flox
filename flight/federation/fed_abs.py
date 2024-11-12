@@ -22,6 +22,20 @@ if t.TYPE_CHECKING:
     from .topologies.topo import Topology
 
 
+def setup_work_job(fn: TrainJob | None) -> TrainJob:
+    return default_training_job  # TODO
+    match fn:
+        case TrainJob():  # TODO: Currently illegal, `TrainJob` is not a type
+            return default_training_job  # TODO
+        case None:
+            return default_training_job
+        case _:
+            raise ValueError(
+                "Invalid value for work function provided. "
+                "Must be either a `TrainJob` or `None`."
+            )
+
+
 class Federation(abc.ABC):
     topology: Topology
     strategy: Strategy
@@ -29,15 +43,17 @@ class Federation(abc.ABC):
     work_fn: TrainJob
     engine: Engine
     global_model: AbstractModule
+    work_fn: TrainJob
 
     def __init__(
         self,
         topology: Topology,
         strategy: Strategy,
+        work_fn: TrainJob | None = None,
     ) -> None:
         self.topology = topology
         self.strategy = strategy
-        self.work_fn = default_training_job
+        self.work_fn = setup_work_job(work_fn)
 
     ####################################################################################
 
@@ -144,7 +160,7 @@ class Federation(abc.ABC):
             trainer_strategy=self.trainer_strategy,
         )
         args = self.engine.transfer(args)
-        return self.engine(self.work_fn, args)
+        return self.engine.submit(self.work_fn, args=args)
 
     def _resolve_node(self, node: Node | None) -> Node:
         """

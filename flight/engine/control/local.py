@@ -25,6 +25,13 @@ class LocalController(AbstractController):
         kind: str | t.Literal["process", "thread"],
         **executor_kwargs,
     ):
+        """
+        Initializes the controller with the given kind of executor.
+
+        Args:
+            kind (str | t.Literal["process", "thread"]): The kind of executor to use.
+            **executor_kwargs: Keyword arguments to be passed to the executor.
+        """
         self.kind = kind
         match self.kind:
             case "process":
@@ -32,8 +39,25 @@ class LocalController(AbstractController):
             case "thread":
                 self.executor = ThreadPoolExecutor(**executor_kwargs)
 
-    def __call__(self, fn: t.Callable[P, T], /, **kwargs) -> Future[T]:  # noqa
+    def submit(self, fn: t.Callable[P, T], /, **kwargs) -> Future[T]:  # noqa
+        """
+        Executes a function locally and asynchronously using either threads or
+        processes based on the given arguments to `__init__`.
+
+        Args:
+            fn (t.Callable[P, T]): The function to be executed.
+            **kwargs: Keyword arguments to be passed to the function.
+
+        Returns:
+            A future object representing the asynchronous execution of the function.
+
+        Notes:
+            Arguments to function can *only* be passed via keyword arguments.
+        """
         return self.executor.submit(fn, **kwargs)
 
     def shutdown(self):
+        """
+        Shuts down the executor.
+        """
         self.executor.shutdown(wait=True, cancel_futures=False)

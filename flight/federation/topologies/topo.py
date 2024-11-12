@@ -102,6 +102,9 @@ class Topology:
     def __len__(self) -> int:
         return len(self._nodes)
 
+    def __str__(self) -> str:
+        return f"Topology(nodes={len(self)}, edges={len(self._edges)})"
+
     def nodes(self, kind: NodeKind | str | None = None) -> t.Iterator[Node]:
         """
         Creates an iterator that loops through nodes making up the topology.
