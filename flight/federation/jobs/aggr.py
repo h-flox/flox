@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
 def default_aggr_job(args: AggrJobArgs) -> Result:
     from flight.federation.jobs.types import Result
     from flight.federation.records import broadcast_records
-    from flight.federation.topologies.node import AggrState
+    from flight.federation.topologies.node import AggrState, WorkerState
 
     node = args.node
     child_results = args.child_results
@@ -23,16 +23,22 @@ def default_aggr_job(args: AggrJobArgs) -> Result:
 
     child_states = {}
     child_params = {}
+    child_modules = {}
     for res in child_results:
         idx = res.node.idx
         child_states[idx] = res.node_state
         child_params[idx] = res.params
+        if isinstance(res.node_state, (WorkerState, AggrState)):
+            child_modules[idx] = res.module
+        else:
+            raise TypeError("Child state must be either `WorkerState` or `AggrState`.")
 
     aggr_state = AggrState(node.idx, children=args.children)
     aggr_params = strategy.aggregate_params(
         state=aggr_state,
         children_states=child_states,
-        children_params=child_params,
+        # children_params=child_params,
+        children_modules=child_modules,
     )
 
     records = []
@@ -48,5 +54,5 @@ def default_aggr_job(args: AggrJobArgs) -> Result:
         records=records,
         extra=extra,
     )
-    result = transfer(result)
+    result = transfer.transfer(result)
     return result

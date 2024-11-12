@@ -53,9 +53,9 @@ class FedAsyncAggr(DefaultAggrStrategy):
         last_updated = kwargs.get("last_updated_node", None)
         assert last_updated is not None
         assert isinstance(last_updated, int | str)
-        assert state.aggr_model is not None
+        assert state.module is not None
 
-        global_model_params = state.aggr_model.get_params()
+        global_model_params = state.module.get_params()
         last_updated_params = children_params[last_updated]
 
         aggr_params = []

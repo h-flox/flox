@@ -5,10 +5,9 @@ from concurrent.futures import FIRST_COMPLETED, wait
 from copy import deepcopy
 
 import pandas as pd
-from tqdm import tqdm
-
 from flox.federation.fed import Federation
 from flox.logger import Logger
+from tqdm import tqdm
 
 if t.TYPE_CHECKING:
     from pandas import DataFrame
@@ -92,7 +91,7 @@ class AsyncFederation(Federation):
 
                 self.global_model = DebugModule()
                 self.params = self.global_model.state_dict()
-                self.state.global_model = self.global_model
+                self.state.pre_module = self.global_model
 
         if not self.topo.two_tier:
             raise ValueError(

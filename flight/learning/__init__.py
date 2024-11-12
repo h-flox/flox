@@ -41,10 +41,14 @@ AbstractDataModule-->TorchDataModule
 
 from .base import AbstractDataModule, AbstractModule, AbstractTrainer
 from .torch.utils import federated_split
+from .types import NpParams, Params, TorchParams
 
 __all__ = [
     "AbstractModule",
     "AbstractDataModule",
     "AbstractTrainer",
     "federated_split",
+    "Params",
+    "NpParams",
+    "TorchParams",
 ]

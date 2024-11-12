@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 
 import torch
-
 from flox.strategies import Strategy
 from flox.strategies.impl.fedavg import FedAvgWorker
 from flox.strategies.impl.fedsgd import FedSGDAggr, FedSGDClient
@@ -38,8 +37,8 @@ class FedProxTrainer(DefaultTrainerStrategy):
         Returns:
             Loss with the proximal term added to it.
         """
-        global_model = state.global_model
-        local_model = state.local_model
+        global_model = state.pre_module
+        local_model = state.module
         assert global_model is not None
         assert local_model is not None
 

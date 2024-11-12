@@ -25,7 +25,7 @@ class FedAsyncAggr(DefaultAggregatorStrategy):
         assert last_updated is not None
         assert isinstance(last_updated, int | str)
 
-        global_model_params = state.global_model.state_dict()
+        global_model_params = state.pre_module.state_dict()
         last_updated_params = children_state_dicts[last_updated]
 
         aggr_params = []

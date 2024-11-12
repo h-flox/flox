@@ -83,9 +83,13 @@ class AbstractDataModule(t.Protocol):
 
 class AbstractModule(abc.ABC):
     @abc.abstractmethod
-    def get_params(self) -> Params:
+    def get_params(self, to_numpy: bool = True) -> Params:
         """
         Getter method for the parameters of a trainable module (i.e., neural network).
+
+        Args:
+            to_numpy (bool): Flag to convert the parameters to numpy `ndarray`s.
+                Defaults to `True`.
 
         Returns:
             The parameters of the module.

@@ -4,6 +4,7 @@ import dataclasses
 import functools
 import typing as t
 
+from flight.learning import AbstractModule
 from flight.strategies.aggr import AggrStrategy
 from flight.strategies.commons import average_state_dicts
 from flight.strategies.coord import CoordStrategy
@@ -16,7 +17,7 @@ StrategyTypes: t.TypeAlias = (
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import AggrState, NodeID, NodeState
-    from flight.learning.types import Params
+    from flight.learning import NpParams, Params
 
 
 class DefaultCoordStrategy(CoordStrategy):
@@ -52,8 +53,8 @@ class DefaultAggrStrategy(AggrStrategy):
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_params: t.Mapping[NodeID, Params],
-        **kwargs,
+        children_modules: t.Mapping[NodeID, AbstractModule],
+        **kwargs: dict[str, t.Any],
     ) -> Params:
         """Callback that handles the model parameter aggregation step.
 
@@ -61,13 +62,17 @@ class DefaultAggrStrategy(AggrStrategy):
             state (AggrState): The state of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): A mapping of the current
                 aggregator node's children and their respective states.
-            children_params (t.Mapping[NodeID, Params]): The model parameters of
-                the models to each respective child node.
+            children_modules (t.Mapping[NodeID, AbstractModule]): A mapping of the
+                modules belonging to each respective child node.
             **kwargs: Keyword arguments provided by users.
 
         Returns:
             Aggregated parameters.
         """
+        children_params: dict[NodeID, NpParams] = {}
+        for idx in children_states:
+            children_params[idx] = children_modules[idx].get_params(to_numpy=True)
+
         return average_state_dicts(children_params, weights=None)
 
     # def end_round(self):

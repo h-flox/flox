@@ -12,15 +12,33 @@ W, B = "weight", "bias"
 
 
 def test_instance():
-    """Test that the associated node strategy type follows the correct protocols."""
+    """
+    Test that the associated node strategy type follows the correct protocols.
+    """
     default_aggr = DefaultAggrStrategy()
 
     assert isinstance(default_aggr, AggrStrategy)
 
 
 def test_aggr_aggregate_params():
-    """Tests usability for the 'aggregate_params' function on two children."""
+    """
+    Tests usability for the 'aggregate_params' function on two children.
+    """
     default_aggr = DefaultAggrStrategy()
+
+    """
+    topo = two_tier_topology()
+    children = topo.get_children(0)
+    for i, child in enumerate(children):
+        child.module = torch.nn.Linear(1, 1, bias=False)
+        state_dict = child.module.state_dict()
+        w = next(iter(state_dict))
+        state_dict[w] = float(i)
+        
+    children_modules = {child: child.module for child in children}
+    avg = default_aggr.aggregate_params(aggr_state, children, children_modules)
+    assert avg == sum(range(len(children))) / len(children)
+    """
 
     state: NodeState = "foo"
     children = {1: "foo1", 2: "foo2"}

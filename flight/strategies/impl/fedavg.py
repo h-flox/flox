@@ -18,8 +18,8 @@ if t.TYPE_CHECKING:
         NodeState,
         WorkerState,
     )
-    from flight.learning.base import AbstractDataModule
-    from flight.learning.types import Params
+    from flight.learning.base import AbstractDataModule, AbstractModule
+    from flight.learning.types import NpParams, Params
 
 
 class _FedAvgConstMixins:
@@ -48,7 +48,7 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_params: t.Mapping[NodeID, Params],
+        children_modules: t.Mapping[NodeID, AbstractModule],
         **kwargs,
     ) -> Params:
         """
@@ -59,13 +59,17 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
             state (NodeState): State of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states
                 of the children.
-            children_params (t.Mapping[NodeID, Params]): Dictionary mapping each
-                child to its values.
+            children_modules (t.Mapping[NodeID, AbstractModule]): Dictionary mapping
+                each child to its values.
             **kwargs: Key word arguments provided by the user.
 
         Returns:
             Params: The aggregated values.
         """
+        children_params: dict[NodeID, NpParams] = {}
+        for idx in children_states:
+            children_params[idx] = children_modules[idx].get_params(to_numpy=True)
+
         weights = {}
         for node, child_state in children_states.items():
             weights[node] = child_state[FedAvgAggr.NUM_SAMPLES]

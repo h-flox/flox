@@ -24,7 +24,7 @@ class ScikitModule(AbstractModule):
     def kind(self) -> FrameworkKind:
         return "scikit"
 
-    def get_params(self) -> Params:
+    def get_params(self, _: bool = True) -> Params:
         params = []
         for i in range(self._n_layers):
             params.append((f"{self.WEIGHT_KEY_PREFIX}_{i}", self.module.coefs_[i]))

@@ -98,8 +98,8 @@ class LocalTrainJob(TrainJob):
         history["parent/idx"] = parent.idx
         history["parent/kind"] = parent.kind.to_str()
 
-        assert state.local_model is not None
-        local_params = state.local_model.state_dict()
+        assert state.module is not None
+        local_params = state.module.state_dict()
         result = JobResult(state, node.idx, node.kind, local_params, history)
 
         result = worker_strategy.work_end(result)  # NOTE: Double-check.

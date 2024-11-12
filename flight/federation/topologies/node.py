@@ -191,11 +191,11 @@ class AggrState(NodeState):
 
     Args:
         children (t.Iterable[Node]): Child nodes in the topology.
-        aggr_model (AbstractModule | None): Aggregated model.
+        module (AbstractModule | None): Aggregated model.
     """
 
     children: t.Sequence[Node]
-    aggr_model: AbstractModule | None = None
+    module: AbstractModule | None = None
 
 
 @dataclass
@@ -204,9 +204,9 @@ class WorkerState(NodeState):
     The state of a Worker node.
 
     Args:
-        global_model (AbstractDataModule | None): ...
-        local_model (AbstractDataModule | None): ...
+        pre_module (AbstractDataModule | None): ...
+        module (AbstractDataModule | None): ...
     """
 
-    global_model: AbstractDataModule | None = None
-    local_model: AbstractDataModule | None = None
+    pre_module: AbstractDataModule | None = None
+    module: AbstractDataModule | None = None
