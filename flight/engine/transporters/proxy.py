@@ -8,7 +8,7 @@ from proxystore.connectors.endpoint import EndpointConnector
 from proxystore.store import Store, get_or_create_store, get_store
 
 from ...federation.topologies import Topology
-from .base import AbstractTransfer
+from .base import AbstractTransporter
 
 if t.TYPE_CHECKING:
     from proxystore.proxy import Proxy

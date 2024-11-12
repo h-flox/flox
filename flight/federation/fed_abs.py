@@ -140,7 +140,7 @@ class Federation(abc.ABC):
     def worker_task(self, node: Node, parent: Node) -> Future[Result]:
         """
         Prepares the arguments for the worker function and submits the function using
-        the provided control plane via the given `Engine`.
+        the provided controllers plane via the given `Engine`.
 
         Args:
             node (Node): The worker node.

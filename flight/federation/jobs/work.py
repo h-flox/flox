@@ -66,7 +66,7 @@ def default_training_job(args: TrainJobArgs) -> Result:
             # TODO: Add this as an attr. of TrainArgJobs.
             trainer_init_params = dict(progress_bar=False)
             trainer_fit_params = dict()
-            trainer = TorchTrainer(**trainer_init_params)
+            trainer = TorchTrainer(node=args.node, **trainer_init_params)
             records = trainer.fit(node_state, local_model, data, **trainer_fit_params)
 
         case _:

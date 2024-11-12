@@ -3,7 +3,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from flight.engine.data.base import BaseTransfer
+from flight.engine.transporters.base import InMemoryTransporter
 from flight.federation.jobs.aggr import default_aggr_job
 from flight.federation.jobs.types import Result, AggrJobArgs
 from flight.federation.topologies import Node
@@ -107,7 +107,7 @@ def aggr_args(node, parent, result) -> AggrJobArgs:
         children=[node],
         child_results=[result],
         aggr_strategy=DefaultAggrStrategy(),  # TODO: We need to resolve this typing.
-        transfer=BaseTransfer(),
+        transfer=InMemoryTransporter(),
     )
 
 

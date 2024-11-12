@@ -4,14 +4,14 @@ import pathlib
 
 import numpy as np
 
-from .engine.control.base import AbstractController
-from .engine.control.local import LocalController
-from .engine.control.serial import SerialController
+from .engine.controllers.base import AbstractController
+from .engine.controllers.local import LocalController
+from .engine.controllers.serial import SerialController
 from .federation import SyncFederation, Topology
-from .federation.jobs.types import Result
 from .learning.base import AbstractDataModule, AbstractModule
 from .strategies import Strategy
 from .strategies.impl import FedSGD
+from .types import Record
 
 
 def load_topology(raw_data: Topology | pathlib.Path | str | dict):
@@ -49,7 +49,7 @@ def federated_fit(
     strategy: Strategy | str = "fedsgd",
     mode: str = "sync",
     fast_dev_run: bool = False,
-) -> tuple[AbstractModule, list[Result]]:
+) -> tuple[AbstractModule, list[Record]]:
     if strategy == "fedsgd":
         strategy = FedSGD()
     else:
@@ -76,5 +76,5 @@ def federated_fit(
         case _:
             raise ValueError("Illegal value for argument `mode`.")
 
-    results = federation.start(rounds)
-    return module, results
+    records = federation.start(rounds)
+    return module, records
