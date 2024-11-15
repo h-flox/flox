@@ -7,11 +7,11 @@ from proxystore.proxy import Proxy
 
 from flight.federation.topologies.node import Node, NodeState, WorkerState
 from flight.learning.base import AbstractDataModule, AbstractModule
-from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
     from flight.types import Record
     from flight.engine.transporters import AbstractTransporter
+    from flight.learning.params import Params
     from flight.strategies import AggrStrategy, TrainerStrategy, WorkerStrategy
 
 

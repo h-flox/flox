@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import pathlib
 import typing as t
 
@@ -180,7 +181,15 @@ class TorchTrainer(TorchTrainerCallbackMixins):
                 pbar,
             )
             for loss in train_losses:
-                self._results.append({"epoch": epoch, "train/loss": loss.item()})
+                self._results.append(
+                    {
+                        "train/time": datetime.datetime.now(),
+                        "node/idx": self.node.idx,
+                        "epoch": epoch,
+                        "train/loss": loss.item(),
+                        "step": self._curr_step,
+                    }
+                )
 
             # Validate the model during training.
             validate_now = epoch % validate_every_n_epochs == 0
@@ -189,6 +198,8 @@ class TorchTrainer(TorchTrainerCallbackMixins):
                 for loss in val_losses:
                     self._results.append(
                         {
+                            "valid/time": datetime.datetime.now(),
+                            "node/idx": self.node.idx,
                             "epoch": epoch,
                             "val/loss": loss.item(),
                             "step": self._curr_step,
@@ -224,6 +235,8 @@ class TorchTrainer(TorchTrainerCallbackMixins):
 
             self._results.append(
                 {
+                    "train/time": datetime.datetime.now(),
+                    "node/idx": self.node.idx,
                     "epoch": epoch,
                     "train/loss": loss.item(),
                     "train/batch_idx": batch_idx,
@@ -255,6 +268,7 @@ class TorchTrainer(TorchTrainerCallbackMixins):
             if loss is not None:
                 self._results.append(
                     {
+                        "train/time": datetime.datetime.now(),
                         "epoch": epoch,
                         "valid/loss": loss.item(),
                         "valid/batch_idx": batch_idx,

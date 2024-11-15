@@ -17,7 +17,7 @@ StrategyTypes: t.TypeAlias = (
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import AggrState, NodeID, NodeState
-    from flight.learning import NpParams, Params
+    from flight.learning import Params
 
 
 class DefaultCoordStrategy(CoordStrategy):
@@ -69,9 +69,9 @@ class DefaultAggrStrategy(AggrStrategy):
         Returns:
             Aggregated parameters.
         """
-        children_params: dict[NodeID, NpParams] = {}
+        children_params: dict[NodeID, Params] = {}
         for idx in children_states:
-            children_params[idx] = children_modules[idx].get_params(to_numpy=True)
+            children_params[idx] = children_modules[idx].get_params()
 
         return average_state_dicts(children_params, weights=None)
 
