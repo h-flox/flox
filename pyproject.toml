@@ -29,7 +29,8 @@ dependencies = [
     "matplotlib",
     "numpy",
     "pandas",
-    "proxystore",
+    "parsl",
+    "proxystore>=0.7.1",
     "scipy",
     "scikit-learn",
     "tqdm",
@@ -73,16 +74,31 @@ docs = [
     "mkdocstrings-python",
 ]
 
+[tool.coverage.run]
+omit = ["*/_remote_module_non_scriptable.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = [
+    # a more strict default pragma
+    "\\# pragma: no cover\\b",
+    # allow defensive code
+    "^\\s*raise AssertionError\\b",
+    "^\\s*raise NotImplementedError\\b",
+    "^\\s*return NotImplemented\\b",
+    "^\\s*raise$",
+    # typing-related code
+    "^\\s*if (False|TYPE_CHECKING):",
+    ": \\.\\.\\.(\\s*#.*)?$",
+    "^ +\\.\\.\\.$",
+]
+
 [tool.mypy]
 plugins = [
-    "numpy.typing.mypy_plugin"
+    "numpy.typing.mypy_plugin",
+    "proxystore.mypy_plugin",
 ]
-
-[tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-]
-
 
 [tool.setuptools.packages.find]
 include = ["flight*"]
