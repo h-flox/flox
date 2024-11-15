@@ -16,7 +16,7 @@ if t.TYPE_CHECKING:
 T = t.TypeVar("T")
 
 
-class ProxystoreTransfer(AbstractTransfer):
+class ProxystoreTransfer(AbstractTransporter):
     def __init__(
         self,
         topo: Topology,
