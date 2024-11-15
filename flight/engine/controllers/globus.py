@@ -5,8 +5,8 @@ from concurrent.futures import Future
 
 import globus_compute_sdk
 
-from ...federation.topologies import Node
-from .base import AbstractController
+from flight.engine.controllers.base import AbstractController
+from flight.federation.topologies import Node
 
 if t.TYPE_CHECKING:
     from flight.types import P, T

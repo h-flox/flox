@@ -6,7 +6,8 @@ import typing as t
 if t.TYPE_CHECKING:
     from ..federation.topologies import Node
     from ..types import Record
-    from .types import Data, DataIterable, DataKinds, FrameworkKind, Params
+    from .params import Params
+    from .types import Data, DataIterable, DataKinds, FrameworkKind
 
 
 # DataType = t.TypeVar("DataType", bound="AbstractDataModule")
@@ -83,13 +84,9 @@ class AbstractDataModule(t.Protocol):
 
 class AbstractModule(abc.ABC):
     @abc.abstractmethod
-    def get_params(self, to_numpy: bool = True) -> Params:
+    def get_params(self) -> Params:
         """
         Getter method for the parameters of a trainable module (i.e., neural network).
-
-        Args:
-            to_numpy (bool): Flag to convert the parameters to numpy `ndarray`s.
-                Defaults to `True`.
 
         Returns:
             The parameters of the module.

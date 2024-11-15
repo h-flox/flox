@@ -15,7 +15,7 @@ from flight.learning.torch.types import TensorLoss
 NUM_LABELS = 10
 
 
-class TrainingModule(TorchModule):
+class MyModule(TorchModule):
     def __init__(self):
         super().__init__()
         self.model = nn.Sequential(
@@ -35,7 +35,7 @@ class TrainingModule(TorchModule):
     def training_step(self, batch, batch_idx) -> TensorLoss:
         x, y = batch
         y_hat = self(x)
-        return nn.functional.nll_loss(y_hat, y)
+        return nn.functional.cross_entropy(y_hat, y)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         return torch.optim.Adam(self.parameters(), lr=0.02)
@@ -48,24 +48,27 @@ def main():
         train=False,
         transform=ToTensor(),
     )
-    data = Subset(data, indices=list(range(2000)))
+    data = Subset(data, indices=list(range(200)))
     topo = fl.flat_topology(10)
-    # exit(0)
-    module = TrainingModule()
+    module = MyModule()
     fed_data = federated_split(
         topo=topo,
-        # data=TensorDataset(
-        #     torch.randn(100, 1), torch.randint(low=0, high=NUM_LABELS, size=(100, 1))
-        # ),
         data=data,
         num_labels=NUM_LABELS,
         label_alpha=100.0,
         sample_alpha=100.0,
     )
-    trained_module, records = fl.federated_fit(topo, module, fed_data, rounds=2)
+    trained_module, records = fl.federated_fit(topo, module, fed_data, rounds=10)
 
     df = pd.DataFrame.from_records(records)
-    sns.lineplot(df, x="round", y="train/loss")
+    print(df.head())
+    sns.lineplot(
+        df,
+        x="train/time",
+        y="train/loss",
+        hue="node/idx",
+        # errorbar=None,
+    ).set(yscale="linear")
     plt.show()
 
 

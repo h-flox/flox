@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
+from flight.learning.params import Params
+
 from ..base import (
     DefaultAggrStrategy,
     DefaultTrainerStrategy,
@@ -19,7 +21,6 @@ if t.TYPE_CHECKING:
         WorkerState,
     )
     from flight.learning.base import AbstractDataModule, AbstractModule
-    from flight.learning.types import NpParams, Params
 
 
 class _FedAvgConstMixins:
@@ -66,15 +67,15 @@ class FedAvgAggr(DefaultAggrStrategy, _FedAvgConstMixins):
         Returns:
             Params: The aggregated values.
         """
-        children_params: dict[NodeID, NpParams] = {}
+        children_params: dict[NodeID, Params] = {}
         for idx in children_states:
-            children_params[idx] = children_modules[idx].get_params(to_numpy=True)
+            children_params[idx] = children_modules[idx].get_params()
 
         weights = {}
         for node, child_state in children_states.items():
             weights[node] = child_state[FedAvgAggr.NUM_SAMPLES]
-
         state[FedAvgAggr.NUM_SAMPLES] = sum(weights.values())
+
         return average_state_dicts(children_params, weights=weights)
 
 
