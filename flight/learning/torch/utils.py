@@ -20,6 +20,10 @@ if t.TYPE_CHECKING:
     from flight.learning.types import Data, FloatDouble, FloatTriple
 
 
+IID: t.Final[float] = 1e5
+NON_IID: t.Final[float] = 1e-5
+
+
 class FederatedDataModule(TorchDataModule):
     """
     This class defines a DataModule that is split across worker nodes in a federation's
@@ -177,8 +181,8 @@ def federated_split(
     topo: Topology,
     data: Data,
     num_labels: int,
-    label_alpha: float,
-    sample_alpha: float,
+    label_alpha: float = IID,
+    sample_alpha: float = IID,
     train_test_valid_split: FloatTriple | FloatDouble | None = None,
     ensure_at_least_one_sample: bool = True,
     rng: np.random.Generator | int | None = None,
