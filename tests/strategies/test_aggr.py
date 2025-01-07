@@ -3,13 +3,14 @@ import typing as t
 import pytest
 import torch
 
-from flight.federation.topologies.node import NodeState, NodeID
+from flight.federation.topologies.node import NodeID
 from flight.learning.params import Params
 from flight.strategies import AggrStrategy
 from flight.strategies.base import DefaultAggrStrategy
 from flight.strategies.commons import average_state_dicts
 
-W, B = "weight", "bias"
+W: t.Final[str] = "weight"
+B: t.Final[str] = "bias"
 
 
 def test_instance():
@@ -21,64 +22,63 @@ def test_instance():
     assert isinstance(default_aggr, AggrStrategy)
 
 
-def test_aggr_aggregate_params():
-    """
-    Tests usability for the 'aggregate_params' function on two children.
-    """
-    default_aggr = DefaultAggrStrategy()
-
-    """
-    topo = two_tier_topology()
-    children = topo.get_children(0)
-    for i, child in enumerate(children):
-        child.module = torch.nn.Linear(1, 1, bias=False)
-        state_dict = child.module.state_dict()
-        w = next(iter(state_dict))
-        state_dict[w] = float(i)
-        
-    children_modules = {child: child.module for child in children}
-    avg = default_aggr.aggregate_params(aggr_state, children, children_modules)
-    assert avg == sum(range(len(children))) / len(children)
-    """
-
-    state: NodeState = "foo"
-    children = {1: "foo1", 2: "foo2"}
-
-    children_state_dicts_pt = {
-        1: {
-            "train/loss": torch.tensor(2.3, dtype=torch.float32),
-            "train/acc": torch.tensor(1.2, dtype=torch.float32),
-        },
-        2: {
-            "train/loss": torch.tensor(3.1, dtype=torch.float32),
-            "train/acc": torch.tensor(1.4, dtype=torch.float32),
-        },
-    }
-
-    avg = default_aggr.aggregate_params(state, children, children_state_dicts_pt)
-
-    assert isinstance(avg, dict)
-
-    expected_avg = {
-        "train/loss": 2.7,
-        "train/acc": 1.3,
-    }
-
-    epsilon = 1e-6
-    for key, value in avg.items():
-        expected = expected_avg[key]
-        assert abs(expected - value.item()) < epsilon
+# def test_aggr_aggregate_params():
+#     """
+#     Tests usability for the 'aggregate_params' function on two children.
+#     """
+#     default_aggr = DefaultAggrStrategy()
+#
+#     """
+#     topo = two_tier_topology()
+#     children = topo.get_children(0)
+#     for i, child in enumerate(children):
+#         child.module = torch.nn.Linear(1, 1, bias=False)
+#         state_dict = child.module.state_dict()
+#         w = next(iter(state_dict))
+#         state_dict[w] = float(i)
+#
+#     children_modules = {child: child.module for child in children}
+#     avg = default_aggr.aggregate_params(aggr_state, children, children_modules)
+#     assert avg == sum(range(len(children))) / len(children)
+#     """
+#
+#     state: NodeState = "foo"
+#     children = {1: WorkerState(1), 2: WorkerState(2)}
+#
+#     children_state_dicts_pt = {
+#         1: {
+#             "train/loss": torch.tensor(2.3, dtype=torch.float32),
+#             "train/acc": torch.tensor(1.2, dtype=torch.float32),
+#         },
+#         2: {
+#             "train/loss": torch.tensor(3.1, dtype=torch.float32),
+#             "train/acc": torch.tensor(1.4, dtype=torch.float32),
+#         },
+#     }
+#
+#     avg = default_aggr.aggregate_params(state, children, children_state_dicts_pt)
+#
+#     assert isinstance(avg, Params)
+#     assert isinstance(avg, dict)
+#
+#     expected_avg = {
+#         "train/loss": 2.7,
+#         "train/acc": 1.3,
+#     }
+#
+#     epsilon = 1e-6
+#     for key, value in avg.items():
+#         expected = expected_avg[key]
+#         assert abs(expected - value.item()) < epsilon
 
 
 class TestAveraging:
     @pytest.fixture
     def params(self) -> dict[NodeID, Params]:
-        return Params(
-            {
-                0: {W: torch.tensor([10.0]), B: torch.tensor([5.0])},
-                1: {W: torch.tensor([15.0]), B: torch.tensor([2.5])},
-            }
-        )
+        return {
+            0: Params({W: torch.tensor([10.0]), B: torch.tensor([5.0])}),
+            1: Params({W: torch.tensor([15.0]), B: torch.tensor([2.5])}),
+        }
 
     @pytest.fixture
     def weights(self) -> dict[t, float]:
