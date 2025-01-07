@@ -1,6 +1,7 @@
 """
 Defines callbacks for processing a set of futures.
 """
+
 from __future__ import annotations
 
 import collections as c

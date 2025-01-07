@@ -23,27 +23,55 @@ if t.TYPE_CHECKING:
 
 
 def setup_work_job(fn: TrainJob | None) -> TrainJob:
-    return default_training_job  # TODO
-    match fn:
-        case TrainJob():  # TODO: Currently illegal, `TrainJob` is not a type
-            return default_training_job  # TODO
-        case None:
-            return default_training_job
-        case _:
-            raise ValueError(
-                "Invalid value for work function provided. "
-                "Must be either a `TrainJob` or `None`."
-            )
+    """
+    This functions returns the work function (i.e., local training job function) to use
+    for a given federation. In short, if the user does not provide a custom user-defined
+    work function (i.e., `fn=None`), then the default work function is returned.
+    Otherwise, the user-defined work function is returned.
+
+    Args:
+        fn (TrainJob | None): The work function (i.e., local training job) that is
+            run on worker nodes in a federation.
+
+    Returns:
+        The work function to be used for local training jobs.
+    """
+    return default_training_job if fn is None else fn
 
 
 class Federation(abc.ABC):
     topology: Topology
+    """
+    The topology that defines the between endpoints that make up the federation.
+    """
+
     strategy: Strategy
+    """
+    The algorithmic/learning strategy that is used for the federation (e.g., FedAvg).
+    """
+
     data: AbstractDataModule
-    work_fn: TrainJob
+    """
+    The data module that is used to train the global model.
+    """
+
     engine: Engine
+    """
+    The engine that is used to submit jobs and arguments to endpoints
+    (e.g., IoT devices, HPC nodes, simulated nodes) through the control and data
+    planes, respectively.
+    """
+
     global_model: AbstractModule
+    """
+    The global model that is trained during the federation.
+    """
+
     work_fn: TrainJob
+    """
+    The work function (i.e., local training jobs) that is run on worker nodes
+    in a federation.
+    """
 
     def __init__(
         self,

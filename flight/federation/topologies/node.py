@@ -190,12 +190,19 @@ class AggrState(NodeState):
     The state of an Aggregator node.
 
     Args:
-        children (t.Iterable[Node]): Child nodes in the topology.
+        children (t.Iterable[Node]): Child nodes to this aggregator in the topology.
         module (AbstractModule | None): Aggregated model.
     """
 
-    children: t.Sequence[Node]
+    children: t.Collection[Node]
+    """
+    The children to the aggregator.
+    """
+
     module: AbstractModule | None = None
+    """
+    The aggregator's module.
+    """
 
 
 @dataclass

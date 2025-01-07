@@ -55,8 +55,8 @@ class AggrJobArgs:
     # fut: Future
     round_num: int
     node: Node
-    children: t.Sequence[Node]
-    child_results: t.Sequence[Result]
+    children: t.Collection[Node]
+    child_results: t.Collection[Result]
     aggr_strategy: AggrStrategy
     transfer: AbstractTransporter
 

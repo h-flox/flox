@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import typing as t
 
-from numpy.random import Generator
-
 from flight.strategies import Strategy
 from flight.strategies.base import (
     DefaultAggrStrategy,
@@ -14,6 +12,8 @@ from flight.strategies.base import (
 from flight.strategies.commons import random_worker_selection
 
 if t.TYPE_CHECKING:
+    from numpy.random import Generator
+
     from flight.federation.topologies.node import Node, NodeState
 
 

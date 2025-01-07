@@ -3,7 +3,8 @@ import typing as t
 import pytest
 import torch
 
-from flight.federation.topologies.node import NodeState
+from flight.federation.topologies.node import NodeState, NodeID
+from flight.learning.params import Params
 from flight.strategies import AggrStrategy
 from flight.strategies.base import DefaultAggrStrategy
 from flight.strategies.commons import average_state_dicts
@@ -71,11 +72,13 @@ def test_aggr_aggregate_params():
 
 class TestAveraging:
     @pytest.fixture
-    def params(self) -> dict[int, dict[str, torch.Tensor]]:
-        return {
-            0: {W: torch.tensor([10.0]), B: torch.tensor([5.0])},
-            1: {W: torch.tensor([15.0]), B: torch.tensor([2.5])},
-        }
+    def params(self) -> dict[NodeID, Params]:
+        return Params(
+            {
+                0: {W: torch.tensor([10.0]), B: torch.tensor([5.0])},
+                1: {W: torch.tensor([15.0]), B: torch.tensor([2.5])},
+            }
+        )
 
     @pytest.fixture
     def weights(self) -> dict[t, float]:

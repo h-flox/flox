@@ -40,7 +40,7 @@ AbstractDataModule-->TorchDataModule
 """
 
 from .base import AbstractDataModule, AbstractModule, AbstractTrainer
-from .params import NpParams, TorchParams
+from .params import NpParams, Params, TorchParams
 from .torch.utils import federated_split
 
 __all__ = [

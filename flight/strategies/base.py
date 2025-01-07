@@ -4,7 +4,6 @@ import dataclasses
 import functools
 import typing as t
 
-from flight.learning import AbstractModule
 from flight.strategies.aggr import AggrStrategy
 from flight.strategies.commons import average_state_dicts
 from flight.strategies.coord import CoordStrategy
@@ -17,7 +16,7 @@ StrategyTypes: t.TypeAlias = (
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import AggrState, NodeID, NodeState
-    from flight.learning import Params
+    from flight.learning import AbstractModule, Params
 
 
 class DefaultCoordStrategy(CoordStrategy):
@@ -263,5 +262,5 @@ class DefaultStrategy(Strategy):
             coord_strategy=DefaultCoordStrategy(),
             aggr_strategy=DefaultAggrStrategy(),
             worker_strategy=DefaultWorkerStrategy(),
-            trainer_strategy=DefaultTrainerStrategy(),
+            # trainer_strategy=DefaultTrainerStrategy(),
         )

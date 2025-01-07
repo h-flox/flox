@@ -31,7 +31,7 @@ def default_training_job(args: TrainJobArgs) -> Result:
     local_model = args.model
     data = args.data
     worker_strategy = args.worker_strategy
-    trainer_strategy = args.trainer_strategy
+    # trainer_strategy = args.trainer_strategy
 
     ####################################################################################
 
@@ -44,30 +44,14 @@ def default_training_job(args: TrainJobArgs) -> Result:
             raise ValueError
 
         case "scikit":
-            from flight.learning.scikit import (
-                ScikitDataModule,
-                ScikitModule,
-                ScikitTrainer,
-            )
+            from ._scikit import scikit_local_train
 
-            assert isinstance(local_model, ScikitModule)
-            assert isinstance(data, ScikitDataModule)
-
-            trainer_init_params = dict()  # TODO: Add this as an attr. of TrainArgJobs.
-            trainer = ScikitTrainer(node, **trainer_init_params)
-            records = trainer.fit(local_model, data)
+            records = scikit_local_train(data, local_model, node)
 
         case "torch":
-            from flight.learning.torch import TorchDataModule, TorchModule, TorchTrainer
+            from ._torch import torch_local_train
 
-            assert isinstance(local_model, TorchModule)
-            assert isinstance(data, TorchDataModule)
-
-            # TODO: Add this as an attr. of TrainArgJobs.
-            trainer_init_params = dict(progress_bar=False)
-            trainer_fit_params = dict()
-            trainer = TorchTrainer(node=args.node, **trainer_init_params)
-            records = trainer.fit(node_state, local_model, data, **trainer_fit_params)
+            records = torch_local_train(args, data, local_model, node_state)
 
         case _:
             raise ValueError(

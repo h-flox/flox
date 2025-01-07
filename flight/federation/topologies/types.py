@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import typing as t
 
-from .node import NodeID
+from flight.federation.topologies import NodeID
 
 NodeLink: t.TypeAlias = tuple[NodeID, NodeID]
 """

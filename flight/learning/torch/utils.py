@@ -249,8 +249,8 @@ def federated_split(
             then the number of samples across workers will look very uniform. The
             distribution of labels behaves similarly.
         - It is worth experimenting with this function using the
-            [`fed_barplot`][flight.learning.utils.fed_barplot] function to visualize the
-            distribution of the federated data module.
+            [`fed_barplot`][flight.learning.utils.fed_barplot] function
+            to visualize the distribution of the federated data module.
         - The `allow_overlapping_samples` feature is ==**not yet implemented**==.
 
     Throws:

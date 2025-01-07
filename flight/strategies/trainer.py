@@ -7,6 +7,11 @@ if t.TYPE_CHECKING:
     from flight.learning.types import LocalStepOutput
 
 
+# TODO: Remove this 'feature' from the Strategy class. For now, it is not needed.
+#       Instead, focus your time on the Globus Compute and Parsl implementations to
+#       run FL with basic testing/validation.
+
+
 @t.runtime_checkable
 class TrainerStrategy(t.Protocol):
     """
