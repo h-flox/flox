@@ -55,11 +55,12 @@ class FederatedDataModule(TorchDataModule):
         """
         Args:
             dataset (Dataset): The dataset to split across workers.
-            train_indices (Dataset): The indices for the training data for
-                each worker.
-            test_indices (Dataset): The indices for the test data for each worker.
-            valid_indices (Dataset): The indices for the validation data for
-                each worker.
+            train_indices (t.Mapping[NodeID, t.Sequence[int]]): The indices for the
+                training data for each worker.
+            test_indices (t.Mapping[NodeID, t.Sequence[int]] | None): The indices
+                for the test data for each worker.
+            valid_indices (t.Mapping[NodeID, t.Sequence[int]] | None): The indices
+                for the validation data for each worker.
             **dataloader_kwargs: Keyword arguments to pass to the `DataLoader` class
                 when calling `train_data()`, `valid_data()`, and `test_data()`.
 
@@ -186,7 +187,7 @@ def federated_split(
     train_test_valid_split: FloatTriple | FloatDouble | None = None,
     ensure_at_least_one_sample: bool = True,
     rng: np.random.Generator | int | None = None,
-    allow_overlapping_samples: bool = False,
+    allow_overlapping_samples: bool = False,  # TODO.
 ) -> FederatedDataModule:
     """
     Splits a dataset across a federation of workers.
@@ -211,7 +212,8 @@ def federated_split(
             generally encouraged to ensure at least 1 sample per worker.
         rng (numpy.random.Generator | int | None): Random number generator.
         allow_overlapping_samples (bool): If `True`, this allows for samples that can
-            be shared across workers; `False` if you want no such sharing.
+            be shared across workers; `False` if you want no such sharing. Note: this
+            is currently not implemented.
 
     Returns:
         A federated data module that where the originally provided dataset is now split
@@ -320,6 +322,16 @@ def federated_split(
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
+    if ensure_at_least_one_sample:
+        for worker in topo.workers:
+            worker_with_most_samples = max(worker_samples, key=worker_samples.get)
+            if worker_samples[worker.idx] == 0:
+                index = indices[worker_with_most_samples].pop()
+                worker_samples[worker_with_most_samples] -= 1
+
+                indices[worker.idx].append(index)
+                worker_samples[worker.idx] += 1
+
     if train_test_valid_split is None:
         train_indices = indices
         test_indices = None
@@ -348,16 +360,6 @@ def federated_split(
     else:
         raise ValueError("Invalid number of elements in `train_test_valid_split`.")
 
-    if ensure_at_least_one_sample:
-        for worker in topo.workers:
-            worker_with_most_samples = max(worker_samples, key=worker_samples.get)
-            if worker_samples[worker.idx] == 0:
-                index = indices[worker_with_most_samples].pop()
-                worker_samples[worker_with_most_samples] -= 1
-
-                indices[worker.idx].append(index)
-                worker_samples[worker.idx] += 1
-
     return FederatedDataModule(
         data,
         train_indices=train_indices,
@@ -367,7 +369,7 @@ def federated_split(
 
 
 def fed_barplot(
-    fed_data: FederatedDataModule,
+    data: FederatedDataModule,
     num_labels: int,
     width: float = 0.5,
     ax: Axes | None = None,
@@ -377,7 +379,7 @@ def fed_barplot(
     Plots the distribution of a `FederatedDataModule` instance as a stacked bar plot.
 
     Args:
-        fed_data (FederatedDataModule): Federated data module.
+        data (FederatedDataModule): Federated data module.
         num_labels (int): Number of labels in the dataset.
         width (float): Width of the bars.
         ax (Axes | None): Axes object to draw onto. If `None` is provided, then one
@@ -397,19 +399,19 @@ def fed_barplot(
     if num_labels < 1:
         raise ValueError("The number of labels must be at least 1.")
 
-    if not isinstance(fed_data, FederatedDataModule):
+    if not isinstance(data, FederatedDataModule):
         raise TypeError(
             f"`fed_data` must be an instance of `FederatedDataModule` "
-            f"(got `{type(fed_data)}`)."
+            f"(got `{type(data)}`)."
         )
 
     label_counts_per_worker = {
-        label: np.zeros(len(fed_data), dtype=np.int32) for label in range(num_labels)
+        label: np.zeros(len(data), dtype=np.int32) for label in range(num_labels)
     }
 
     i = 0  # worker index -- we use this instead of the actual worker ID to start at 0
-    for node, _ in fed_data:
-        for batch in fed_data.train_data(node):
+    for node, _ in data:
+        for batch in data.train_data(node):
             _, labels = batch
             for label in labels:
                 label_counts_per_worker[label.item()][i] += 1
@@ -419,8 +421,8 @@ def fed_barplot(
     if ax is None:
         fig, ax = plt.subplots()
 
-    bottom = np.zeros(len(fed_data))
-    workers = list(range(len(fed_data)))
+    bottom = np.zeros(len(data))
+    workers = list(range(len(data)))
     for label, worker_count in label_counts_per_worker.items():
         ax.bar(
             workers,

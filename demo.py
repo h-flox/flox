@@ -58,7 +58,9 @@ def main():
         label_alpha=100.0,
         sample_alpha=100.0,
     )
-    trained_module, records = fl.federated_fit(topo, module, fed_data, rounds=10)
+    trained_module, records = fl.federated_fit(
+        topo, module, fed_data, strategy="fedavg", rounds=10
+    )
 
     df = pd.DataFrame.from_records(records)
     print(df.head())

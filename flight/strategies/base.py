@@ -262,5 +262,5 @@ class DefaultStrategy(Strategy):
             coord_strategy=DefaultCoordStrategy(),
             aggr_strategy=DefaultAggrStrategy(),
             worker_strategy=DefaultWorkerStrategy(),
-            # trainer_strategy=DefaultTrainerStrategy(),
+            trainer_strategy=DefaultTrainerStrategy(),
         )

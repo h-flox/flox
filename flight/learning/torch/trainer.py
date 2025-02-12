@@ -121,11 +121,11 @@ class TorchTrainer(TorchTrainerCallbackMixins):
         Fits (or trains) a PyTorch module on a given module.
 
         Args:
-            node_state (WorkerState):
-            model (TorchModule):
-            data (TorchDataModule):
-            validate_every_n_epochs:
-            ckpt_path:
+            node_state (WorkerState): State of the current node.
+            model (TorchModule): Model to train.
+            data (TorchDataModule): Data module to use for training.
+            validate_every_n_epochs: Number of epochs to wait before validating the
+            ckpt_path: Path to save the model checkpoint.
 
         Raises:
             - `ValueError`: Thrown when illegal values are given to arguments.

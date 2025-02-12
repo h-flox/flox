@@ -201,7 +201,7 @@ class SyncFederation(Federation):
             round_num=self._round_num,
             node=node,
             children=children,
-            child_results=[],  # Note: this is updated in the callback,
+            child_results=[],  # NOTE: this is updated in the callback,
             aggr_strategy=self.aggr_strategy,
             transfer=self.engine.transmitter,
         )
