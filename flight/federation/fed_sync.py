@@ -11,13 +11,15 @@ from .fed_abs import Federation
 from .future_callbacks import all_futures_finished
 from .jobs.aggr import default_aggr_job
 from .jobs.types import AggrJobArgs
+from .records import broadcast_records
 from .topologies.node import Node, NodeKind, AggrState
 from .topologies.topo import Topology
 from ..engine import Engine
+from ..types import Record
 
 if t.TYPE_CHECKING:
     from ..strategies.base import Strategy
-    from .jobs.types import Result
+    from .jobs import Result, TrainJob
     from ..learning.base import AbstractDataModule, AbstractModule
 
 
@@ -33,16 +35,16 @@ class SyncFederation(Federation):
         strategy: Strategy,
         module: AbstractModule,
         data: AbstractDataModule,
+        work_fn: TrainJob | None = None,
         # engine: Engine,
         #
         logger=None,
         debug=None,
     ):
-        super().__init__(topology, strategy)
+        super().__init__(topology, strategy, work_fn=work_fn)
         self.module = module
         self.data = data
-        self.engine = Engine()
-        # self.engine = engine
+        self.engine = Engine(None, None)  # TODO
         self.exceptions = []
         self.global_model = module  # None
 
@@ -52,15 +54,20 @@ class SyncFederation(Federation):
         self._pbar: tqdm | None = None
         self._round_num: int = 0
 
-    def start(self, rounds: int) -> list[Result]:
+    def start(self, rounds: int) -> list[Record]:
+        # TODO: I do NOT think we need `start` and `federation_round` to be separate.
         results = []
+        records = []
         self._round_num = 0
 
         for round_no in tqdm(range(rounds)):
             self._round_num = round_no
             res = self.federation_round(round_no)
             results.append(res)
-        return results
+            records.extend(res.records)
+
+        # return results
+        return records
 
     def federation_round(self, round_no: int) -> Result:
         log(f"Starting round {round_no}")
@@ -71,9 +78,18 @@ class SyncFederation(Federation):
         try:
             step_result = step_future.result()
         except Exception as err:
-            self.engine.control_plane.shutdown()
+            self.engine.controller.shutdown()
             raise err
 
+        # TEST THE GLOBAL MODEL.
+        coord = self.topology.coordinator
+        test_data = self.data.test_data(coord)
+        if test_data:
+            _ = self.global_model.test_step(test_data)  # TODO
+            test_results = {"test/acc": -1, "test/loss": -1}
+            broadcast_records(step_result.records, **test_results)
+
+        # UPDATE PROGRESS BAR.
         self.global_model.set_params(step_result.params)
         if self._pbar:
             self._pbar.update()
@@ -185,9 +201,9 @@ class SyncFederation(Federation):
             round_num=self._round_num,
             node=node,
             children=children,
-            child_results=[],  # Note: this is updated in the callback,
+            child_results=[],  # NOTE: this is updated in the callback,
             aggr_strategy=self.aggr_strategy,
-            transfer=self.engine.data_plane,
+            transfer=self.engine.transmitter,
         )
 
         cbk = functools.partial(

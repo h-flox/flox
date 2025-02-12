@@ -9,8 +9,8 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from flight.engine.control.parsl import ParslController
-from flight.engine.control.serial import SerialController
+from flight.engine.controllers.parsl import ParslController
+from flight.engine.controllers.serial import SerialController
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import NodeKind, WorkerState
 from flight.learning.scikit import ScikitDataModule

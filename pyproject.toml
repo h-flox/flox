@@ -24,6 +24,7 @@ maintainers = [
 
 requires-python = ">=3.11"
 dependencies = [
+    "parsl",
     "globus-compute-sdk",
     "lightning",
     "matplotlib",
@@ -60,6 +61,7 @@ dev = [
 monitoring = ["tensorboard"]
 proxystore = ["proxystore"]
 docs = [
+    "black",
     "mkdocs",
     "mkdocs-autorefs",
     "mkdocs-gen-files",

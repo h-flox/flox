@@ -3,11 +3,11 @@ from __future__ import annotations
 import typing as t
 
 import numpy as np
-import torch
+
+from flight.learning.params import Params
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import NodeID
-    from flight.learning.types import Params
 
 
 def average_state_dicts(
@@ -37,24 +37,14 @@ def average_state_dicts(
         weight_sum = sum(list(weights.values()))
         node_weights = {node: weights[node] / weight_sum for node in weights}
 
-    with torch.no_grad():
-        avg_weights = {}
-        for node, state_dict in state_dicts.items():
-            w = node_weights[node]
-            for name, value in state_dict.items():
-                match value:
-                    # TODO: We need some abstraction for math operations across numpy
-                    #       and tensors.
-                    case torch.Tensor():
-                        value = w * torch.clone(value)
-                    case np.ndarray():
-                        value = w * value
-                    case _:
-                        raise ValueError("Unsupported data type for parameter value.")
+    avg_weights = {}
+    for node, node_params in state_dicts.items():
+        node_params = node_params.numpy()
+        w = node_weights[node]
+        for name, value in node_params.items():
+            if name not in avg_weights:
+                avg_weights[name] = w * np.copy(value)
+            else:
+                avg_weights[name] += w * np.copy(value)
 
-                if name not in avg_weights:
-                    avg_weights[name] = value
-                else:
-                    avg_weights[name] += value
-
-    return avg_weights
+    return Params(avg_weights)

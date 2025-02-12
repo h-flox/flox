@@ -9,6 +9,7 @@ from matplotlib.axes import Axes
 from .node import NodeKind
 
 if t.TYPE_CHECKING:
+    from .node import NodeID
     from .topo import Topology
 
 
@@ -24,6 +25,10 @@ _PROGS = [
     "osage",
     "patchwork",
 ]
+"""
+Backend programs for visualizing a topology with Matplotlib. Support for
+these backends are provided by `networkx`.
+"""
 
 
 def draw(
@@ -81,9 +86,9 @@ def draw(
             "has been created via interactive mode."
         )
 
-    coord = [topo.coordinator.idx]
-    aggregators = list(aggr.idx for aggr in topo.aggregators)
-    workers = list(worker.idx for worker in topo.workers)
+    coord: list[NodeID] = [topo.coordinator.idx]
+    aggregators: list[NodeID] = [aggr.idx for aggr in topo.aggregators]
+    workers: list[NodeID] = [worker.idx for worker in topo.workers]
 
     if node_kind_attrs is None:
         node_kind_attrs = {

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import typing as t
 
-from numpy.random import Generator
-
 from flight.strategies import Strategy
 from flight.strategies.base import (
     DefaultAggrStrategy,
@@ -11,11 +9,12 @@ from flight.strategies.base import (
     DefaultTrainerStrategy,
     DefaultWorkerStrategy,
 )
-from flight.strategies.commons import average_state_dicts, random_worker_selection
+from flight.strategies.commons import random_worker_selection
 
 if t.TYPE_CHECKING:
-    from flight.federation.topologies.node import AggrState, Node, NodeID, NodeState
-    from flight.learning.types import Params
+    from numpy.random import Generator
+
+    from flight.federation.topologies.node import Node, NodeState
 
 
 class FedSGDCoord(DefaultCoordStrategy):
@@ -76,12 +75,13 @@ class FedSGDAggr(DefaultAggrStrategy):
     Standard averaging strategy.
     """
 
+    '''
     def aggregate_params(
         self,
         state: AggrState,
         children_states: t.Mapping[NodeID, NodeState],
-        children_params: t.Mapping[NodeID, Params],
-        **kwargs,
+        children_modules: t.Mapping[NodeID, AbstractModule],
+        **kwargs: dict[str, t.Any],
     ) -> Params:
         """
         Performs a simple average of the model parameters returned by the child nodes.
@@ -100,14 +100,20 @@ class FedSGDAggr(DefaultAggrStrategy):
             state (NodeState): State of the current aggregator node.
             children_states (t.Mapping[NodeID, NodeState]): Dictionary of the states of
                 the children.
-            children_params (t.Mapping[NodeID, Params]): Dictionary mapping each
-                child to its values.
+            children_modules (t.Mapping[NodeID, AbstractModule]): A mapping of the
+                modules belonging to each respective child node.
             **kwargs: Key word arguments provided by the user.
 
         Returns:
             Aggregated parameters.
         """
+        print(children_modules)
+        children_params = {
+            child: module.get_params(to_numpy=True)
+            for child, module in children_modules.items()
+        }
         return average_state_dicts(children_params, weights=None)
+    '''
 
 
 class FedSGD(Strategy):

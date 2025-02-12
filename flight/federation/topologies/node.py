@@ -150,7 +150,7 @@ class NodeState:
 
     def __setitem__(self, key: str, value: t.Any) -> None:
         """
-        Setter function that stores a data item into the state's cache by key.
+        Setter function that stores a datum into the state's cache by key.
 
         Args:
             key (str): The key to store the data in cache for lookup.
@@ -190,12 +190,19 @@ class AggrState(NodeState):
     The state of an Aggregator node.
 
     Args:
-        children (t.Iterable[Node]): Child nodes in the topology.
-        aggr_model (AbstractModule | None): Aggregated model.
+        children (t.Iterable[Node]): Child nodes to this aggregator in the topology.
+        module (AbstractModule | None): Aggregated model.
     """
 
-    children: t.Sequence[Node]
-    aggr_model: AbstractModule | None = None
+    children: t.Collection[Node]
+    """
+    The children to the aggregator.
+    """
+
+    module: AbstractModule | None = None
+    """
+    The aggregator's module.
+    """
 
 
 @dataclass
@@ -204,9 +211,9 @@ class WorkerState(NodeState):
     The state of a Worker node.
 
     Args:
-        global_model (AbstractDataModule | None): ...
-        local_model (AbstractDataModule | None): ...
+        pre_module (AbstractDataModule | None): ...
+        module (AbstractDataModule | None): ...
     """
 
-    global_model: AbstractDataModule | None = None
-    local_model: AbstractDataModule | None = None
+    pre_module: AbstractDataModule | None = None
+    module: AbstractDataModule | None = None

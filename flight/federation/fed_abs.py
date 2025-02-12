@@ -22,22 +22,66 @@ if t.TYPE_CHECKING:
     from .topologies.topo import Topology
 
 
+def setup_work_job(fn: TrainJob | None) -> TrainJob:
+    """
+    This functions returns the work function (i.e., local training job function) to use
+    for a given federation. In short, if the user does not provide a custom user-defined
+    work function (i.e., `fn=None`), then the default work function is returned.
+    Otherwise, the user-defined work function is returned.
+
+    Args:
+        fn (TrainJob | None): The work function (i.e., local training job) that is
+            run on worker nodes in a federation.
+
+    Returns:
+        The work function to be used for local training jobs.
+    """
+    return default_training_job if fn is None else fn
+
+
 class Federation(abc.ABC):
     topology: Topology
+    """
+    The topology that defines the between endpoints that make up the federation.
+    """
+
     strategy: Strategy
+    """
+    The algorithmic/learning strategy that is used for the federation (e.g., FedAvg).
+    """
+
     data: AbstractDataModule
-    work_fn: TrainJob
+    """
+    The data module that is used to train the global model.
+    """
+
     engine: Engine
+    """
+    The engine that is used to submit jobs and arguments to endpoints
+    (e.g., IoT devices, HPC nodes, simulated nodes) through the control and data
+    planes, respectively.
+    """
+
     global_model: AbstractModule
+    """
+    The global model that is trained during the federation.
+    """
+
+    work_fn: TrainJob
+    """
+    The work function (i.e., local training jobs) that is run on worker nodes
+    in a federation.
+    """
 
     def __init__(
         self,
         topology: Topology,
         strategy: Strategy,
+        work_fn: TrainJob | None = None,
     ) -> None:
         self.topology = topology
         self.strategy = strategy
-        self.work_fn = default_training_job
+        self.work_fn = setup_work_job(work_fn)
 
     ####################################################################################
 
@@ -124,7 +168,7 @@ class Federation(abc.ABC):
     def worker_task(self, node: Node, parent: Node) -> Future[Result]:
         """
         Prepares the arguments for the worker function and submits the function using
-        the provided control plane via the given `Engine`.
+        the provided controllers plane via the given `Engine`.
 
         Args:
             node (Node): The worker node.
@@ -144,7 +188,7 @@ class Federation(abc.ABC):
             trainer_strategy=self.trainer_strategy,
         )
         args = self.engine.transfer(args)
-        return self.engine(self.work_fn, args)
+        return self.engine.submit(self.work_fn, args=args)
 
     def _resolve_node(self, node: Node | None) -> Node:
         """

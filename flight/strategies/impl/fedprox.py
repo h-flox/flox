@@ -31,8 +31,8 @@ class FedProxTrainer(DefaultTrainerStrategy):
         Returns:
             The updated local step output (or loss) associated with the current node.
         """
-        global_model = state.global_model
-        local_model = state.local_model
+        global_model = state.pre_module
+        local_model = state.module
         assert global_model is not None
         assert local_model is not None
 

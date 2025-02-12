@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import pathlib
 import typing as t
 
@@ -19,7 +20,60 @@ if t.TYPE_CHECKING:
     _PATH: t.TypeAlias = pathlib.Path | str
 
 
-class TorchTrainer:
+class TorchTrainerCallbackMixins:
+    # noinspection PyMethodMayBeStatic
+    def hyperparameters(self, state: WorkerState) -> dict[str, t.Any]:
+        """
+        Returns the hyperparameters to be used by the ``Trainer`` for local training.
+
+        Args:
+            state (WorkerState): The state of the current worker node.
+
+        Returns:
+            Trainer hyperparameters. What key-value pairs are returned will need to
+                depend on the trainer users plan to use for federations. The default
+                behavior of this method is to return an empty dictionary.
+        """
+        return {}
+
+    # noinspection PyMethodMayBeStatic
+    def before_backprop(
+        self,
+        state: WorkerState,
+        out: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Callback to run before backpropagation.
+
+        Args:
+            state (WorkerState): State of the current node.
+            out (torch.Tensor): The calculated loss
+
+        Returns:
+            Loss after running the callback.
+        """
+        return out
+
+    # noinspection PyMethodMayBeStatic
+    def after_backprop(
+        self,
+        state: WorkerState,
+        out: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Callback to run after backpropagation.
+
+        Args:
+            state (WorkerState): State of the current node.
+            out (torch.Tensor): The calculated loss
+
+        Returns:
+            Loss after running the callback.
+        """
+        return out
+
+
+class TorchTrainer(TorchTrainerCallbackMixins):
     node: Node
     strategy: TrainerStrategy
 
@@ -64,13 +118,14 @@ class TorchTrainer:
         ckpt_path: _PATH | None = None,
     ) -> list[Record]:
         """
+        Fits (or trains) a PyTorch module on a given module.
 
         Args:
-            node_state (WorkerState):
-            model (TorchModule):
-            data (TorchDataModule):
-            validate_every_n_epochs:
-            ckpt_path:
+            node_state (WorkerState): State of the current node.
+            model (TorchModule): Model to train.
+            data (TorchDataModule): Data module to use for training.
+            validate_every_n_epochs: Number of epochs to wait before validating the
+            ckpt_path: Path to save the model checkpoint.
 
         Raises:
             - `ValueError`: Thrown when illegal values are given to arguments.
@@ -90,12 +145,13 @@ class TorchTrainer:
 
         if not isinstance(train_dataloader, DataLoader):
             raise TypeError(
-                "Method for argument `data.train_data(.)` must return a `DataLoader`."
+                "Method for argument `data.train_data(.)` "
+                "must return a `DataLoader`."
             )
         if not isinstance(valid_dataloader, DataLoader | None):
             raise TypeError(
-                "Method for argument `data.valid_data(.)` must return a `DataLoader` "
-                "or `None`."
+                "Method for argument `data.valid_data(.)` "
+                "must return a `DataLoader` or `None`."
             )
 
         pbar_prefix = f"TorchTrainer(NodeID={self.node.idx})"
@@ -125,7 +181,15 @@ class TorchTrainer:
                 pbar,
             )
             for loss in train_losses:
-                self._results.append({"epoch": epoch, "train/loss": loss.item()})
+                self._results.append(
+                    {
+                        "train/time": datetime.datetime.now(),
+                        "node/idx": self.node.idx,
+                        "epoch": epoch,
+                        "train/loss": loss.item(),
+                        "step": self._curr_step,
+                    }
+                )
 
             # Validate the model during training.
             validate_now = epoch % validate_every_n_epochs == 0
@@ -134,6 +198,8 @@ class TorchTrainer:
                 for loss in val_losses:
                     self._results.append(
                         {
+                            "valid/time": datetime.datetime.now(),
+                            "node/idx": self.node.idx,
                             "epoch": epoch,
                             "val/loss": loss.item(),
                             "step": self._curr_step,
@@ -169,6 +235,8 @@ class TorchTrainer:
 
             self._results.append(
                 {
+                    "train/time": datetime.datetime.now(),
+                    "node/idx": self.node.idx,
                     "epoch": epoch,
                     "train/loss": loss.item(),
                     "train/batch_idx": batch_idx,
@@ -200,6 +268,7 @@ class TorchTrainer:
             if loss is not None:
                 self._results.append(
                     {
+                        "train/time": datetime.datetime.now(),
                         "epoch": epoch,
                         "valid/loss": loss.item(),
                         "valid/batch_idx": batch_idx,

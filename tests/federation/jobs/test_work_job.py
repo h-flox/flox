@@ -28,7 +28,7 @@ def node_state() -> WorkerState:
 
 
 @pytest.fixture
-def model() -> TorchModule:
+def linear_regr_model() -> TorchModule:
     class LinearRegr(TorchModule):
         def __init__(self):
             super().__init__()
@@ -88,12 +88,12 @@ def data() -> TorchDataModule:
 
 
 @pytest.fixture
-def train_args(node, parent, node_state, model, data) -> TrainJobArgs:
+def train_args(node, parent, node_state, linear_regr_model, data) -> TrainJobArgs:
     return TrainJobArgs(
         node,
         parent,
         node_state,
-        model,
+        linear_regr_model,
         data,
         worker_strategy=DefaultWorkerStrategy(),
         trainer_strategy=DefaultTrainerStrategy(),

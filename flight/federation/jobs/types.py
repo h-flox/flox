@@ -7,11 +7,11 @@ from proxystore.proxy import Proxy
 
 from flight.federation.topologies.node import Node, NodeState, WorkerState
 from flight.learning.base import AbstractDataModule, AbstractModule
-from flight.learning.types import Params
 
 if t.TYPE_CHECKING:
     from flight.types import Record
-    from flight.engine.data import AbstractTransfer
+    from flight.engine.transporters import AbstractTransporter
+    from flight.learning.params import Params
     from flight.strategies import AggrStrategy, TrainerStrategy, WorkerStrategy
 
 
@@ -32,6 +32,13 @@ class Result:
     Parameters returned as part of a result from a single Node in a federation.
     """
 
+    module: AbstractModule | None = field(default=None)
+    """
+    The model module that was returned as part of this result. For *Workers*, these
+    are locally-trained model updates. For *Aggregators*, these are the aggregated
+    modules.
+    """
+
     records: list[Record] = field(default_factory=list)
     """
     List of records for model training/aggregation metrics.
@@ -48,10 +55,10 @@ class AggrJobArgs:
     # fut: Future
     round_num: int
     node: Node
-    children: t.Sequence[Node]
-    child_results: t.Sequence[Result]
+    children: t.Collection[Node]
+    child_results: t.Collection[Result]
     aggr_strategy: AggrStrategy
-    transfer: AbstractTransfer
+    transfer: AbstractTransporter
 
 
 @dataclass(slots=True, frozen=True)

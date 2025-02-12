@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import functools
+import os
 import pathlib
 import typing as t
 import uuid
@@ -101,6 +102,9 @@ class Topology:
 
     def __len__(self) -> int:
         return len(self._nodes)
+
+    def __str__(self) -> str:
+        return f"Topology(nodes={len(self)}, edges={len(self._edges)})"
 
     def nodes(self, kind: NodeKind | str | None = None) -> t.Iterator[Node]:
         """
@@ -503,3 +507,10 @@ def validate(topo: Topology) -> None:
                     raise TopologyException(
                         f"{kind_str} node(s) cannot have any children nodes."
                     )
+
+
+TopologyLike: t.TypeAlias = Topology | GraphDict | os.PathLike | str
+"""
+A type alias that represents the different types of objects that can be used to
+define a Flight `Topology`.
+"""

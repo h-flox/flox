@@ -3,29 +3,15 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from flight.engine.data.base import BaseTransfer
+from flight.engine.transporters.base import InMemoryTransporter
 from flight.federation.jobs.aggr import default_aggr_job
 from flight.federation.jobs.types import Result, AggrJobArgs
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import AggrState
+from flight.learning.params import Params
 from flight.learning.torch import TorchDataModule
 from flight.learning.torch import TorchModule
 from flight.strategies.base import DefaultAggrStrategy
-
-
-@pytest.fixture
-def parent() -> Node:
-    return Node(idx=0, kind="coordinator", children=[1])
-
-
-@pytest.fixture
-def node() -> Node:
-    return Node(idx=1, kind="worker")
-
-
-@pytest.fixture
-def aggr_state(node) -> AggrState:
-    return AggrState(0, [node], None)
 
 
 @pytest.fixture
@@ -89,11 +75,27 @@ def data() -> TorchDataModule:
 
 
 @pytest.fixture
+def parent() -> Node:
+    return Node(idx=0, kind="coordinator", children=[1])
+
+
+@pytest.fixture
+def node() -> Node:
+    return Node(idx=1, kind="worker")
+
+
+@pytest.fixture
+def aggr_state(node, model) -> AggrState:
+    return AggrState(0, [node], model)
+
+
+@pytest.fixture
 def result(node, aggr_state) -> Result:
     return Result(
         node=node,
         node_state=aggr_state,
-        params={},
+        module=aggr_state.module,  # TODO: This shouldn't be needed.
+        params=Params({"a": 1}),
         records=[],
         extra={},
     )
@@ -107,11 +109,10 @@ def aggr_args(node, parent, result) -> AggrJobArgs:
         children=[node],
         child_results=[result],
         aggr_strategy=DefaultAggrStrategy(),  # TODO: We need to resolve this typing.
-        transfer=BaseTransfer(),
+        transfer=InMemoryTransporter(),
     )
 
 
-class TestWorkerJob:
-    def test_outputs(self, aggr_args):
-        result = default_aggr_job(aggr_args)
-        assert isinstance(result, Result)
+def test_outputs(aggr_args):
+    result = default_aggr_job(aggr_args)
+    assert isinstance(result, Result)

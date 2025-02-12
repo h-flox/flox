@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import typing as t
-from collections import OrderedDict
-
-from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 from flight.learning import AbstractModule
-from flight.learning.types import FrameworkKind, Params
+from flight.learning.params import Params
+from flight.learning.types import FrameworkKind
+
+if t.TYPE_CHECKING:
+    from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 
 class ScikitModule(AbstractModule):
-    WEIGHT_KEY_PREFIX = "weight"
-    BIAS_KEY_PREFIX = "bias"
+    WEIGHT_KEY_PREFIX: t.Final[str] = "weight"
+    BIAS_KEY_PREFIX: t.Final[str] = "bias"
 
     def __init__(self, module: MLPClassifier | MLPRegressor):
         self.module = module
@@ -25,19 +26,32 @@ class ScikitModule(AbstractModule):
         return "scikit"
 
     def get_params(self) -> Params:
+        """
+        Getter method for the parameters of a trainable module (i.e., neural network)
+
+        Returns:
+            The parameters of the module.
+        """
         params = []
         for i in range(self._n_layers):
             params.append((f"{self.WEIGHT_KEY_PREFIX}_{i}", self.module.coefs_[i]))
             params.append((f"{self.BIAS_KEY_PREFIX}_{i}", self.module.intercepts_[i]))
-        return OrderedDict(params)
+        return Params(params)
 
     def set_params(self, params: Params):
+        """
+        Setter method for the parameters of a trainable module (i.e., neural network)
+        implemented in Scikit-Learn.
+
+        Args:
+            params (Params): The parameters to set.
+        """
+        params = params.numpy()
         param_keys = list(params.keys())
         layer_nums = set(map(lambda txt: int(txt.split("_")[-1]), param_keys))
         num_layers = max(layer_nums) + 1
 
-        weights = []
-        biases = []
+        weights, biases = [], []
         for i in range(num_layers):
             w_i = params[f"{self.WEIGHT_KEY_PREFIX}_{i}"]
             b_i = params[f"{self.BIAS_KEY_PREFIX}_{i}"]
@@ -57,5 +71,4 @@ class ScikitModule(AbstractModule):
                 "ScikitModule :: Inconsistent number of layers between "
                 "coefficients/weights and intercepts/biases."
             )
-
         return n

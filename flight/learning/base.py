@@ -6,7 +6,8 @@ import typing as t
 if t.TYPE_CHECKING:
     from ..federation.topologies import Node
     from ..types import Record
-    from .types import Data, DataIterable, DataKinds, FrameworkKind, Params
+    from .params import Params
+    from .types import Data, DataIterable, DataKinds, FrameworkKind
 
 
 # DataType = t.TypeVar("DataType", bound="AbstractDataModule")

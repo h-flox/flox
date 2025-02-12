@@ -8,13 +8,15 @@ import torch
 from torch import nn
 
 from flight.learning import AbstractModule
-from flight.learning.types import FrameworkKind, Params
+from flight.learning.params import Params
+from flight.learning.types import FrameworkKind
 
 from .types import TensorLoss, TensorStepOutput
 
-_DEFAULT_INCLUDE_STATE = False
+_DEFAULT_INCLUDE_STATE: t.Final[bool] = False
 """
-...
+Default constant for whether to include the state in the parameters of a
+[`TorchModule`][flight.learning.torch.module.TorchModule].
 """
 
 
@@ -22,8 +24,7 @@ class TorchModule(AbstractModule, nn.Module):
     """
     Wrapper class for a PyTorch model (i.e., `torch.nn.Module`).
 
-    Based on PyTorch Lightning's
-    [LightningModule](
+    Based on PyTorch Lightning's [LightningModule](
         https://lightning.ai/docs/pytorch/stable/_modules/lightning/
         pytorch/core/module.html#LightningModule
     ).
@@ -40,45 +41,36 @@ class TorchModule(AbstractModule, nn.Module):
     def kind(self) -> FrameworkKind:
         return "torch"
 
-    def get_params(self, to_numpy: bool = True) -> Params:
+    def get_params(self) -> Params:
         """
         Getter method for the parameters of a trainable module (i.e., neural network)
         implemented in PyTorch.
 
-        Args:
-            to_numpy (bool): Flag to convert the parameters to numpy arrays. Defaults
-                to `True`.
-
         Returns:
-            The parameters of the module.
+            The parameters of the module. If the `to_numpy` flag is set to `True`,
+                then `NpParams` are returned (i.e., values are NumPy `ndarray`s);
+                `TorchParams` are returned (i.e., values are PyTorch `Tensor`s);
 
         Notes:
             We recommend not changing the `to_numpy` flag unless you are sure of what
             you are doing. The default value is set to `True` to allow for standard
             mathematical operations in aggregation functions across different
             frameworks.
+
+        Throws:
+            - `UnsupportedParameterKindError`: If the parameter kind is
+                unknown/unsupported
         """
-
-        def _parse_params(pair: tuple[str, torch.Tensor]):
-            """
-            Helper hidden function that converts parameters to NumPy `ndarray`s if
-            specified by the `get_params` arg.
-            """
-            if to_numpy:
-                return pair[0], pair[1].data.numpy()
-            else:
-                return pair[0], pair[1].data
-
-        state_dict = self.state_dict()
         if self.include_state:
-            return OrderedDict(_parse_params(items) for items in state_dict.items())
-        else:
-            param_names = dict(self.named_parameters())
-            return OrderedDict(
-                _parse_params((name, value))
-                for (name, value) in state_dict.items()
-                if name in param_names
+            params = OrderedDict(
+                (name, param) for name, param in self.state_dict().items()
             )
+        else:
+            params = OrderedDict(
+                (name, param.data) for (name, param) in self.named_parameters()
+            )
+
+        return Params(params)
 
     def set_params(self, params: Params) -> None:
         """
@@ -91,29 +83,10 @@ class TorchModule(AbstractModule, nn.Module):
         Throws:
             - `ValueError`: if the parameter pair from (`next(iter(params.items())`)
                 is not of length 2.
-            - `Exception`: can be thrown. if the parameter cannot be converted to a
-                PyTorch `Tensor`.
+            - `Exception`: can be thrown if the parameters cannot be converted to a
+                PyTorch `Tensor`s.
         """
-
-        def _parse_params(pair: tuple[str, torch.Tensor]):
-            """
-            Helper hidden function that converts parameters to PyTorch `Tensor`s if
-            specified by the `get_params` arg.
-            """
-            if len(pair) != 2:
-                raise ValueError("Invalid parameter pair; must be of length 2.")
-
-            if isinstance(pair[1], torch.Tensor):
-                return pair[0], pair[1]
-            try:
-                return pair[0], torch.tensor(pair[1])
-            except Exception as err:
-                err.add_note("Failed to convert parameter to PyTorch `Tensor`.")
-                raise err
-
-        strict = self.include_state
-        new_params = OrderedDict(_parse_params(items) for items in params.items())
-        return self.load_state_dict(new_params, strict=strict, assign=False)
+        self.load_state_dict(params.torch(), strict=self.include_state, assign=False)
 
     ####################################################################################
 
@@ -149,8 +122,8 @@ class TorchModule(AbstractModule, nn.Module):
         Returns:
             A configured optimizer or a list of optimizers for training the model.
 
-        Raises:
-            NotImplementedError: If the method is not overridden in a subclass.
+        Throws:
+            - `NotImplementedError`: If the method is not overridden in a subclass.
         """
 
     ####################################################################################
@@ -172,7 +145,7 @@ class TorchModule(AbstractModule, nn.Module):
         Returns:
             The output of the prediction step, encapsulating the model's predictions.
 
-        Raises:
+        Throws:
             - `NotImplementedError`: If the method is not implemented.
         """
         raise NotImplementedError(
@@ -192,7 +165,7 @@ class TorchModule(AbstractModule, nn.Module):
         Returns:
             The output of the prediction step, encapsulating the model's predictions.
 
-        Raises:
+        Throws:
             - `NotImplementedError`: If the method is not implemented.
         """
         raise NotImplementedError(
@@ -213,7 +186,7 @@ class TorchModule(AbstractModule, nn.Module):
         Returns:
             The output of the prediction step, encapsulating the model's predictions.
 
-        Raises:
+        Throws:
             - `NotImplementedError`: If the method is not implemented.
         """
         raise NotImplementedError(

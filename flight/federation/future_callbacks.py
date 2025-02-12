@@ -1,6 +1,7 @@
 """
 Defines callbacks for processing a set of futures.
 """
+
 from __future__ import annotations
 
 import collections as c
@@ -81,7 +82,7 @@ def all_futures_finished(
             transfer=args.transfer,
         )
         try:
-            fut = engine(job, args)
+            fut = engine.submit(job, args=args)
             cbk = functools.partial(set_parent_future, parent_fut)
             fut.add_done_callback(cbk)
         except Exception as err:
