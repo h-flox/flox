@@ -3,11 +3,11 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from .types import AggrJobArgs, Result
+    from flight.federation.types import AggrJobArgs, Result
 
 
 def default_aggr_job(args: AggrJobArgs) -> Result:
-    from flight.federation.jobs.types import Result
+    from flight.federation.types import Result
     from flight.federation.records import broadcast_records
     from flight.federation.topologies.node import AggrState, WorkerState
 

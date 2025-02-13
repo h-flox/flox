@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from .fed_abs import Federation
 from .future_callbacks import all_futures_finished
-from .jobs.aggr import default_aggr_job
-from .jobs.types import AggrJobArgs
+from .aggr.aggr import default_aggr_job
+from flight.federation.types import AggrJobArgs
 from .records import broadcast_records
 from .topologies.node import Node, NodeKind, AggrState
 from .topologies.topo import Topology
@@ -19,7 +19,7 @@ from ..types import Record
 
 if t.TYPE_CHECKING:
     from ..strategies.base import Strategy
-    from .jobs import Result, TrainJob
+    from .aggr import Result, TrainJob
     from ..learning.base import AbstractDataModule, AbstractModule
 
 

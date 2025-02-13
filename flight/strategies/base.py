@@ -7,12 +7,9 @@ import typing as t
 from flight.strategies.aggr import AggrStrategy
 from flight.strategies.commons import average_state_dicts
 from flight.strategies.coord import CoordStrategy
-from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-StrategyTypes: t.TypeAlias = (
-    WorkerStrategy | AggrStrategy | CoordStrategy | TrainerStrategy
-)
+StrategyTypes: t.TypeAlias = WorkerStrategy | AggrStrategy | CoordStrategy
 
 if t.TYPE_CHECKING:
     from flight.federation.topologies.node import AggrState, NodeID, NodeState
@@ -143,49 +140,6 @@ class DefaultWorkerStrategy(WorkerStrategy):
     #     return result
 
 
-class DefaultTrainerStrategy(TrainerStrategy):
-    """Default implementation of a strategy for the trainer."""
-
-    # def hparams(
-    #     self,
-    #     node: Node | None = None,
-    #     state: WorkerState | None = None,
-    # ) -> dict[str, t.Any]:
-    #     return {}
-    #
-    # def before_backprop(
-    #     self,
-    #     state: WorkerState,
-    #     out: LocalStepOutput,
-    # ) -> LocalStepOutput:
-    #     """Callback to run before backpropagation.
-    #
-    #     Args:
-    #         state (WorkerState): State of the current node.
-    #         out (LocalStepOutput): The calculated loss
-    #
-    #     Returns:
-    #         The loss at the end of the callback
-    #     """
-    #     return out
-    #
-    # def after_backprop(
-    #     self,
-    #     state: WorkerState,
-    #     out: LocalStepOutput,
-    # ) -> LocalStepOutput:
-    #     """Callback to run after backpropagation.
-    #
-    #     Args:
-    #         state (WorkerState): State of the current node.
-    #         out (LocalStepOutput): The calculated loss
-    #
-    #     Returns:
-    #         The loss at the end of the callback
-    #     """
-    #     return out
-
-
 @dataclasses.dataclass(frozen=True, repr=False)
 class Strategy:
     """
@@ -209,18 +163,11 @@ class Strategy:
     Implementation of the specific callbacks for the worker node(s).
     """
 
-    trainer_strategy: TrainerStrategy
-    """
-    Implementation of callbacks specific to the execution of the training loop
-    on the worker node(s).
-    """
-
     def __iter__(self) -> t.Iterator[tuple[str, StrategyTypes]]:
         items: list[tuple[str, StrategyTypes]] = [
             ("coord_strategy", self.coord_strategy),
             ("aggr_strategy", self.aggr_strategy),
             ("worker_strategy", self.worker_strategy),
-            ("trainer_strategy", self.trainer_strategy),
         ]
         yield from items
 
@@ -262,5 +209,4 @@ class DefaultStrategy(Strategy):
             coord_strategy=DefaultCoordStrategy(),
             aggr_strategy=DefaultAggrStrategy(),
             worker_strategy=DefaultWorkerStrategy(),
-            trainer_strategy=DefaultTrainerStrategy(),
         )

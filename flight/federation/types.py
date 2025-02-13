@@ -10,14 +10,16 @@ from flight.federation.topologies.node import Node, NodeState, WorkerState
 from flight.learning.base import AbstractDataModule, AbstractModule
 
 if t.TYPE_CHECKING:
+    from ignite.engine import Engine, Events
     from torch import nn
 
-    from ignite.engine import Engine, Events
-
-    from flight.types import Record
     from flight.engine.transporters import AbstractTransporter
     from flight.learning.params import Params
     from flight.strategies import AggrStrategy, TrainerStrategy, WorkerStrategy
+    from flight.types import Record
+
+    WorkerLocalState: t.TypeAlias = dict[str, t.Any]
+    EventHandler: t.TypeAlias = t.Callable[[Engine, WorkerLocalState], None]
 
 
 def _default_prepare_batch(
@@ -92,7 +94,7 @@ class IgniteConfig:
     supervised: bool = True
 
     # supervised_training_step_args with defaults
-    device: str | torch.DeviceObjType = "cpu"
+    device: str | torch.DeviceObjType = "mps"  # TODO: Create `auto` default
     non_blocking: bool = True
     prepare_batch: t.Callable = _default_prepare_batch
     model_transform: t.Callable[[t.Any], t.Any] = lambda output: output
@@ -103,13 +105,13 @@ class IgniteConfig:
     model_fn: t.Callable[[nn.Module, t.Any], t.Any] = lambda model, x: model(x)
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(slots=True)
 class TrainJobArgs:
     """
     Arguments for the local training job run on worker nodes in a federation.
 
     The default implementation for a local training job is given by
-    [`default_training_job`][flight.federation.jobs.work.default_training_job].
+    [`default_training_job`][flight.federation.aggr.work.default_training_job].
     """
 
     node: Node
@@ -128,15 +130,9 @@ class TrainJobArgs:
     ignite_config: IgniteConfig = field(default_factory=lambda: IgniteConfig())
     supervised: bool = True  # Ignite-specific
 
-    train_handlers: list[tuple[Events, t.Callable[[Engine], None]]] = field(
-        default_factory=list
-    )
-    valid_handlers: list[tuple[Events, t.Callable[[Engine], None]]] = field(
-        default_factory=list
-    )
-    test_handlers: list[tuple[Events, t.Callable[[Engine], None]]] = field(
-        default_factory=list
-    )
+    train_handlers: list[tuple[Events, EventHandler]] = field(default_factory=list)
+    valid_handlers: list[tuple[Events, EventHandler]] = field(default_factory=list)
+    test_handlers: list[tuple[Events, EventHandler]] = field(default_factory=list)
 
     # TODO: Remove entirely.
     trainer_strategy_depr: TrainerStrategy = None
@@ -149,10 +145,10 @@ Helper type alias for a `Result` or a proxy to a `Result`.
 
 AggrJob: t.TypeAlias = t.Callable[[AggrJobArgs], Result]
 """
-Function signature for aggregation jobs.
+Function signature for aggregation aggr.
 """
 
 TrainJob: t.TypeAlias = t.Callable[[TrainJobArgs], Result]
 """
-Function signature for loca training jobs.
+Function signature for loca training aggr.
 """

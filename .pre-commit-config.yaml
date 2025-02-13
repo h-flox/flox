@@ -34,6 +34,6 @@ repos:
       - id: flake8
         additional_dependencies: ['flake8-bugbear==22.10.27']
 
-# TODO: Switch back to including `jobs/` and `fed_sync.py` when we are ready.
+# TODO: Switch back to including `aggr/` and `fed_sync.py` when we are ready.
 # exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*'
-exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*|flight/federation/jobs/.*|flight/federation/fed_sync.py|demos/.*'
+exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*|flight/federation/aggr/.*|flight/federation/fed_sync.py|demos/.*'

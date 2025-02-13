@@ -25,7 +25,7 @@ class Engine:
 
     transmitter: AbstractTransporter
     """
-    Object responsible for facilitating data transfer for the execution of jobs.
+    Object responsible for facilitating data transfer for the execution of aggr.
     This abstraction is used in the case of distributed and remote execution
     of Flight federations.
     """
@@ -42,7 +42,7 @@ class Engine:
             controller (AbstractController): The controller responsible for submitting
                 functions to be executed at the appropriate compute resources.
             transmitter (AbstractTransporter): The object responsible for facilitating
-                data transfers for the execution of jobs.
+                data transfers for the execution of aggr.
         """
         self.controller = SerialController()
         self.transmitter = InMemoryTransporter()

@@ -4,11 +4,10 @@ import typing as t
 from dataclasses import dataclass
 
 if t.TYPE_CHECKING:
-    from flight.federation.jobs import TrainJobArgs, Result
-
     from ignite.engine import Engine
-    from torch import nn
-    from torch import optim
+    from torch import nn, optim
+
+    from flight.federation.aggr import Result, TrainJobArgs
     from flight.types import Record
 
 
@@ -16,10 +15,10 @@ if t.TYPE_CHECKING:
     ProcessFn: t.TypeAlias = t.Callable[[Engine, t.Any], t.Any]
     """
     As defined by Ignite (see [Engine][ignite.engine.Engine]), this is a function
-    that receives a handle to the engine and the current batch in each iteration, 
+    that receives a handle to the engine and the current batch in each iteration,
     and returns data to be stored in the engine's state.
-    
-    Simply put, this function defines how an `Engine` processes a batch of data during 
+
+    Simply put, this function defines how an `Engine` processes a batch of data during
     training, testing, and evaluation.
     """
 
@@ -33,9 +32,9 @@ if t.TYPE_CHECKING:
     ]
     """
     A function that has access to the model, optimizer, and loss function, and processes
-in a broader scope than a `ProcessFn`. This function type is used to wrap a `ProcessFn`
-with these dependencies in context.
-"""
+    in a broader scope than a `ProcessFn`. This function type is used to wrap a
+    `ProcessFn` with these dependencies in context.
+    """
 
 
 @dataclass
@@ -45,10 +44,12 @@ class TrainingJobState:
 
 def training_job(args: TrainJobArgs) -> Result:
     import functools
-    from ignite.engine import create_supervised_trainer, Engine
 
-    from flight.federation.jobs import Result
-    from flight.learning.torch import TorchModule, TorchDataModule
+    from ignite.engine import Engine, create_supervised_trainer
+    from torch.utils.data import DataLoader, Dataset
+
+    from flight.federation.aggr import Result
+    from flight.learning.torch import TorchDataModule, TorchModule
 
     ####################################################################################
 
@@ -99,26 +100,37 @@ def training_job(args: TrainJobArgs) -> Result:
     local_state = locals()
 
     for event, handler in args.train_handlers:
-        handler_with_state = functools.partial(handler, locals)
-        trainer.add_event_handler(event, handler_with_state)
+        # handler_with_state = functools.partial(handler, local_state)
+        # trainer.add_event_handler(event, handler_with_state)
+        trainer.add_event_handler(event, handler, local_state)
 
     if validator:
         for event, handler in args.valid_handlers:
-            handler_with_state = functools.partial(handler, locals)
+            handler_with_state = functools.partial(handler, local_state)
             validator.add_event_handler(event, handler_with_state)
 
     if tester:
         for event, handler in args.test_handlers:
-            handler_with_state = functools.partial(handler, locals)
+            handler_with_state = functools.partial(handler, local_state)
             tester.add_event_handler(event, handler_with_state)
 
     ####################################################################################
 
-    assert isinstance(args.data, TorchDataModule)
-    train_loader = args.data.train_data()
+    # assert isinstance(args.data, TorchDataModule)
+
+    if isinstance(args.data, TorchDataModule):
+        train_loader = args.data.train_data()
+    elif isinstance(args.data, DataLoader):
+        train_loader = args.data
+    elif isinstance(args.data, Dataset):
+        train_loader = DataLoader(args.data, batch_size=64)
+    else:
+        raise ValueError
+
+    # train_loader = args.data.train_data()
     #
     # print(next(iter(train_loader)))
-    trainer.run(train_loader, max_epochs=1)
+    trainer.run(train_loader, max_epochs=5)
 
     return Result(
         node=args.node,

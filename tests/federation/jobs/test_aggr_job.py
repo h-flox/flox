@@ -4,8 +4,8 @@ import torch
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
 from flight.engine.transporters.base import InMemoryTransporter
-from flight.federation.jobs.aggr import default_aggr_job
-from flight.federation.jobs.types import Result, AggrJobArgs
+from flight.federation.aggr.aggr import default_aggr_job
+from flight.federation.types import Result, AggrJobArgs
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import AggrState
 from flight.learning.params import Params

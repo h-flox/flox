@@ -4,12 +4,7 @@ import typing as t
 
 from flight.learning.params import Params
 
-from ..base import (
-    DefaultAggrStrategy,
-    DefaultTrainerStrategy,
-    DefaultWorkerStrategy,
-    Strategy,
-)
+from ..base import DefaultAggrStrategy, DefaultWorkerStrategy, Strategy
 from ..commons.averaging import average_state_dicts
 from .fedsgd import FedSGDCoord
 
@@ -147,5 +142,4 @@ class FedAvg(Strategy):
             ),
             aggr_strategy=FedAvgAggr(),
             worker_strategy=FedAvgWorker(),
-            trainer_strategy=DefaultTrainerStrategy(),
         )

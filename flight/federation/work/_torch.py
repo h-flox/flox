@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from flight.federation.jobs import TrainJobArgs
+from flight.federation.aggr import TrainJobArgs
 from flight.federation.topologies import WorkerState
 from flight.learning import AbstractDataModule, AbstractModule
-from flight.learning.torch import TorchModule, TorchDataModule, TorchTrainer
+from flight.learning.torch import TorchDataModule, TorchModule, TorchTrainer
 from flight.types import Record
 
 

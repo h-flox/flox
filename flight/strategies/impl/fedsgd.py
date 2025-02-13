@@ -6,7 +6,6 @@ from flight.strategies import Strategy
 from flight.strategies.base import (
     DefaultAggrStrategy,
     DefaultCoordStrategy,
-    DefaultTrainerStrategy,
     DefaultWorkerStrategy,
 )
 from flight.strategies.commons import random_worker_selection
@@ -152,5 +151,4 @@ class FedSGD(Strategy):
             ),
             aggr_strategy=FedSGDAggr(),
             worker_strategy=DefaultWorkerStrategy(),
-            trainer_strategy=DefaultTrainerStrategy(),
         )

@@ -5,13 +5,12 @@ import copy
 import typing as t
 from concurrent.futures import Future
 
+from flight.federation.types import Result, TrainJob, TrainJobArgs
+from flight.federation.work._depr import default_training_job
 from flight.strategies.aggr import AggrStrategy
 from flight.strategies.coord import CoordStrategy
-from flight.strategies.trainer import TrainerStrategy
 from flight.strategies.worker import WorkerStrategy
 
-from .jobs.types import Result, TrainJob, TrainJobArgs
-from .jobs.work import default_training_job
 from .topologies.node import Node, WorkerState
 
 if t.TYPE_CHECKING:
@@ -34,7 +33,7 @@ def setup_work_job(fn: TrainJob | None) -> TrainJob:
             run on worker nodes in a federation.
 
     Returns:
-        The work function to be used for local training jobs.
+        The work function to be used for local training aggr.
     """
     return default_training_job if fn is None else fn
 
@@ -57,7 +56,7 @@ class Federation(abc.ABC):
 
     engine: Engine
     """
-    The engine that is used to submit jobs and arguments to endpoints
+    The engine that is used to submit aggr and arguments to endpoints
     (e.g., IoT devices, HPC nodes, simulated nodes) through the control and data
     planes, respectively.
     """
@@ -69,7 +68,7 @@ class Federation(abc.ABC):
 
     work_fn: TrainJob
     """
-    The work function (i.e., local training jobs) that is run on worker nodes
+    The work function (i.e., local training aggr) that is run on worker nodes
     in a federation.
     """
 
@@ -111,7 +110,7 @@ class Federation(abc.ABC):
         It will also submit the appropriate job to all the required children nodes.
         This is based on the selected children. Given the coordinator, $C$, and the
         set of selected worker nodes $W$, any node that falls on a path between $C$
-        and every worker $w \\in W$ will have jobs sent to them.
+        and every worker $w \\in W$ will have aggr sent to them.
 
         Args:
             node (Node): The Coordinator node.
@@ -158,11 +157,6 @@ class Federation(abc.ABC):
         """Convenience alias that returns the federation's `WorkerStrategy`."""
         return self.strategy.worker_strategy
 
-    @property
-    def trainer_strategy(self) -> TrainerStrategy:
-        """Convenience alias that returns the federation's `TrainerStrategy`."""
-        return self.strategy.trainer_strategy
-
     ####################################################################################
 
     def worker_task(self, node: Node, parent: Node) -> Future[Result]:
@@ -185,7 +179,6 @@ class Federation(abc.ABC):
             model=copy.deepcopy(self.global_model),
             data=self.data,
             worker_strategy=self.worker_strategy,
-            trainer_strategy_depr=self.trainer_strategy,
         )
         args = self.engine.transfer(args)
         return self.engine.submit(self.work_fn, args=args)

@@ -11,7 +11,7 @@ if t.TYPE_CHECKING:
 
 class SerialController(AbstractController):
     """
-    A simple controller that runs jobs serially.
+    A simple controller that runs aggr serially.
 
     This class should be used for rapid prototyping and simple debugging on
     your local machine.

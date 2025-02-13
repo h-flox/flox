@@ -1,6 +1,12 @@
 from .aggr import default_aggr_job
-from .types import AbstractResult, AggrJob, AggrJobArgs, Result, TrainJob, TrainJobArgs
-from .work import default_training_job
+from flight.federation.types import (
+    AbstractResult,
+    AggrJob,
+    AggrJobArgs,
+    Result,
+    TrainJob,
+    TrainJobArgs,
+)
 
 __all__ = [
     "AbstractResult",

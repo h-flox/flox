@@ -7,8 +7,8 @@ from flight.learning.base import AbstractDataModule
 if t.TYPE_CHECKING:
     import torch
 
-    from flight.federation.jobs.types import Result
     from flight.federation.topologies.node import WorkerState
+    from flight.federation.types import Result
 
 
 @t.runtime_checkable

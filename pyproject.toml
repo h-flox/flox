@@ -42,7 +42,7 @@ dependencies = [
 [project.optional-dependencies]
 all = ["flight[dev,docs,monitoring,proxystore]"]
 endpoints = [
-    # TODO: Add dependencies for endpoints to run aggregation and worker jobs.
+    # TODO: Add dependencies for endpoints to run aggregation and worker aggr.
 ]
 dev = [
     "black",

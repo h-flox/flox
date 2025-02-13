@@ -47,7 +47,7 @@ class ParslController(AbstractController):
             run_dir (pathlib.Path | str):
             script_dir (pathlib.Path | str):
             priming (bool): If `True`, a simple priming function is run to reduce
-                initial startup costs during execution of jobs. This priming job just
+                initial startup costs during execution of aggr. This priming job just
                 simply returns platform information. No priming is done if `False`.
         """
         import parsl

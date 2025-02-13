@@ -1,15 +1,16 @@
 import numpy as np
 import pytest
 import torch
+from torch import nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from flight.federation.jobs.types import TrainJobArgs, Result
-from flight.federation.jobs.work import default_training_job
+from flight.federation.types import TrainJobArgs, Result
+from flight.federation.work._depr import default_training_job
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import WorkerState
 from flight.learning.torch import TorchDataModule
 from flight.learning.torch import TorchModule
-from flight.strategies.base import DefaultWorkerStrategy, DefaultTrainerStrategy
+from flight.strategies.base import DefaultWorkerStrategy
 
 
 @pytest.fixture
@@ -54,6 +55,9 @@ def linear_regr_model() -> TorchModule:
 
         def configure_optimizers(self) -> torch.optim.Optimizer:
             return torch.optim.SGD(self.parameters(), lr=0.001)
+
+        def configure_criterion(self) -> nn.Module:
+            return nn.L1Loss()
 
     return LinearRegr()
 

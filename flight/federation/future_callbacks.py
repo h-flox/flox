@@ -9,13 +9,13 @@ import functools
 import typing as t
 from concurrent.futures._base import InvalidStateError  # noqa
 
-from flight.federation.jobs.types import AggrJobArgs
+from flight.federation.types import AggrJobArgs
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from flight.engine import Engine
-    from flight.federation.jobs.types import AggrJob
+    from flight.federation.types import AggrJob
 
 _FUTURE_RESULTS_KEY: t.Final[str] = "__results"
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as t
 
 if t.TYPE_CHECKING:
-    from flight.federation.jobs.types import Result, TrainJobArgs
+    from flight.federation.types import Result, TrainJobArgs
 
 
 # TODO: Test the hell out of this function.
@@ -19,14 +19,14 @@ def default_training_job(args: TrainJobArgs) -> Result:
         Result of local training job completed by a worker node.
     """
 
-    import datetime
+    # import datetime
 
-    from flight.federation.jobs.types import Result
+    from flight.federation.types import Result
 
     ####################################################################################
 
     node = args.node
-    parent = args.parent
+    # parent = args.parent
     node_state = args.worker_strategy.start_work(args.node_state)
     local_model = args.model
     data = args.data
@@ -37,14 +37,14 @@ def default_training_job(args: TrainJobArgs) -> Result:
 
     worker_strategy.start_work(node_state)
 
-    training_start = datetime.datetime.now()
+    # training_start = datetime.datetime.now()
 
     match local_model.kind():
         case "lightning":
             raise ValueError
 
         case "scikit":
-            from ._scikit import scikit_local_train
+            from flight.federation.work._scikit import scikit_local_train
 
             records = scikit_local_train(data, local_model, node)
 
@@ -66,18 +66,18 @@ def default_training_job(args: TrainJobArgs) -> Result:
     # TODO: These needed calls (↑↑ and ↓↓) to be included in the trainers!!
     # state, optimizer = worker_strategy.after_training(node_state)
 
-    training_end = datetime.datetime.now()
+    # training_end = datetime.datetime.now()
 
     ####################################################################################
 
-    history = {
-        "node_idx": node.idx,
-        "node_kind": node.kind,
-        "parent_idx": parent.idx,
-        "parent_kind": parent.kind,
-        "training_start": training_start,
-        "training_end": training_end,
-    }
+    # history = {
+    #     "node_idx": node.idx,
+    #     "node_kind": node.kind,
+    #     "parent_idx": parent.idx,
+    #     "parent_kind": parent.kind,
+    #     "training_start": training_start,
+    #     "training_end": training_end,
+    # }
 
     ####################################################################################
 
@@ -135,13 +135,13 @@ def ignite_training_job(args: TrainJobArgs) -> Result:
     trainer = Engine(args.train_step)
 
     """
-    
+
     if there is validation_data:
         if users do not provide `valid_step`:
             valid_step = make_supervised_step_from_default(...)
-        
+
         validator = Engine(valid_step)
-        
+
         @trainer.on(Events.EPOCH_COMPLETED):
         def log_validation_results(validator):
             ...

@@ -6,7 +6,6 @@ from collections import OrderedDict
 from flight.strategies.base import (
     DefaultAggrStrategy,
     DefaultCoordStrategy,
-    DefaultTrainerStrategy,
     DefaultWorkerStrategy,
     Strategy,
 )
@@ -84,5 +83,4 @@ class FedAsync(Strategy):
             aggr_strategy=FedAsyncAggr(alpha),
             coord_strategy=DefaultCoordStrategy(),
             worker_strategy=DefaultWorkerStrategy(),
-            trainer_strategy=DefaultTrainerStrategy(),
         )

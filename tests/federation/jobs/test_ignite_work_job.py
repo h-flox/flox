@@ -4,13 +4,13 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
-from flight.federation.jobs.types import TrainJobArgs, Result
-from flight.federation.jobs.work_ignite import training_job
+from flight.federation.types import TrainJobArgs, Result
+from flight.federation.work.ignite import training_job
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import WorkerState
 from flight.learning.torch import TorchDataModule
 from flight.learning.torch import TorchModule
-from flight.strategies.base import DefaultWorkerStrategy, DefaultTrainerStrategy
+from flight.strategies.base import DefaultWorkerStrategy
 
 
 @pytest.fixture
@@ -100,7 +100,6 @@ def train_args(node, parent, node_state, linear_regr_model, data) -> TrainJobArg
         linear_regr_model,
         data,
         worker_strategy=DefaultWorkerStrategy(),
-        trainer_strategy_depr=DefaultTrainerStrategy(),
     )
 
 
