@@ -3,16 +3,36 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass, field
 
+import torch
 from proxystore.proxy import Proxy
 
 from flight.federation.topologies.node import Node, NodeState, WorkerState
 from flight.learning.base import AbstractDataModule, AbstractModule
 
 if t.TYPE_CHECKING:
+    from torch import nn
+
+    from ignite.engine import Engine, Events
+
     from flight.types import Record
     from flight.engine.transporters import AbstractTransporter
     from flight.learning.params import Params
     from flight.strategies import AggrStrategy, TrainerStrategy, WorkerStrategy
+
+
+def _default_prepare_batch(
+    batch: t.Sequence[torch.Tensor],
+    device: t.Optional[str | torch.device] = None,
+    non_blocking: bool = False,
+) -> tuple[torch.Tensor | t.Sequence | t.Mapping | str | bytes, ...]:
+    """Prepare batch for training or evaluation: pass to a device with options."""
+    from ignite.utils import convert_tensor
+
+    x, y = batch
+    return (
+        convert_tensor(x, device=device, non_blocking=non_blocking),
+        convert_tensor(y, device=device, non_blocking=non_blocking),
+    )
 
 
 @dataclass
@@ -61,6 +81,28 @@ class AggrJobArgs:
     transfer: AbstractTransporter
 
 
+@dataclass
+class IgniteConfig:
+    # loss_fn: nn.Module
+    # optimizer_cls: type[optim.Optimizer]
+    #
+    # optimizer_args: dict[str, t.Any] = field(default_factory=dict)
+    # TODO: Is there a way make this dynamic? I.e., where strategies
+    #       can create these per-endpoint?
+    supervised: bool = True
+
+    # supervised_training_step_args with defaults
+    device: str | torch.DeviceObjType = "cpu"
+    non_blocking: bool = True
+    prepare_batch: t.Callable = _default_prepare_batch
+    model_transform: t.Callable[[t.Any], t.Any] = lambda output: output
+    output_transform: t.Callable[
+        [t.Any, t.Any, t.Any, torch.Tensor], t.Any
+    ] = lambda x, y, y_pred, loss: loss.item()
+    gradient_accumulation_steps: int = 1
+    model_fn: t.Callable[[nn.Module, t.Any], t.Any] = lambda model, x: model(x)
+
+
 @dataclass(slots=True, frozen=True)
 class TrainJobArgs:
     """
@@ -76,7 +118,28 @@ class TrainJobArgs:
     model: AbstractModule | None
     data: AbstractDataModule
     worker_strategy: WorkerStrategy
-    trainer_strategy: TrainerStrategy
+
+    # New fields
+    train_step: t.Callable | None = None
+    valid_step: t.Callable | None = None
+    test_step: t.Callable | None = None
+
+    # ignite_config: IgniteConfig | None = None
+    ignite_config: IgniteConfig = field(default_factory=lambda: IgniteConfig())
+    supervised: bool = True  # Ignite-specific
+
+    train_handlers: list[tuple[Events, t.Callable[[Engine], None]]] = field(
+        default_factory=list
+    )
+    valid_handlers: list[tuple[Events, t.Callable[[Engine], None]]] = field(
+        default_factory=list
+    )
+    test_handlers: list[tuple[Events, t.Callable[[Engine], None]]] = field(
+        default_factory=list
+    )
+
+    # TODO: Remove entirely.
+    trainer_strategy_depr: TrainerStrategy = None
 
 
 AbstractResult: t.TypeAlias = Result | Proxy[Result]

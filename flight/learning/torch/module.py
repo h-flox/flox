@@ -126,6 +126,23 @@ class TorchModule(AbstractModule, nn.Module):
             - `NotImplementedError`: If the method is not overridden in a subclass.
         """
 
+    @abc.abstractmethod
+    def configure_criterion(self) -> nn.Module:
+        """
+        Abstract method for configuring the criterion (i.e., loss function)
+        used during model training.
+
+        This method should be implemented in subclasses to define the loss function
+        used for training the model. The loss function is used to calculate the
+        difference between the model's predictions and the actual target values.
+
+        Returns:
+            The loss function (criterion) used for training the model.
+
+        Throws:
+            - `NotImplementedError`: If the method is not overridden in a subclass.
+        """
+
     ####################################################################################
 
     def predict_step(self, *args: t.Any, **kwargs) -> TensorStepOutput:

@@ -185,7 +185,7 @@ class Federation(abc.ABC):
             model=copy.deepcopy(self.global_model),
             data=self.data,
             worker_strategy=self.worker_strategy,
-            trainer_strategy=self.trainer_strategy,
+            trainer_strategy_depr=self.trainer_strategy,
         )
         args = self.engine.transfer(args)
         return self.engine.submit(self.work_fn, args=args)

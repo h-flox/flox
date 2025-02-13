@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
 import torch
+from torch import nn
 from torch.utils.data import DataLoader, Subset, TensorDataset
 
 from flight.federation.jobs.types import TrainJobArgs, Result
-from flight.federation.jobs.work import default_training_job
+from flight.federation.jobs.work_ignite import training_job
 from flight.federation.topologies import Node
 from flight.federation.topologies.node import WorkerState
 from flight.learning.torch import TorchDataModule
@@ -55,6 +56,9 @@ def linear_regr_model() -> TorchModule:
         def configure_optimizers(self) -> torch.optim.Optimizer:
             return torch.optim.SGD(self.parameters(), lr=0.001)
 
+        def configure_criterion(self) -> nn.Module:
+            return nn.L1Loss()
+
     return LinearRegr()
 
 
@@ -102,5 +106,5 @@ def train_args(node, parent, node_state, linear_regr_model, data) -> TrainJobArg
 
 class TestWorkerJob:
     def test_outputs(self, train_args):
-        result = default_training_job(train_args)
+        result = training_job(train_args)
         assert isinstance(result, Result)
