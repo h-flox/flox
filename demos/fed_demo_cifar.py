@@ -10,11 +10,11 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
 
-from flight.federation import Topology
-from flight.federation.fed_sync import SyncFederation
-from flight.federation.topologies import Node
-from flight.learning.torch import TorchDataModule, TorchModule
-from flight.strategies.impl.fedavg import FedAvg
+from v1.flight import Topology
+from v1.flight.federation.fed_sync import SyncFederation
+from v1.flight import Node
+from v1.flight import TorchDataModule, TorchModule
+from v1.flight.strategies.impl.fedavg import FedAvg
 
 
 class MyCifarModule(TorchModule):

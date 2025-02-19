@@ -10,8 +10,8 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 
-from flight.federation.topologies import Node
-from flight.learning.scikit import ScikitDataModule, ScikitModule, ScikitTrainer
+from v1.flight import Node
+from v1.flight.learning.scikit import ScikitDataModule, ScikitModule, ScikitTrainer
 
 SEED = 42
 

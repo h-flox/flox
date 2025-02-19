@@ -7,11 +7,11 @@ from torch.utils.data import DataLoader, Subset, TensorDataset
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
 
-from flight.federation.topologies import Node
-from flight.federation.topologies.node import WorkerState
-from flight.learning.torch import TorchDataModule, TorchModule, TorchTrainer
-from flight.learning.types import LocalStepOutput
-from flight.strategies.base import DefaultTrainerStrategy
+from v1.flight import Node
+from v1.flight.topologies.node import WorkerState
+from v1.flight import TorchDataModule, TorchModule, TorchTrainer
+from v1.flight import LocalStepOutput
+from v1.flight import DefaultTrainerStrategy
 
 
 class MyModule(TorchModule):

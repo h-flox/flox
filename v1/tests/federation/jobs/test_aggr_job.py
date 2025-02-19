@@ -1,0 +1,118 @@
+import numpy as np
+import pytest
+import torch
+from torch.utils.data import DataLoader, Subset, TensorDataset
+
+from v1.flight.engine.transporters.base import InMemoryTransporter
+from v1.flight.federation.aggr.aggr import default_aggr_job
+from v1.flight.federation.types import Result, AggrJobArgs
+from v1.flight import Node
+from v1.flight.topologies.node import AggrState
+from v1.flight import Params
+from v1.flight import TorchDataModule
+from v1.flight import TorchModule
+from v1.flight import DefaultAggrStrategy
+
+
+@pytest.fixture
+def model() -> TorchModule:
+    class LinearRegr(TorchModule):
+        def __init__(self):
+            super().__init__()
+            self.m = torch.nn.Parameter(
+                torch.randn(
+                    1,
+                )
+            )
+            self.b = torch.nn.Parameter(
+                torch.randn(
+                    1,
+                )
+            )
+
+        def forward(self, x):
+            return self.m * x + self.b
+
+        def training_step(self, batch, batch_idx):
+            inputs, targets = batch
+            preds = self(inputs)
+            loss = torch.nn.functional.l1_loss(preds, targets)
+            return loss
+
+        def configure_optimizers(self) -> torch.optim.Optimizer:
+            return torch.optim.SGD(self.parameters(), lr=0.001)
+
+    return LinearRegr()
+
+
+@pytest.fixture
+def data() -> TorchDataModule:
+    class DataModule(TorchDataModule):
+        def __init__(self):
+            super().__init__()
+
+            def fn(xi):
+                return 12.34 * xi + 56.789
+
+            self.num_items = 100
+            x = torch.tensor([[val] for val in np.linspace(0.0, 10.0, self.num_items)])
+            y = torch.tensor([[fn(xi)] for xi in x])
+            self.data = TensorDataset(x, y)
+
+        def train_data(self, node: Node | None = None) -> DataLoader:
+            start = 0
+            end = int(self.num_items * 0.8)
+            subset = Subset(self.data, indices=list(range(start, end)))
+            return DataLoader(subset, batch_size=16)
+
+        def valid_data(self, node: Node | None = None) -> DataLoader | None:
+            return None
+
+        def test_data(self, node: Node | None = None) -> DataLoader | None:
+            return None
+
+    return DataModule()
+
+
+@pytest.fixture
+def parent() -> Node:
+    return Node(idx=0, kind="coordinator", children=[1])
+
+
+@pytest.fixture
+def node() -> Node:
+    return Node(idx=1, kind="worker")
+
+
+@pytest.fixture
+def aggr_state(node, model) -> AggrState:
+    return AggrState(0, [node], model)
+
+
+@pytest.fixture
+def result(node, aggr_state) -> Result:
+    return Result(
+        node=node,
+        node_state=aggr_state,
+        module=aggr_state.module,  # TODO: This shouldn't be needed.
+        params=Params({"a": 1}),
+        records=[],
+        extra={},
+    )
+
+
+@pytest.fixture
+def aggr_args(node, parent, result) -> AggrJobArgs:
+    return AggrJobArgs(
+        round_num=0,
+        node=parent,
+        children=[node],
+        child_results=[result],
+        aggr_strategy=DefaultAggrStrategy(),  # TODO: We need to resolve this typing.
+        transfer=InMemoryTransporter(),
+    )
+
+
+def test_outputs(aggr_args):
+    result = default_aggr_job(aggr_args)
+    assert isinstance(result, Result)

@@ -1,6 +1,6 @@
 demos/
 experiments/
-runinfo/
+v1/runinfo/
 notebooks/
 examples/
 **/logs.csv
@@ -11,7 +11,7 @@ screenlog.*
 .DS_Store
 
 # Parsl-related directories/files to ignore.
-runinfo/
+v1/runinfo/
 # parsl*
 
 # Compressed data
@@ -184,6 +184,6 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
-/out/
+/v1/out/
 examples/quickstart/out/
-Temp Notebook.ipynb
+v1/Temp Notebook.ipynb

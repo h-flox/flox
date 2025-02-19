@@ -11,7 +11,7 @@ reference_dir = "docs"
 excludes = [
     "fit.py",
     "fed_async.py",
-    "fed_sync.py",
+    "synch.py",
     "fed_abs.py",
 ]  # TODO: Change later.
 

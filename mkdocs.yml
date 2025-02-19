@@ -16,7 +16,8 @@ nav:
       - home/proxystore.md
   - Getting Started:
       - getting_started/quickstart.md
-      - getting_started/topologies.md
+      - getting_started/learning.md
+#      - getting_started/topologies.md
       - Strategies:
           - getting_started/strategies/index.md
           - getting_started/strategies/what.md

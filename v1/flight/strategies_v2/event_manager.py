@@ -1,0 +1,6 @@
+class CoordinatorEventManager:
+    ...
+
+
+class LearningEventManager:
+    ...

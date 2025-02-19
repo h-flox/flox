@@ -1,5 +1,5 @@
-from flight.federation.topologies.node import Node, NodeKind
-from flight.federation.topologies.topo import Topology
+from v1.flight.topologies.node import Node, NodeKind
+from v1.flight.topologies.topo import Topology
 
 
 def main():

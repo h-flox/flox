@@ -1,0 +1,18 @@
+model = ...
+data = ...
+topology = Topology(...)
+
+fitter = Fitter(
+    global_model = model,
+    data = data,
+    topology = topology,
+    strategy = Strategy(...),
+)
+
+@fitter.on(CoordEvents.ROUND_START(every=10))
+def update_recent_loss(context):
+    r = context.state.round
+    l = context.metrics.loss
+    print("Round[{}] Recent loss -> {:0.5f}.".format(r, l))
+
+fitter.start()

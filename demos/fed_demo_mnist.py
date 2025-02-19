@@ -19,10 +19,10 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from torchvision.datasets import MNIST
 
-from flight.federation import Topology
-from flight.federation.topologies import Node
-from flight.fit import federated_fit
-from flight.learning.torch import TorchDataModule, TorchModule
+from v1.flight import Topology
+from v1.flight import Node
+from v1.flight import federated_fit
+from v1.flight import TorchDataModule, TorchModule
 
 
 class MyMnistModule(TorchModule):
