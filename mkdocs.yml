@@ -119,7 +119,7 @@ plugins:
             - import pytkdocs_tweaks
             - pytkdocs_tweaks.main()
           paths: [ flox ]
-          load_external_modules: true
+          load_external_modules: false
           inherited_members: true
           options:
             docstring_section_style: spacy # list
@@ -127,12 +127,12 @@ plugins:
             group_by_category: true
             # inherited_members: yes
             line_length: 60
-            members_order: alphabetical  # source
+            members_order: source  # alphabetical
             merge_init_into_class: yes
             separate_signature: yes
             show_root_full_path: yes
             show_signature_annotations: yes
-            show_source: false
+            show_source: true
             show_submodules: false
             show_labels: true
             # summary: true

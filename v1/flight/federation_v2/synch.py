@@ -1,7 +1,6 @@
 import copy
 import functools
 import typing as t
-
 from collections import defaultdict
 from concurrent.futures import Future
 
@@ -10,14 +9,13 @@ from v1.flight.engine import Engine
 from v1.flight.engine.controllers.local import LocalController
 from v1.flight.engine.transporters import InMemoryTransporter
 from v1.flight.federation.future_callbacks import all_futures_finished
-from v1.flight.learning import AbstractModule, AbstractDataModule
-from v1.flight.topologies import Node, NodeKind
 from v1.flight.federation.types import Result
+from v1.flight.federation_v2.events import CoordEvent, IgniteEvent, WorkerEvent
 from v1.flight.federation_v2.jobs.aggregation import aggregation_job
 from v1.flight.federation_v2.jobs.ignite import training_job
-from v1.flight.federation_v2.events import CoordEvent, WorkerEvent, IgniteEvent
-
+from v1.flight.learning import AbstractDataModule, AbstractModule
 from v1.flight.strategies_v2.sync.base import Strategy
+from v1.flight.topologies import Node, NodeKind
 
 ROUNDS: int = 10
 AGGR_JOB = aggregation_job
@@ -89,7 +87,7 @@ class SyncFederationV2:
             test_data: Dataset = ...
             strategy.fire_events_by_type(CoordEvent.AFTER_TEST_DATA_LOAD, context)
             test_loader: DataLoader = ...
-    
+
             tester: engine.Engine = engine.create_supervised_evaluator(...)
             for event, handler in strategy.get_event_handlers_by_type(IgniteEvent):
                 tester.add_event_handler(event, handler, context)

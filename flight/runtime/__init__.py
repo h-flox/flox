@@ -97,8 +97,9 @@ class Runtime:
         Returns:
 
         """
-        from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+        from concurrent.futures import Executor, ProcessPoolExecutor, ThreadPoolExecutor
 
+        control_plane: Executor
         match exec_kind:
             case "thread":
                 control_plane = ThreadPoolExecutor(max_workers=max_workers)

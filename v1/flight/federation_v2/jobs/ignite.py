@@ -4,10 +4,10 @@ import typing as t
 from dataclasses import dataclass
 
 if t.TYPE_CHECKING:
-    from v1.flight.federation_v2.jobs.ignite import Engine
     from torch import nn, optim
 
     from v1.flight.federation.aggr import Result, TrainJobArgs
+    from v1.flight.federation_v2.jobs.ignite import Engine
     from v1.flight.types import Record
 
 
@@ -45,10 +45,10 @@ class TrainingJobState:
 def training_job(args: TrainJobArgs) -> Result:
     import functools
 
-    from v1.flight.federation_v2.jobs.ignite import Engine, create_supervised_trainer
     from torch.utils.data import DataLoader, Dataset
 
     from v1.flight.federation.aggr import Result
+    from v1.flight.federation_v2.jobs.ignite import Engine, create_supervised_trainer
     from v1.flight.learning.torch import TorchDataModule, TorchModule
 
     ####################################################################################

@@ -19,10 +19,9 @@
 import abc
 import inspect
 import typing as t
-from enum import auto, Enum
+from enum import Enum, auto
 
 from v1.flight import Topology
-
 from v1.flight.federation_v2.events import Event
 
 Context: t.TypeAlias = dict[str, t.Any]

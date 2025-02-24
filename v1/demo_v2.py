@@ -2,14 +2,10 @@ import typing as t
 
 import torch
 from ignite.engine import Events
+from torch.utils.data import DataLoader, TensorDataset
 
-from torch.utils.data import TensorDataset, DataLoader
-
+from v1.flight import Node, TensorLoss, TorchDataModule, TorchModule
 from v1.flight.federation.work.ignite import training_job
-from v1.flight import TorchModule, TorchDataModule
-from v1.flight import TensorLoss
-from v1.flight import Node
-
 
 ####################################################################################################
 
