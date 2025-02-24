@@ -1,38 +1,55 @@
 import enum
 import typing as t
-from dataclasses import dataclass, field
 from uuid import UUID
 
 from .types import NodeID
 
 
 class NodeKind(enum.Enum):
-    """Enum for the kind of nodes that can exist in a Flight topology."""
+    """
+    Enum for the kind of nodes that can exist in a Flight topology.
+    """
 
     COORDINATOR = "coordinator"
-    """Coordinator node. There can only be 1 in a topology."""
+    """
+    Coordinator node. There can only be 1 in a topology.
+    """
 
     AGGREGATOR = "aggregator"
-    """Aggregator nodes."""
+    """
+    Aggregator nodes.
+    """
 
     WORKER = "worker"
-    """Worker nodes."""
+    """
+    Worker nodes.
+    """
 
 
 class Node:
     idx: NodeID
-    """The ID of the node."""
+    """
+    The ID of the node.
+    """
 
     kind: NodeKind
 
     globus_compute_id: UUID | None
-    """Globus Compute UUID for remote execution."""
+    """
+    Globus Compute UUID for remote execution.
+    """
 
     proxystore_id: UUID | None
-    """ProxyStore UUID for data transfer across remote endpoints with Globus Compute."""
+    """
+    ProxyStore UUID for data transfer across remote endpoints with
+    Globus Compute.
+    """
 
     extra: dict[str, t.Any]
-    """Extra parameters users with to give to Nodes that can be used during federations."""
+    """
+    Extra parameters users with to give to Nodes that can be used during
+    federations.
+    """
 
     def __init__(
         self,

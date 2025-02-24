@@ -1,6 +1,6 @@
 import typing as t
 
-from flight.events import *
+from flight.events import CoordinatorEvents
 
 
 def simple_federated_fit(

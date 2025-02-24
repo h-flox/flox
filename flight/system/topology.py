@@ -11,7 +11,6 @@ from .io import (
     from_adj_list,
     from_adj_matrix,
     from_dict,
-    from_edgelist,
     from_json,
     from_networkx,
     from_yaml,
@@ -39,15 +38,17 @@ class Topology:
 
         Args:
             nodes (list[Node]): List of `Node`s in the `Topology`.
-            edges (list[Edge]): List of edges between `Node`s that exist in the `Topology`.
-            _source (pathlib.Path | str | None, optional): Indicates the file used to
-                instantiate the `Topology` (if one was used). This should *not* be used
-                by the user; instead it should be used only by factory methods.
+            edges (list[Edge]): List of edges between `Node`s that
+                exist in the `Topology`.
+            _source (pathlib.Path | str | None, optional): Indicates
+                the file used to instantiate the `Topology` (if one
+                was used). This should *not* be used by the user;
+                instead it should be used only by factory methods.
                 Defaults to `None`.
 
         Raises:
-            - `ValueError`: Raised if value for `_source` it not a `pathlib.Path`, `str`,
-                or `None`.
+            - `ValueError`: Raised if value for `_source` it not a
+              `pathlib.Path`, `str`, or `None`.
         """
         node_dict = {node.idx: node for node in nodes}
         graph: nx.DiGraph = nx.DiGraph()
@@ -124,7 +125,8 @@ class Topology:
         return len(self.nodes())
 
     def number_of_edges(self) -> int:
-        """Returns the number of edges in the `Topology`.
+        """
+        Returns the number of edges in the `Topology`.
 
         Returns:
             Number of edges.
@@ -132,20 +134,24 @@ class Topology:
         return len(self.edges)
 
     def number_of_nodes(self, kind: NodeKind | str | None = None) -> int:
-        """Returns the number of nodes in the `Topology` (of a designated kind if specified).
+        """
+        Returns the number of nodes in the `Topology` (of a designated
+        kind if specified).
 
         Args:
-            kind (NodeKind | str | None): Specifies the kind of nodes to count. This is
-                `None` by default, which will return the total number of nodes in the
+            kind (NodeKind | str | None): Specifies the kind of nodes
+                to count. This is `None` by default, which will return
+                the total number of nodes in the
 
         Returns:
             The number of nodes of a specified kind (if one is given).
                 Topology.
 
         Notes:
-            If you wish to use no argument (i.e., `topo.number_of_nodes()`), it is
-            recommended that you instead use `len()`. The `number_of_nodes()` method
-            iterates through the nodes, whereas the implementation for `len()` does not.
+            If you wish to use no argument (i.e., `topo.number_of_nodes()`),
+            it is recommended that you instead use `len()`. The `number_of_nodes()`
+            method iterates through the nodes, whereas the implementation for
+            `len()` does not.
         """
         return sum(1 for _ in self.nodes(kind))
 
@@ -190,7 +196,8 @@ class Topology:
         return nodes
 
     def parent(self, node: Node | NodeID) -> Node:
-        """Get the parent of the given `Node` in the `Topology`.
+        """
+        Get the parent of the given `Node` in the `Topology`.
 
         Args:
             node (Node | NodeID): The node to get the parent of.
@@ -199,8 +206,10 @@ class Topology:
             The parent of the given node.
 
         Throws:
-            - `NodeNotFoundError`: If the node is not found in the `Topology`.
-            - `TopologyException`: If the node is the coordinator, which cannot have a parent.
+            - `NodeNotFoundError`: If the node is not found in the
+              `Topology`.
+            - `TopologyException`: If the node is the coordinator,
+              which cannot have a parent.
         """
         idx = resolve_node_or_idx(node)
         if idx not in self:
@@ -269,7 +278,7 @@ class Topology:
 
         return True
 
-    #########################################################################################
+    ###################################################################################
 
     @property
     def coordinator(self) -> Node:
@@ -298,7 +307,7 @@ class Topology:
         """
         return self.nodes(NodeKind.WORKER)
 
-    #########################################################################################
+    ###################################################################################
 
     @property
     def node_dict(self) -> dict[NodeID, Node]:
@@ -320,21 +329,30 @@ class Topology:
         """Indicates the file used to instantiate the `Topology` (if one was used)."""
         return self._source
 
-    #########################################################################################
+    ###################################################################################
 
     @classmethod
     def from_adj_list(cls, adj_list: t.Mapping[NodeID, t.Iterable[NodeID]]) -> Topology:
-        """Adjacency list factory method based on [`from_adj_list`][flight.system.io.from_adj_list]."""
+        """
+        Adjacency list factory method based on
+        [`from_adj_list`][flight.system.io.from_adj_list].
+        """
         return cls(*from_adj_list(adj_list))
 
     @classmethod
     def from_adj_matrix(cls, matrix: ArrayLike) -> Topology:
-        """Adjacency matrix factory method based on [`from_adj_matrix`][flight.system.io.from_adj_matrix]."""
+        """
+        Adjacency matrix factory method based on
+        [`from_adj_matrix`][flight.system.io.from_adj_matrix].
+        """
         return cls(*from_adj_matrix(matrix))
 
     @classmethod
     def from_dict(cls, data: GraphDict) -> Topology:
-        """Dictionary factory method based on [`from_dict`][flight.system.io.from_dict]."""
+        """
+        Dictionary factory method based on
+        [`from_dict`][flight.system.io.from_dict].
+        """
         return cls(*from_dict(data))
 
     @classmethod
@@ -343,22 +361,33 @@ class Topology:
 
     @classmethod
     def from_json(cls, path: pathlib.Path | str, safe_load: bool = True) -> Topology:
-        """JSON factory method based on [`from_json`][flight.system.io.from_json]."""
+        """
+        JSON factory method based on
+        [`from_json`][flight.system.io.from_json].
+        """
         return cls(*from_json(path, safe_load))
 
     @classmethod
     def from_networkx(cls, graph: nx.DiGraph) -> Topology:
-        """NetworkX factory method based on [`from_networkx`][flight.system.io.from_networkx]."""
+        """
+        NetworkX factory method based on
+        [`from_networkx`][flight.system.io.from_networkx].
+        """
         return cls(*from_networkx(graph))
 
     @classmethod
     def from_yaml(cls, path: pathlib.Path | str) -> Topology:
-        """YAML factory method based on [`from_yaml`][flight.system.io.from_yaml]."""
+        """
+        YAML factory method based on
+        [`from_yaml`][flight.system.io.from_yaml].
+        """
         return cls(*from_yaml(path))
 
 
 def resolve_node_or_idx(node_or_idx: Node | NodeID) -> NodeID:
-    """Returns the `NodeID` from an ambiguous input that can either be a `Node` or a `NodeID`.
+    """
+    Returns the `NodeID` from an ambiguous input that can either
+    be a `Node` or a `NodeID`.
 
     Args:
         node_or_idx (Node | NodeID): Data of either type `Node` or `NodeID`.

@@ -11,7 +11,8 @@ class ControlPlane(t.Protocol):
     A protocol that defines an interface for a control plane object.
 
     The definition of this protocol is based on the `submit` method found in
-    the [`concurrent.futures.Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.submit)
+    the [`concurrent.futures.Executor`](https://docs.python.org/3/
+    library/concurrent.futures.html#concurrent.futures.Executor.submit)
     function definition.
     """
 

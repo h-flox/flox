@@ -36,4 +36,4 @@ repos:
 
 # TODO: Switch back to including `aggr/` and `synch.py` when we are ready.
 # exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*'
-exclude: 'flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*|flight/federation/aggr/.*|flight/federation/synch.py|demos/.*'
+exclude: 'v1/.*|flox/.*|flox_examples/.*|flox_tests/.*|quickstart/.*|tests/.*|flight/federation/aggr/.*|flight/federation/synch.py|demos/.*'
