@@ -3,16 +3,13 @@ from __future__ import annotations
 import abc
 import typing as t
 
-from torch import nn
+import torch.nn as nn
 
 if t.TYPE_CHECKING:
     from torch.optim import Optimizer
 
 
-class TorchModule(nn.Module):
-    def __init__(self):
-        super().__init__()
-        ...
+class TorchModule(abc.ABC, nn.Module):
 
     @abc.abstractmethod
     def configure_criterion(self, *args, **kwargs) -> t.Callable:

@@ -8,6 +8,8 @@ def flat_topology(n: int, /, **kwargs) -> Topology:
 
     Args:
         n (int): Number of worker nodes.
+        **kwargs: Keyword arguments that are passed onto every node in the
+            created `Topology`.
 
     Returns:
         A flat topology with `n + 1` total nodes.
