@@ -2,7 +2,7 @@ name: tests
 
 on:
   push:
-    branches: [main, numpy-params, test-me-*]
+    branches: [main, ignite, test-me-*]
 #    tags:
   pull_request:
   workflow_dispatch:
