@@ -10,7 +10,6 @@ if t.TYPE_CHECKING:
 
 
 class TorchModule(abc.ABC, nn.Module):
-
     @abc.abstractmethod
     def configure_criterion(self, *args, **kwargs) -> t.Callable:
         """

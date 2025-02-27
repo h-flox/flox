@@ -3,14 +3,11 @@ class WorkerState:
 
 
 def worker_job():
-    from flight.events import WorkerEvents
-    from flight.learning.module import TorchModule, TorchDataModule
-
-    from ignite.engine import (
-        create_supervised_trainer,
-        Engine,
-    )
+    from ignite.engine import Engine, create_supervised_trainer
     from torch.utils.data import DataLoader, Dataset
+
+    from flight.events import WorkerEvents
+    from flight.learning.module import TorchDataModule, TorchModule
 
     ####################################################################
 
