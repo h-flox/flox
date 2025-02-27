@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+import functools
+import inspect
 import typing as t
 
-from ignite.engine.events import EventEnum, EventsList
+from ignite.engine.events import EventEnum, Events, EventsList
 
 
 class FlightEventEnum(EventEnum):
@@ -40,6 +44,9 @@ class FlightEventEnum(EventEnum):
         if self.__class__ != other.__class__:
             return False
         return EventEnum.__eq__(self, other)
+
+    def __or__(self, other: t.Any) -> EventsList:
+        return EventsList() | self | other
 
 
 class CoordinatorEvents(FlightEventEnum):
@@ -90,9 +97,6 @@ class CoordinatorEvents(FlightEventEnum):
     Triggered when an exception is raised.
     """
 
-    def __or__(self, other: t.Any) -> EventsList:
-        return EventsList() | self | other
-
 
 class AggregatorEvents(FlightEventEnum):
     """
@@ -114,6 +118,80 @@ class WorkerEvents(FlightEventEnum):
     """Triggered at the start of a worker's job."""
     COMPLETED = "completed"
     """Triggered at the end of a worker's."""
+
+
+GenericEvents: t.TypeAlias = (
+    CoordinatorEvents | AggregatorEvents | WorkerEvents | Events  # Ignite `Events`
+)
+"""
+A union type of all event types usable in Flight (defined in Flight and Ignite).
+"""
+
+EventHandler: t.TypeAlias = t.Callable  # TODO
+
+
+_ON_DECORATOR_META_FLAG: t.Final[str] = "_event_type"
+
+
+def on(event_type: GenericEvents):
+    def decorator(func: t.Callable):
+        setattr(func, _ON_DECORATOR_META_FLAG, event_type)  # Store metadata
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def get_event_handlers(
+    obj: t.Any,
+    event_type: GenericEvents | EventsList,
+    predicate: t.Callable[..., bool] | None = None,
+) -> list[tuple[str, EventHandler]]:
+    """
+    Given an object with implemented `EventHandler`s, this function returns a list
+    of `EventHandlers` specified by the `event_type`.
+
+    It is worth noting that the `event_type` argument can specify a specific type
+    of event or a list of events via the `|` operator.
+
+    Args:
+        obj (t.Any): Object that contains event handlers within its definitions.
+        predicate (t.Callable[[...], bool] | None): A filtering method used by
+            `inspect.getmembers` to filter out members of `obj` to search for
+            `EventHandler`s. Defaults to `None`; which will set
+            `predicate=inspect.ismethod`.
+
+    Returns:
+        List of tuples with the `EventHandler`s in `obj`. Each tuple in the list
+            contains the name of the `EventHandler` and the callable function
+            itself.
+
+    Examples:
+        >>> obj = ...
+        >>> handlers = get_event_handlers(obj, WorkerEvents.STARTED)
+        >>> handlers = get_event_handlers(
+        >>>     obj,
+        >>>     WorkerEvents.STARTED | WorkerEvents.COMPLETED,
+        >>> )
+    """
+    if predicate is None:
+        predicate = inspect.ismethod
+
+    handlers = []
+    for name, method in inspect.getmembers(obj, predicate=predicate):
+        method_event = getattr(method, _ON_DECORATOR_META_FLAG, None)
+
+        if method_event and isinstance(event_type, EventsList):
+            if method_event in event_type:
+                handlers.append((name, method))
+        elif method_event is event_type:
+            handlers.append((name, method))
+
+    return handlers
 
 
 class CoordinatorState:

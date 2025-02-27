@@ -2,6 +2,7 @@ import pytest
 
 from flight.strategy import _EnforceSuperMeta
 
+
 def test_enforce_super_meta():
     class Invalid(metaclass=_EnforceSuperMeta):
         def __init__(self):
@@ -41,5 +42,7 @@ def test_enforce_super_meta():
 
     with pytest.raises(RuntimeError):
         ValidFailingChild()
+
             
-            
+def test_strategy_event():
+    pass
