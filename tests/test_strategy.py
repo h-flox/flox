@@ -37,12 +37,13 @@ def test_enforce_super_meta():
 
     class ValidFailingChild(Valid):
         """This class should *fail* on construction."""
+
         def __init__(self):
             self.name = "valid_failing_child"
 
     with pytest.raises(RuntimeError):
         ValidFailingChild()
 
-            
+
 def test_strategy_event():
     pass

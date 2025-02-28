@@ -35,18 +35,18 @@ def test_event_binary_operations():
     assert AggregatorEvents.STARTED in items
 
     assert WorkerEvents.STARTED not in items
- 
 
 
 def test_get_event_handlers():
     class MyClass:
         """Strategy-like class."""
+
         def __init__(self):
             super().__init__()
-            
+
         @on(WorkerEvents.STARTED)
-        def hello_world(self, context):
-            context["tmp"] = "hello"
+        def cache(self, context):
+            context["tmp"] = True
 
         @on(WorkerEvents.COMPLETED)
         def cleanup(self, context):
@@ -56,7 +56,7 @@ def test_get_event_handlers():
     # handlers for the specified event type.
     start_handlers = get_event_handlers(MyClass(), WorkerEvents.STARTED)
     assert len(start_handlers) == 1
-    assert start_handlers[0][0] == "hello_world"
+    assert start_handlers[0][0] == "cache"
 
     completed_handlers = get_event_handlers(MyClass(), WorkerEvents.COMPLETED)
     assert len(completed_handlers) == 1
@@ -69,7 +69,7 @@ def test_get_event_handlers():
         WorkerEvents.STARTED | WorkerEvents.COMPLETED,
     )
     assert len(start_and_comp_handlers) == 2
-    assert {name for name, _ in start_and_comp_handlers} == {"hello_world", "cleanup"}
+    assert {name for name, _ in start_and_comp_handlers} == {"cache", "cleanup"}
 
     # Ensure that event handlers that do not exist in `MyClass` are not returned.
     other_handlers = get_event_handlers(MyClass(), CoordinatorEvents.STARTED)
@@ -78,7 +78,43 @@ def test_get_event_handlers():
     # Ensure that context/state is properly passed through the events.
     context = {}
     start_handlers[0][1](context)
-    assert context["tmp"] == "hello"
+    assert context["tmp"] == True
 
     completed_handlers[0][1](context)
     assert "tmp" not in context
+
+
+def test_get_event_handlers_by_genre():
+    class MyClass:
+        """Strategy-like class."""
+
+        def __init__(self):
+            super().__init__()
+
+        @on(WorkerEvents.STARTED)
+        def cache(self, context):
+            context["tmp"] = True
+
+        @on(WorkerEvents.COMPLETED)
+        def cleanup(self, context):
+            del context["tmp"] 
+
+        @on(CoordinatorEvents.STARTED)
+        def coord_hello(self, context):
+            print("Coordinator: 'Hello!'")
+
+    instance = MyClass()
+    
+    worker_handlers = get_event_handlers_by_genre(instance, WorkerEvents)
+    coord_handlers = get_event_handlers_by_genre(instance, CoordinatorEvents)
+
+    worker_handler_names = set(h[0] for h in worker_handlers)
+    coord_handler_names = set(h[0] for h in coord_handlers)
+
+    assert worker_handler_names == {"cache", "cleanup"}
+    assert coord_handler_names == {"coord_hello"}
+
+    worker_coord_handlers = get_event_handlers_by_genre(instance, [WorkerEvents, CoordinatorEvents])
+    worker_coord_handler_names = set([h[0] for h in worker_coord_handlers])
+
+    assert worker_coord_handler_names == {"cache", "cleanup", "coord_hello"}

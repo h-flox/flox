@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import typing as t
+from collections.abc import Iterable
 
 from ignite.engine.events import EventEnum, Events, EventsList
 
@@ -104,9 +105,13 @@ class AggregatorEvents(FlightEventEnum):
     """
 
     STARTED = "started"
-    """Triggered at the start of an aggregation job."""
+    """
+    Triggered at the start of an aggregation job.
+    """
     COMPLETED = "completed"
-    """Triggered at the end of an aggregation job."""
+    """
+    Triggered at the end of an aggregation job.
+    """
 
 
 class WorkerEvents(FlightEventEnum):
@@ -115,9 +120,13 @@ class WorkerEvents(FlightEventEnum):
     """
 
     STARTED = "started"
-    """Triggered at the start of a worker's job."""
+    """
+    Triggered at the start of a worker's job.
+    """
     COMPLETED = "completed"
-    """Triggered at the end of a worker's."""
+    """
+    Triggered at the end of a worker's.
+    """
 
 
 GenericEvents: t.TypeAlias = (
@@ -127,14 +136,34 @@ GenericEvents: t.TypeAlias = (
 A union type of all event types usable in Flight (defined in Flight and Ignite).
 """
 
-EventHandler: t.TypeAlias = t.Callable  # TODO
+EventHandler: t.TypeAlias = t.Callable[..., t.Any]
+"""
+Callable definition for functions that are called on the firing of an event.
+"""
 
 
 _ON_DECORATOR_META_FLAG: t.Final[str] = "_event_type"
 
 
 def on(event_type: GenericEvents):
-    def decorator(func: t.Callable):
+    """
+    Decorator function that wraps a function with the given `event_type`.
+
+    This is used to class methods in [`Strategy`][flight.strategy.Strategy]
+    classes where methods can
+    use this function to decorate class methods to fire for specific event types.
+
+    ```python
+    class SomeObject:
+        ...
+
+        @on(CoordinatorEvents.STARTED)
+        def greet(self, context) -> None:
+            print("Start")
+    ```
+    """
+
+    def decorator(func: EventHandler):
         setattr(func, _ON_DECORATOR_META_FLAG, event_type)  # Store metadata
 
         @functools.wraps(func)
@@ -160,6 +189,8 @@ def get_event_handlers(
 
     Args:
         obj (t.Any): Object that contains event handlers within its definitions.
+        event_type (GenericEvents | EventsList): Event type(s) to get the handlers
+            for.
         predicate (t.Callable[[...], bool] | None): A filtering method used by
             `inspect.getmembers` to filter out members of `obj` to search for
             `EventHandler`s. Defaults to `None`; which will set
@@ -190,6 +221,56 @@ def get_event_handlers(
                 handlers.append((name, method))
         elif method_event is event_type:
             handlers.append((name, method))
+
+    return handlers
+
+
+def get_event_handlers_by_genre(
+    obj: t.Any,
+    event_type: type[EventEnum] | t.Iterable[type[EventEnum]],
+    predicate: t.Callable[..., bool] | None = None,
+) -> list[tuple[str, EventHandler]]:
+    handlers: list[tuple[str, EventHandler]] = []
+    if predicate is None:
+        predicate = inspect.ismethod
+
+    #######################################################################
+
+    def _process_single_event_enum(
+        _event_type: type[EventEnum],
+    ) -> None:
+        """
+        Check for and add (if any) event handlers for the given event type.
+        """
+        for name, method in inspect.getmembers(obj, predicate):
+            method_event = getattr(method, _ON_DECORATOR_META_FLAG, None)
+            if isinstance(method_event, _event_type):
+                handlers.append((name, method))
+
+    def _process_iterable_of_event_enums(
+        _event_types: t.Iterable[type[EventEnum]],
+    ) -> None:
+        """
+        Check for and add (if any) event handlers for the given
+        iterable set of event types.
+        """
+        for _event_type in _event_types:
+            _process_single_event_enum(_event_type)
+
+    #######################################################################
+
+    if inspect.isclass(event_type):
+        if issubclass(event_type, EventEnum):
+            _process_single_event_enum(event_type)
+        else:
+            raise TypeError
+
+    elif isinstance(event_type, Iterable):
+        is_subclass_mask: list[bool] = [issubclass(e, EventEnum) for e in event_type]
+        if all(is_subclass_mask):
+            _process_iterable_of_event_enums(event_type)
+        else:
+            raise ValueError
 
     return handlers
 
