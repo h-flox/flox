@@ -46,6 +46,11 @@ class Topology:
                 instead it should be used only by factory methods.
                 Defaults to `None`.
 
+        Notes:
+            If you are using the `Topology.__init__()` initializer to
+            create an instance of this class, you should avoid using
+            the `_source` argument.
+
         Raises:
             - `ValueError`: Raised if value for `_source` it not a
               `pathlib.Path`, `str`, or `None`.

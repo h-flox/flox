@@ -1,6 +1,6 @@
 import pytest
 
-from flight.strategy import _EnforceSuperMeta
+from flight.strategy import _EnforceSuperMeta, _SUPER_META_FLAG
 
 
 def test_enforce_super_meta():
@@ -21,11 +21,13 @@ def test_enforce_super_meta():
     class Valid(metaclass=_EnforceSuperMeta):
         def __init__(self):
             super().__init__()
-            self._initialized = True
+            setattr(self, _SUPER_META_FLAG, True)
             self.name = "valid"
 
     assert isinstance(Valid(), Valid)
-
+    
+    ########################################################################
+    
     class ValidWorkingChild(Valid):
         def __init__(self):
             super().__init__()
@@ -34,6 +36,8 @@ def test_enforce_super_meta():
     inst = ValidWorkingChild()
     assert isinstance(inst, ValidWorkingChild)
     assert isinstance(inst, Valid)
+
+    ########################################################################
 
     class ValidFailingChild(Valid):
         """This class should *fail* on construction."""

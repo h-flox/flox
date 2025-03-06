@@ -129,9 +129,12 @@ class WorkerEvents(FlightEventEnum):
     """
 
 
-GenericEvents: t.TypeAlias = (
-    CoordinatorEvents | AggregatorEvents | WorkerEvents | Events  # Ignite `Events`
-)
+GenericEvents: t.TypeAlias = t.Union[
+    CoordinatorEvents,
+    AggregatorEvents,
+    WorkerEvents,
+    Events,  # Ignite `Events`
+]
 """
 A union type of all event types usable in Flight (defined in Flight and Ignite).
 """
@@ -143,6 +146,9 @@ Callable definition for functions that are called on the firing of an event.
 
 
 _ON_DECORATOR_META_FLAG: t.Final[str] = "_event_type"
+"""
+Name of the flag used in the [`on()`][flight.events.on] decorator.
+"""
 
 
 def on(event_type: GenericEvents):
@@ -230,6 +236,22 @@ def get_event_handlers_by_genre(
     event_type: type[EventEnum] | t.Iterable[type[EventEnum]],
     predicate: t.Callable[..., bool] | None = None,
 ) -> list[tuple[str, EventHandler]]:
+    """
+    Given an object, get all of its event handler attributes that are designated
+    to be run for a given genre of events (e.g., `WorkerEvents`, `AggregatorEvents`,
+    `CoordinatorEvents`, `Events`).
+
+    Args:
+        obj (t.Any): ...
+        event_type (type[EventEnum] | typing.Iterable[type[EventEnum]]):
+            ...
+        predicate (typing.Callable[..., bool | None): ...
+
+    Returns:
+        List of tuples with the `EventHandler`s in `obj` belonging to the given
+            genre(s). Each tuple in the list contains the name of the
+            `EventHandler` and the callable function itself.
+    """
     handlers: list[tuple[str, EventHandler]] = []
     if predicate is None:
         predicate = inspect.ismethod

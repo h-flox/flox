@@ -5,20 +5,30 @@ import inspect
 import typing as t
 
 from .events import get_event_handlers
-from .system import Topology
 
 if t.TYPE_CHECKING:
     from ignite.engine.events import EventsList
 
     from .events import EventHandler, GenericEvents
+    from .system import Topology
 
 
 _SUPER_META_FLAG: t.Final[str] = "__super_is_initialized"
-"""TODO"""
+"""
+Flag to ensure that the call to `super().__init__()` is called via
+[`_EnforceSuperMeta`][flight.strategy._EnforceSuperMeta].
+"""
 
 
 class _EnforceSuperMeta(abc.ABCMeta):
+    """
+    ...
+    """
+
     def __call__(cls, *args, **kwargs):
+        """
+        ...
+        """
         instance = super().__call__(*args, **kwargs)
         if not getattr(instance, _SUPER_META_FLAG, False):
             raise RuntimeError(
@@ -28,17 +38,25 @@ class _EnforceSuperMeta(abc.ABCMeta):
 
 
 class AggregationPolicy(t.Protocol):
-    """..."""
+    """
+    ...
+    """
 
     def __call__(self, *args, **kwargs):
-        """..."""
+        """
+        ...
+        """
 
 
 class WorkerSelectionPolicy(t.Protocol):
-    """..."""
+    """
+    ...
+    """
 
     def __call__(self, *args, **kwargs):
-        """..."""
+        """
+        ...
+        """
 
 
 class Strategy:
@@ -140,6 +158,21 @@ class Strategy:
         """
         return self.selection_policy(topology, *args, **kwargs)
 
+    def fire_event_handler(
+        self,
+        event_type: GenericEvents | EventsList,
+    ) -> None:
+        """
+        TODO
+        """
+        # NOTE: Should this be in the Federation instead? Need to think this over.
+        #       Remember, this has to run on the different nodes
+        #       (coordinator/aggregator/workers)
+        context: dict[str, t.Any] = {}
+        for _name, handler in get_event_handlers(self, event_type):
+            # TODO: Log the activation of the event here in the state.
+            handler(context)
+
     @classmethod
     def _required_attrs(cls) -> tuple[str, ...]:
         """
@@ -159,7 +192,8 @@ class Strategy:
         marked to be for `event_type` by its decorator.
 
         Args:
-            event_type (GenericEvents | EventList):
+            event_type (GenericEvents | EventList): The type of event to (or list of
+                event types) to grab the event handlers for.
 
         Returns:
             List of event handlers meant for the provided `event_type`.

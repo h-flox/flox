@@ -33,6 +33,9 @@ class Node:
     """
 
     kind: NodeKind
+    """
+    The kind of role the `Node` serves in a topology.
+    """
 
     globus_compute_id: UUID | None
     """
