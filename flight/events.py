@@ -139,7 +139,10 @@ GenericEvents: t.TypeAlias = t.Union[
 A union type of all event types usable in Flight (defined in Flight and Ignite).
 """
 
-EventHandler: t.TypeAlias = t.Callable[..., t.Any]
+EventHandler: t.TypeAlias = t.Callable[
+    ...,  # [t.Any, t.Any],
+    t.Any,
+]
 """
 Callable definition for functions that are called on the firing of an event.
 """
@@ -295,15 +298,3 @@ def get_event_handlers_by_genre(
             raise ValueError
 
     return handlers
-
-
-class CoordinatorState:
-    ...
-
-
-class AggregatorState:
-    ...
-
-
-class WorkerState:
-    ...

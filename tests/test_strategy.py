@@ -1,6 +1,6 @@
 import pytest
 
-from flight.strategy import _EnforceSuperMeta, _SUPER_META_FLAG
+from flight.strategy import _EnforceSuperMeta, _SUPER_META_FLAG, Strategy
 
 
 def test_enforce_super_meta():
@@ -47,6 +47,31 @@ def test_enforce_super_meta():
 
     with pytest.raises(RuntimeError):
         ValidFailingChild()
+
+
+def test_strategy_def_with_explicit_policies():
+    class TestStrategy(Strategy):
+        def __init__(self):
+            super().__init__()
+    
+        def aggregation_policy(self, *args, **kwargs):
+            return  # TODO: Change this when we have this working in `fitter.py`.
+
+        def selection_policy(self, *args, **kwargs):
+            return  # TODO: Change this when we have this working in `fitter.py`.
+
+    assert isinstance(TestStrategy(), Strategy)
+
+
+def test_strategy_def_with_arg_policies():
+    def aggregation_policy(self, *args, **kwargs):
+        return  # TODO: Change this when we have this working in `fitter.py`.
+
+    def selection_policy(self, *args, **kwargs):
+        return  # TODO: Change this when we have this working in `fitter.py`.
+
+    assert isinstance(Strategy(aggregation_policy, selection_policy), Strategy)
+    
 
 
 def test_strategy_event():

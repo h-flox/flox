@@ -1,35 +1,49 @@
+from __future__ import annotations
+
 import typing as t
 
-from flight.events import CoordinatorEvents
+from .events import CoordinatorEvents
+
+if t.TYPE_CHECKING:
+    from .strategy import Strategy
+    from .system.topology import Topology
 
 
 def simple_federated_fit(
-    topology: t.Any,
+    topology: Topology,
+    strategy: Strategy,
     rounds: int,
 ):
+    context = {}
+
     """Skeletal framework for how FL will be performed in Flight with events."""
-    CoordinatorEvents.STARTED
+    strategy.fire_event_handler(CoordinatorEvents.STARTED, context)
 
     curr_round: int = 0
     while True:
-        CoordinatorEvents.ROUND_STARTED
+        strategy.fire_event_handler(CoordinatorEvents.ROUND_STARTED, context)
 
-        federated_round(topology)
+        federated_round(topology, strategy, context)
 
-        CoordinatorEvents.ROUND_COMPLETED
+        strategy.fire_event_handler(CoordinatorEvents.ROUND_COMPLETED, context)
 
         curr_round += 1
         cond = curr_round >= rounds
         if cond:
             break
 
-    CoordinatorEvents.COMPLETED
+    strategy.fire_event_handler(CoordinatorEvents.COMPLETED, context)
+    return context
 
 
-def federated_round(topology):
-    CoordinatorEvents.WORKER_SELECTION_STARTED
+def federated_round(
+    topology: Topology,
+    strategy: Strategy,
+    context: dict[str, t.Any],
+):
+    strategy.fire_event_handler(CoordinatorEvents.WORKER_SELECTION_STARTED, context)
     selected_workers = worker_selection([1, 2, 3])
-    CoordinatorEvents.WORKER_SELECTION_COMPLETED
+    strategy.fire_event_handler(CoordinatorEvents.WORKER_SELECTION_COMPLETED, context)
 
     relevant_nodes = get_relevant_nodes(topology, selected_workers)
 

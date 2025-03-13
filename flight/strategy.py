@@ -59,7 +59,7 @@ class WorkerSelectionPolicy(t.Protocol):
         """
 
 
-class Strategy:
+class Strategy(metaclass=_EnforceSuperMeta):
     """
     A `Strategy` is a collection of logical pieces that are run during the
     execution of a federation.
@@ -119,8 +119,13 @@ class Strategy:
     ) -> None:
         """
         Args:
-            aggregation_policy (AggregationPolicy | None): ...
-            selection_policy (WorkerSelectionPolicy | None): ...
+            aggregation_policy (AggregationPolicy | None): Callable
+                object/function that defines how model parameters are
+                aggregated by aggregator nodes and the coordinator in
+                the `Topology` used in a federation.
+            selection_policy (WorkerSelectionPolicy | None): Callable
+                object/function that defines how worker nodes are selected
+                to perform local training at each aggregation round.
         """
         super().__init__()
         setattr(self, _SUPER_META_FLAG, True)
@@ -136,13 +141,13 @@ class Strategy:
                     f"`{self.__class__.__name__}` missing `{attr}` implementation."
                 )
 
-    def __new__(cls, *args, **kwargs):
-        instance = super().__new__(cls)
-        if not hasattr(cls, _SUPER_META_FLAG):
-            raise RuntimeError(
-                f"`{cls.__name__}.__init__()` must call `super().__init__()`."
-            )
-        return instance
+    # def __new__(cls, *args, **kwargs):
+    #     instance = super().__new__(cls)
+    #     if not hasattr(cls, _SUPER_META_FLAG):
+    #         raise RuntimeError(
+    #             f"`{cls.__name__}.__init__()` must call `super().__init__()`."
+    #         )
+    #     return instance
 
     def aggregate(self, *args, **kwargs):
         """
@@ -161,22 +166,37 @@ class Strategy:
     def fire_event_handler(
         self,
         event_type: GenericEvents | EventsList,
+        context: dict[str, t.Any] | None = None,
     ) -> None:
         """
-        TODO
+        Fires the event handler implementations for a single event type or a list of
+        event types.
+
+        Args:
+            event_type (GenericEvents | EventsList): The event type(s) to fire with
+                the given context.
+            context (dict[str, typing.Any] | None): Optional context that the event
+                handler is run with. Defaults to `None`.
         """
         # NOTE: Should this be in the Federation instead? Need to think this over.
         #       Remember, this has to run on the different nodes
         #       (coordinator/aggregator/workers)
-        context: dict[str, t.Any] = {}
+        if context is None:
+            context = {}
+
         for _name, handler in get_event_handlers(self, event_type):
             # TODO: Log the activation of the event here in the state.
+            print(name, handler)
             handler(context)
 
     @classmethod
-    def _required_attrs(cls) -> tuple[str, ...]:
+    def _required_attrs(cls) -> tuple[str, str]:
         """
         Defines/returns attributes that must be defined by the user.
+
+        Returns:
+            Tuple of attribute names that are required to be implemented/provided
+            by the `Strategy`.
         """
         return "aggregation_policy", "selection_policy"
 
@@ -208,3 +228,14 @@ class Strategy:
             event_type,
             predicate=inspect.ismethod,
         )
+
+
+class DefaultStrategy(Strategy):
+    def __init__(self):
+        super().__init__()
+
+    def aggregation_policy(self, *args, **kwargs):
+        return  # TODO: Change this when we have this working in `fitter.py`.
+
+    def selection_policy(self, *args, **kwargs):
+        return  # TODO: Change this when we have this working in `fitter.py`.
