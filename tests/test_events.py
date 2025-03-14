@@ -48,6 +48,10 @@ def test_get_event_handlers():
         def cache(self, context):
             context["tmp"] = True
 
+        @on(CoordinatorEvents.STARTED | CoordinatorEvents.COMPLETED)
+        def greet(self, context):
+            print("Hello!")
+
         @on(WorkerEvents.COMPLETED)
         def cleanup(self, context):
             del context["tmp"]
@@ -62,6 +66,17 @@ def test_get_event_handlers():
     assert len(completed_handlers) == 1
     assert completed_handlers[0][0] == "cleanup"
 
+    coord_start_handlers = get_event_handlers(MyClass(), CoordinatorEvents.STARTED)
+    coord_compl_handlers = get_event_handlers(MyClass(), CoordinatorEvents.COMPLETED)
+    coord_start_compl_handlers = get_event_handlers(
+        MyClass(),
+        CoordinatorEvents.STARTED | CoordinatorEvents.COMPLETED,
+    )
+
+    assert len(coord_start_handlers) == 1
+    assert len(coord_compl_handlers) == 1
+    assert len(coord_start_compl_handlers) == 1
+
     # Ensure that `get_event_handler()` method handles the case of `EventList`
     # objects which are given by the `|` (or the `__or__`) operator.
     start_and_comp_handlers = get_event_handlers(
@@ -72,7 +87,7 @@ def test_get_event_handlers():
     assert {name for name, _ in start_and_comp_handlers} == {"cache", "cleanup"}
 
     # Ensure that event handlers that do not exist in `MyClass` are not returned.
-    other_handlers = get_event_handlers(MyClass(), CoordinatorEvents.STARTED)
+    other_handlers = get_event_handlers(MyClass(), AggregatorEvents.STARTED)
     assert len(other_handlers) == 0
 
     # Ensure that context/state is properly passed through the events.

@@ -49,6 +49,9 @@ class FlightEventEnum(EventEnum):
     def __or__(self, other: t.Any) -> EventsList:
         return EventsList() | self | other
 
+    def __hash__(self) -> int:
+        return hash(f"{self.__class__.__name__}.{self._name_}")
+
 
 class CoordinatorEvents(FlightEventEnum):
     """
@@ -154,7 +157,7 @@ Name of the flag used in the [`on()`][flight.events.on] decorator.
 """
 
 
-def on(event_type: GenericEvents):
+def on(event_type: GenericEvents | EventsList):
     """
     Decorator function that wraps a function with the given `event_type`.
 
@@ -221,15 +224,53 @@ def get_event_handlers(
     if predicate is None:
         predicate = inspect.ismethod
 
+    TypeValues: t.TypeAlias = t.Literal["generic", "list"]
+
+    def get_type_signature(met) -> list[TypeValues, TypeValues]:
+        signature = []
+
+        if isinstance(event_type, GenericEvents):
+            signature.append("generic")
+        elif isinstance(event_type, EventsList):
+            signature.append("list")
+        else:
+            raise TypeError(f"Illegal type for argument `event_type`, {met=}.")
+
+        if isinstance(met, GenericEvents):
+            signature.append("generic")
+        elif isinstance(met, EventsList):
+            signature.append("list")
+        else:
+            raise TypeError(f"Illegal event type for collected method, {met=}.")
+
+        return signature
+
     handlers = []
     for name, method in inspect.getmembers(obj, predicate=predicate):
-        method_event = getattr(method, _ON_DECORATOR_META_FLAG, None)
+        method_event_type = getattr(method, _ON_DECORATOR_META_FLAG, None)
+        if method_event_type is None:
+            continue
 
-        if method_event and isinstance(event_type, EventsList):
-            if method_event in event_type:
-                handlers.append((name, method))
-        elif method_event is event_type:
-            handlers.append((name, method))
+        match get_type_signature(method_event_type):
+            case "generic", "generic":
+                if event_type == method_event_type:
+                    handlers.append((name, method))
+
+            case "generic", "list":
+                if event_type in method_event_type:
+                    handlers.append((name, method))
+
+            case "list", "generic":
+                if method_event_type in event_type:
+                    handlers.append((name, method))
+
+            case "list", "list":
+                et_set, met_set = set(event_type), set(method_event_type)
+                if et_set.intersection(met_set):
+                    handlers.append((name, method))
+
+            case _:
+                raise TypeError("Illegal types for `event_type`.")
 
     return handlers
 
