@@ -10,18 +10,18 @@ from flight.system.topology import Topology
 
 
 class TestStrategy(DefaultStrategy):
-    # TODO: We need to fix the `|` operator for events.
     @on(
-        CoordinatorEvents.STARTED # |
-        # CoordinatorEvents.COMPLETED |
-        # CoordinatorEvents.ROUND_STARTED |
-        # CoordinatorEvents.ROUND_COMPLETED |
-        # CoordinatorEvents.WORKER_SELECTION_STARTED |
-        # CoordinatorEvents.WORKER_SELECTION_COMPLETED
+        CoordinatorEvents.STARTED |
+        CoordinatorEvents.COMPLETED |
+        CoordinatorEvents.ROUND_STARTED |
+        CoordinatorEvents.ROUND_COMPLETED |
+        CoordinatorEvents.WORKER_SELECTION_STARTED |
+        CoordinatorEvents.WORKER_SELECTION_COMPLETED
     )
     def count(self, context):
-        print(context)
-        context["count"] += 1
+        if "invocations" not in context:
+            context["invocations"] = 0
+        context["invocations"] += 1
 
 
 @pytest.fixture
@@ -47,7 +47,5 @@ def test_federated_fit_without_failure(topology):
 def test_federated_fit_event_hooks(topology):
     strategy = TestStrategy()
     handlers = strategy.get_event_handlers(CoordinatorEvents.STARTED)
-    print(handlers)
     context = simple_federated_fit(topology, strategy=strategy, rounds=1)
-    print(context)
-    assert context["count"] == 6
+    assert context["invocations"] == 6

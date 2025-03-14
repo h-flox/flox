@@ -141,14 +141,6 @@ class Strategy(metaclass=_EnforceSuperMeta):
                     f"`{self.__class__.__name__}` missing `{attr}` implementation."
                 )
 
-    # def __new__(cls, *args, **kwargs):
-    #     instance = super().__new__(cls)
-    #     if not hasattr(cls, _SUPER_META_FLAG):
-    #         raise RuntimeError(
-    #             f"`{cls.__name__}.__init__()` must call `super().__init__()`."
-    #         )
-    #     return instance
-
     def aggregate(self, *args, **kwargs):
         """
         Shorthand method to use the aggregation method defined by the
@@ -162,6 +154,19 @@ class Strategy(metaclass=_EnforceSuperMeta):
         worker selection policy.
         """
         return self.selection_policy(topology, *args, **kwargs)
+
+    @classmethod
+    def _required_attrs(cls) -> tuple[str, str]:
+        """
+        Defines/returns attributes that must be defined by the user.
+
+        Returns:
+            Tuple of attribute names that are required to be implemented/provided
+            by the `Strategy`.
+        """
+        return "aggregation_policy", "selection_policy"
+
+    #################################################################################
 
     def fire_event_handler(
         self,
@@ -182,25 +187,15 @@ class Strategy(metaclass=_EnforceSuperMeta):
         #       Remember, this has to run on the different nodes
         #       (coordinator/aggregator/workers)
         if context is None:
+            print("Creating a new context")
             context = {}
+        else:
+            print("Inherited a context")
 
         for _name, handler in get_event_handlers(self, event_type):
             # TODO: Log the activation of the event here in the state.
-            print(name, handler)
+            print(_name, handler)
             handler(context)
-
-    @classmethod
-    def _required_attrs(cls) -> tuple[str, str]:
-        """
-        Defines/returns attributes that must be defined by the user.
-
-        Returns:
-            Tuple of attribute names that are required to be implemented/provided
-            by the `Strategy`.
-        """
-        return "aggregation_policy", "selection_policy"
-
-    #################################################################################
 
     @t.final
     def get_event_handlers(
