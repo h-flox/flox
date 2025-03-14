@@ -157,13 +157,16 @@ Name of the flag used in the [`on()`][flight.events.on] decorator.
 """
 
 
+# TODO: Add a `priority` functionality on each event so that we can
+#       sort the event ordering by priority. This would look like:
+#       `@on(WorkerEvents.STARTED(priority=2))`.
 def on(event_type: GenericEvents | EventsList):
     """
     Decorator function that wraps a function with the given `event_type`.
 
     This is used to class methods in [`Strategy`][flight.strategy.Strategy]
-    classes where methods can
-    use this function to decorate class methods to fire for specific event types.
+    classes where methods can use this function to decorate class methods
+    to fire for specific event types.
 
     ```python
     class SomeObject:
@@ -224,26 +227,20 @@ def get_event_handlers(
     if predicate is None:
         predicate = inspect.ismethod
 
-    TypeValues: t.TypeAlias = t.Literal["generic", "list"]
-
-    def get_type_signature(met) -> list[TypeValues, TypeValues]:
+    def get_type_signature(met: t.Any) -> tuple[str, ...]:
         signature = []
 
-        if isinstance(event_type, GenericEvents):
-            signature.append("generic")
-        elif isinstance(event_type, EventsList):
+        if isinstance(event_type, EventsList):
             signature.append("list")
-        else:
-            raise TypeError(f"Illegal type for argument `event_type`, {met=}.")
-
-        if isinstance(met, GenericEvents):
+        else:  # isinstance(event_type, GenericEvents) == True
             signature.append("generic")
-        elif isinstance(met, EventsList):
-            signature.append("list")
-        else:
-            raise TypeError(f"Illegal event type for collected method, {met=}.")
 
-        return signature
+        if isinstance(met, EventsList):
+            signature.append("list")
+        else:  #  isinstance(met, GenericEvents) == True
+            signature.append("generic")
+
+        return tuple(signature)
 
     handlers = []
     for name, method in inspect.getmembers(obj, predicate=predicate):
@@ -261,11 +258,11 @@ def get_event_handlers(
                     handlers.append((name, method))
 
             case "list", "generic":
-                if method_event_type in event_type:
+                if method_event_type in event_type:  # type: ignore[operator]
                     handlers.append((name, method))
 
             case "list", "list":
-                et_set, met_set = set(event_type), set(method_event_type)
+                et_set, met_set = set(event_type), set(method_event_type)  # type: ignore[arg-type]
                 if et_set.intersection(met_set):
                     handlers.append((name, method))
 
@@ -309,9 +306,18 @@ def get_event_handlers_by_genre(
         Check for and add (if any) event handlers for the given event type.
         """
         for name, method in inspect.getmembers(obj, predicate):
-            method_event = getattr(method, _ON_DECORATOR_META_FLAG, None)
-            if isinstance(method_event, _event_type):
-                handlers.append((name, method))
+            method_event_type = getattr(method, _ON_DECORATOR_META_FLAG, None)
+
+            print(f"{method_event_type=}  |  {_event_type=}")
+
+            if isinstance(method_event_type, EventsList):
+                if _event_type in method_event_type:  # type: ignore
+                    handlers.append((name, method))
+            elif isinstance(method_event_type, GenericEvents):  # type: ignore
+                if isinstance(method_event_type, _event_type):
+                    handlers.append((name, method))
+            # if isinstance(method_event_type, _event_type):
+            #     handlers.append((name, method))
 
     def _process_iterable_of_event_enums(
         _event_types: t.Iterable[type[EventEnum]],

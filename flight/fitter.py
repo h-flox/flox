@@ -14,7 +14,7 @@ def simple_federated_fit(
     strategy: Strategy,
     rounds: int,
 ):
-    context = {}
+    context: dict[str, t.Any] = {}
 
     """Skeletal framework for how FL will be performed in Flight with events."""
     strategy.fire_event_handler(CoordinatorEvents.STARTED, context)

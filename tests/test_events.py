@@ -118,17 +118,25 @@ def test_get_event_handlers_by_genre():
         def coord_hello(self, context):
             print("Coordinator: 'Hello!'")
 
+        @on(AggregatorEvents.STARTED | AggregatorEvents.COMPLETED)
+        def greet(self, context):
+            print("Hello!")
+
     instance = MyClass()
     
     worker_handlers = get_event_handlers_by_genre(instance, WorkerEvents)
+    aggr_handlers = get_event_handlers_by_genre(instance, AggregatorEvents)
     coord_handlers = get_event_handlers_by_genre(instance, CoordinatorEvents)
 
     worker_handler_names = set(h[0] for h in worker_handlers)
+    aggr_handler_names = set(h[0] for h in aggr_handlers)
+    print(aggr_handlers)
     coord_handler_names = set(h[0] for h in coord_handlers)
-
+    
     assert worker_handler_names == {"cache", "cleanup"}
+    assert aggr_handler_names == {"greet"}
     assert coord_handler_names == {"coord_hello"}
-
+    
     worker_coord_handlers = get_event_handlers_by_genre(instance, [WorkerEvents, CoordinatorEvents])
     worker_coord_handler_names = set([h[0] for h in worker_coord_handlers])
 
