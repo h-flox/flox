@@ -132,19 +132,24 @@ class WorkerEvents(FlightEventEnum):
     """
 
 
+IgniteEvents = Events
+"""
+Simple alias to `Events` in PyTorch Ignite that are used during model training.
+"""
+
 GenericEvents: t.TypeAlias = t.Union[
     CoordinatorEvents,
     AggregatorEvents,
     WorkerEvents,
-    Events,  # Ignite `Events`
+    IgniteEvents,
 ]
 """
 A union type of all event types usable in Flight (defined in Flight and Ignite).
 """
 
 EventHandler: t.TypeAlias = t.Callable[
-    ...,  # [t.Any, t.Any],
-    t.Any,
+    [dict[str, t.Any]],  # context
+    None,
 ]
 """
 Callable definition for functions that are called on the firing of an event.
@@ -227,20 +232,20 @@ def get_event_handlers(
     if predicate is None:
         predicate = inspect.ismethod
 
-    def get_type_signature(met: t.Any) -> tuple[str, ...]:
-        signature = []
+    def get_type_matching(met: t.Any) -> tuple[str, ...]:
+        matching = []
 
         if isinstance(event_type, EventsList):
-            signature.append("list")
+            matching.append("list")
         else:  # isinstance(event_type, GenericEvents) == True
-            signature.append("generic")
+            matching.append("generic")
 
         if isinstance(met, EventsList):
-            signature.append("list")
-        else:  #  isinstance(met, GenericEvents) == True
-            signature.append("generic")
+            matching.append("list")
+        else:  # isinstance(met, GenericEvents) == True
+            matching.append("generic")
 
-        return tuple(signature)
+        return tuple(matching)
 
     handlers = []
     for name, method in inspect.getmembers(obj, predicate=predicate):
@@ -248,7 +253,7 @@ def get_event_handlers(
         if method_event_type is None:
             continue
 
-        match get_type_signature(method_event_type):
+        match get_type_matching(method_event_type):
             case "generic", "generic":
                 if event_type == method_event_type:
                     handlers.append((name, method))
@@ -262,7 +267,8 @@ def get_event_handlers(
                     handlers.append((name, method))
 
             case "list", "list":
-                et_set, met_set = set(event_type), set(method_event_type)  # type: ignore[arg-type]
+                et_set = set(event_type)  # type: ignore[arg-type]
+                met_set = set(method_event_type)  # type: ignore[arg-type]
                 if et_set.intersection(met_set):
                     handlers.append((name, method))
 

@@ -22,7 +22,9 @@ Flag to ensure that the call to `super().__init__()` is called via
 
 class _EnforceSuperMeta(abc.ABCMeta):
     """
-    ...
+    Metaclass that requires instances of classes that use it
+    (via `class MyClass(metaclass=_EnforceSuperMeta): ...`) to use
+    `super().__init__()` in the initializer.
     """
 
     def __call__(cls, *args, **kwargs):
@@ -31,7 +33,7 @@ class _EnforceSuperMeta(abc.ABCMeta):
         """
         instance = super().__call__(*args, **kwargs)
         if not getattr(instance, _SUPER_META_FLAG, False):
-            raise RuntimeError(
+            raise AttributeError(
                 f"{cls.__name__}.__init__() must call super().__init__()"
             )
         return instance
@@ -42,6 +44,7 @@ class AggregationPolicy(t.Protocol):
     ...
     """
 
+    # TODO
     def __call__(self, *args, **kwargs):
         """
         ...
@@ -53,6 +56,7 @@ class WorkerSelectionPolicy(t.Protocol):
     ...
     """
 
+    # TODO
     def __call__(self, *args, **kwargs):
         """
         ...
@@ -122,10 +126,11 @@ class Strategy(metaclass=_EnforceSuperMeta):
             aggregation_policy (AggregationPolicy | None): Callable
                 object/function that defines how model parameters are
                 aggregated by aggregator nodes and the coordinator in
-                the `Topology` used in a federation.
+                the `Topology` used in a federation. Defaults to `None`.
             selection_policy (WorkerSelectionPolicy | None): Callable
                 object/function that defines how worker nodes are selected
                 to perform local training at each aggregation round.
+                Defaults to `None`.
         """
         super().__init__()
         setattr(self, _SUPER_META_FLAG, True)
@@ -182,6 +187,12 @@ class Strategy(metaclass=_EnforceSuperMeta):
                 the given context.
             context (dict[str, typing.Any] | None): Optional context that the event
                 handler is run with. Defaults to `None`.
+
+        Notes:
+            The order in which event handlers for `event_type` is not guaranteed.
+            Ensure that the logic of your given `Strategy` for federated learning
+            with Flight does not rely on a certain order of these event handlers
+            to run.
         """
         # NOTE: Should this be in the Federation instead? Need to think this over.
         #       Remember, this has to run on the different nodes
@@ -226,6 +237,10 @@ class Strategy(metaclass=_EnforceSuperMeta):
 
 
 class DefaultStrategy(Strategy):
+    """
+    Simple strategy implementation used for convenience.
+    """
+
     def __init__(self):
         super().__init__()
 

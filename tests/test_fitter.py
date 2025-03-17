@@ -11,12 +11,12 @@ from flight.system.topology import Topology
 
 class TestStrategy(DefaultStrategy):
     @on(
-        CoordinatorEvents.STARTED |
-        CoordinatorEvents.COMPLETED |
-        CoordinatorEvents.ROUND_STARTED |
-        CoordinatorEvents.ROUND_COMPLETED |
-        CoordinatorEvents.WORKER_SELECTION_STARTED |
-        CoordinatorEvents.WORKER_SELECTION_COMPLETED
+        CoordinatorEvents.STARTED
+        | CoordinatorEvents.COMPLETED
+        | CoordinatorEvents.ROUND_STARTED
+        | CoordinatorEvents.ROUND_COMPLETED
+        | CoordinatorEvents.WORKER_SELECTION_STARTED
+        | CoordinatorEvents.WORKER_SELECTION_COMPLETED
     )
     def count(self, context):
         if "invocations" not in context:
@@ -32,9 +32,9 @@ def topology() -> Topology:
 
     for node, node_data in graph.nodes(data=True):
         node_data["kind"] = "coordinator" if node == 0 else "worker"
-    
+
     return Topology.from_networkx(graph)
-    
+
 
 def test_federated_fit_without_failure(topology):
     try:

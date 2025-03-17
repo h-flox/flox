@@ -6,6 +6,7 @@ from flight.events import *
 def foo(*args, **kwargs):
     pass
 
+
 class TestStrategy(Strategy):
     def __init__(self):
         super().__init__(foo, foo)
