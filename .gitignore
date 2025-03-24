@@ -7,7 +7,6 @@ examples/
 runs/
 screenlog.*
 
-v1/
 
 # macOS system
 .DS_Store
