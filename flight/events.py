@@ -1,3 +1,15 @@
+"""
+```mermaid
+sequenceDiagram
+    participant Coordinator
+    participant Aggregator
+    participant Worker
+    
+    Coordinator->>Aggregator
+    Coordinator->>Worker
+``` 
+"""
+
 from __future__ import annotations
 
 import functools
@@ -56,6 +68,11 @@ class FlightEventEnum(EventEnum):
 class CoordinatorEvents(FlightEventEnum):
     """
     Coordinator events.
+
+    ```mermaid
+    flowchart LR
+        a-->b
+    ```
     """
 
     STARTED = "started"
@@ -134,7 +151,9 @@ class WorkerEvents(FlightEventEnum):
 
 IgniteEvents = Events
 """
-Simple alias to `Events` in PyTorch Ignite that are used during model training.
+Simple, and more clear, alias to 
+[`Events`](https://pytorch.org/ignite/generated/ignite.engine.events.Events.html)
+in PyTorch Ignite that are used during model training.
 """
 
 GenericEvents: t.TypeAlias = t.Union[
@@ -193,6 +212,38 @@ def on(event_type: GenericEvents | EventsList):
         return wrapper
 
     return decorator
+
+
+def fire_event_handler_by_type(
+    obj: t.Any,
+    event_type: GenericEvents | EventsList,
+    context: dict[str, t.Any] | None = None,
+    logger: t.Any = None,
+) -> None:
+    """
+    Fires the event handler implementations for a single event type or a list of
+    event types.
+
+    Args:
+        obj (t.Any): Object that has attributes with event handlers which are
+            decorated by the [`on()`][flight.events.on] decorator.
+        event_type (GenericEvents | EventsList): The event type(s) to fire with
+            the given context.
+        context (dict[str, typing.Any] | None): Optional context that the event
+            handler is run with. Defaults to `None`.
+        logger: Optional logger to use for logging the event firing.
+
+    Notes:
+        The order in which event handlers for `event_type` is not guaranteed.
+        Ensure that the logic of your given `Strategy` for federated learning
+        with Flight does not rely on a certain order of these event handlers
+        to run.
+    """
+    if context is None:
+        context = {}
+
+    for _name, handler in get_event_handlers(obj, event_type):
+        handler(context)
 
 
 def get_event_handlers(
@@ -280,17 +331,21 @@ def get_event_handlers(
 
 def get_event_handlers_by_genre(
     obj: t.Any,
-    event_type: type[EventEnum] | t.Iterable[type[EventEnum]],
+    event_genre: type[EventEnum] | t.Iterable[type[EventEnum]],
     predicate: t.Callable[..., bool] | None = None,
 ) -> list[tuple[str, EventHandler]]:
     """
     Given an object, get all of its event handler attributes that are designated
-    to be run for a given genre of events (e.g., `WorkerEvents`, `AggregatorEvents`,
-    `CoordinatorEvents`, `Events`).
+    to be run for a given genre of events (e.g.,
+    [`WorkerEvents`][flight.events.WorkerEvents],
+    [`AggregatorEvents`][flight.events.AggregatorEvents],
+    [`CoordinatorEvents`][flight.events.CoordinatorEvents],
+    [`Events`](https://pytorch.org/ignite/generated/ignite.engine.events.Events.html)
+    /[`IgniteEvents`][flight.events.IgniteEvents]).
 
     Args:
         obj (t.Any): ...
-        event_type (type[EventEnum] | typing.Iterable[type[EventEnum]]):
+        event_genre (type[EventEnum] | typing.Iterable[type[EventEnum]]):
             ...
         predicate (typing.Callable[..., bool | None): ...
 
@@ -298,6 +353,17 @@ def get_event_handlers_by_genre(
         List of tuples with the `EventHandler`s in `obj` belonging to the given
             genre(s). Each tuple in the list contains the name of the
             `EventHandler` and the callable function itself.
+
+    Examples:
+        >>> from flight.events import on, WorkerEvents
+        >>>
+        >>> class MyObject:
+        >>>    @on(WorkerEvents.STARTED)
+        >>>    def foo(self, context):
+        >>>        print("Hello, world!")
+        >>>
+        >>> get_event_handlers_by_genre(obj, WorkerEvents)
+        ["foo", <bound method MyStrategy.foo of ...]
     """
     handlers: list[tuple[str, EventHandler]] = []
     if predicate is None:
@@ -305,9 +371,7 @@ def get_event_handlers_by_genre(
 
     #######################################################################
 
-    def _process_single_event_enum(
-        _event_type: type[EventEnum],
-    ) -> None:
+    def _process_single_event_enum(_event_type: type[EventEnum]) -> None:
         """
         Check for and add (if any) event handlers for the given event type.
         """
@@ -337,16 +401,16 @@ def get_event_handlers_by_genre(
 
     #######################################################################
 
-    if inspect.isclass(event_type):
-        if issubclass(event_type, EventEnum):
-            _process_single_event_enum(event_type)
+    if inspect.isclass(event_genre):
+        if issubclass(event_genre, EventEnum):
+            _process_single_event_enum(event_genre)
         else:
             raise TypeError
 
-    elif isinstance(event_type, Iterable):
-        is_subclass_mask: list[bool] = [issubclass(e, EventEnum) for e in event_type]
+    elif isinstance(event_genre, Iterable):
+        is_subclass_mask: list[bool] = [issubclass(e, EventEnum) for e in event_genre]
         if all(is_subclass_mask):
-            _process_iterable_of_event_enums(event_type)
+            _process_iterable_of_event_enums(event_genre)
         else:
             raise ValueError
 

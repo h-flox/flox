@@ -7,7 +7,7 @@ from enum import Flag, auto
 from ignite import engine
 
 if t.TYPE_CHECKING:
-    from ignite.engine import Engine
+    pass
 
 
 class CoordEvent(Flag):

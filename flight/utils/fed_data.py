@@ -184,8 +184,8 @@ def federated_split(
         for worker in topo.workers:
             worker_with_most_samples = max(
                 worker_samples,
-                key=worker_samples.get,
-            )  # type: ignore [arg-type]
+                key=worker_samples.get,  # type: ignore [arg-type]
+            )
             if worker_samples[worker.idx] == 0:
                 index = indices[worker_with_most_samples].pop()
                 worker_samples[worker_with_most_samples] -= 1

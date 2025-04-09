@@ -4,13 +4,14 @@ import abc
 import inspect
 import typing as t
 
-from .events import get_event_handlers
+from .events import get_event_handlers, get_event_handlers_by_genre
 
 if t.TYPE_CHECKING:
     from ignite.engine.events import EventsList
 
-    from .events import EventHandler, GenericEvents
+    from .events import EventEnum, EventHandler, GenericEvents
     from .system import Topology
+    from .system.types import NodeID
 
 
 _SUPER_META_FLAG: t.Final[str] = "__super_is_initialized"
@@ -57,7 +58,7 @@ class WorkerSelectionPolicy(t.Protocol):
     """
 
     # TODO
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> list[NodeID]:
         """
         ...
         """
@@ -153,7 +154,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
         """
         return self.aggregation_policy(*args, **kwargs)
 
-    def select_workers(self, topology: Topology, *args, **kwargs):
+    def select_workers(self, topology: Topology, *args, **kwargs) -> list[NodeID]:
         """
         Shorthand method to use the worker selection method defined by the
         worker selection policy.
@@ -232,6 +233,55 @@ class Strategy(metaclass=_EnforceSuperMeta):
         return get_event_handlers(
             self,
             event_type,
+            predicate=inspect.ismethod,
+        )
+
+    @t.final
+    def get_event_handlers_by_genre(
+        self,
+        event_genre: type[EventEnum] | t.Iterable[type[EventEnum]],
+    ):
+        """
+        Returns all the implemented event handlers in a `Strategy` that are
+        to be run for a given genre of events (e.g.,
+        [`WorkerEvents`][flight.events.WorkerEvents],
+        [`AggregatorEvents`][flight.events.AggregatorEvents],
+        [`CoordinatorEvents`][flight.events.CoordinatorEvents],
+        [`Events`](
+            https://pytorch.org/ignite/generated/ignite.engine.events.Events.html
+        )
+        /[`IgniteEvents`][flight.events.IgniteEvents]).
+
+        Args:
+            event_genre (type[EventEnum] | typing.Iterable[type[EventEnum]]):
+                The genre of events to grab the event handlers for.
+
+        Returns:
+            List of tuples with the `EventHandler`s in `obj` belonging to the given
+                genre(s). Each tuple in the list contains the name of the
+                `EventHandler` and the callable function itself.
+
+        Notes:
+            This method is shorthand for the [`get_event_handlers_by_genre()`]
+            [flight.events.get_event_handlers_by_genre] function that simply passes
+            `self` as the initial argument (`obj`).
+
+        Examples:
+            >>> from flight.events import on, WorkerEvents
+            >>> from flight.strategy import DefaultStrategy
+            >>>
+            >>> class MyStrategy(DefaultStrategy):
+            >>>    @on(WorkerEvents.STARTED)
+            >>>    def foo(self, context):
+            >>>        print("Hello, world!")
+            >>>
+            >>> s = MyStrategy(...)
+            >>> s.get_event_handlers_by_genre(WorkerEvents)
+            ["foo", <bound method MyStrategy.foo of ...]
+        """
+        return get_event_handlers_by_genre(
+            self,
+            event_genre,
             predicate=inspect.ismethod,
         )
 

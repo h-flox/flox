@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from .events import CoordinatorEvents
+from .runtime import Runtime
 
 if t.TYPE_CHECKING:
     from .strategy import Strategy
@@ -15,6 +16,7 @@ def simple_federated_fit(
     rounds: int,
 ):
     context: dict[str, t.Any] = {}
+    runtime = Runtime()
 
     """Skeletal framework for how FL will be performed in Flight with events."""
     strategy.fire_event_handler(CoordinatorEvents.STARTED, context)
@@ -23,7 +25,7 @@ def simple_federated_fit(
     while True:
         strategy.fire_event_handler(CoordinatorEvents.ROUND_STARTED, context)
 
-        federated_round(topology, strategy, context)
+        federated_round(runtime, topology, strategy, context)
 
         strategy.fire_event_handler(CoordinatorEvents.ROUND_COMPLETED, context)
 
@@ -37,6 +39,7 @@ def simple_federated_fit(
 
 
 def federated_round(
+    runtime: Runtime,
     topology: Topology,
     strategy: Strategy,
     context: dict[str, t.Any],
@@ -49,12 +52,15 @@ def federated_round(
 
     return  # TODO: Edit later.
     for node in relevant_nodes:
+
         if node.kind == "aggregator":
-            pass
+            runtime.submit(...)
+
         elif node.kind == "worker":
-            pass
+            runtime.submit(...)
+
         else:
-            pass
+            raise ValueError
 
 
 def worker_selection(lst: list[t.Any]) -> list[t.Any]:

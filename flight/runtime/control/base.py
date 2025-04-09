@@ -5,6 +5,8 @@ import typing as t
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
+T = t.TypeVar("T")
+
 
 class ControlPlane(t.Protocol):
     """
@@ -16,7 +18,7 @@ class ControlPlane(t.Protocol):
     function definition.
     """
 
-    def submit(self, fn: t.Callable, /, *args, **kwargs) -> Future:
+    def submit(self, fn: t.Callable[..., T], /, *args, **kwargs) -> Future[T]:
         """
         Executes a given function with the provided keyword arguments.
 
