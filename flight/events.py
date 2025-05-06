@@ -4,10 +4,10 @@ sequenceDiagram
     participant Coordinator
     participant Aggregator
     participant Worker
-    
+
     Coordinator->>Aggregator
     Coordinator->>Worker
-``` 
+```
 """
 
 from __future__ import annotations
@@ -151,7 +151,7 @@ class WorkerEvents(FlightEventEnum):
 
 IgniteEvents = Events
 """
-Simple, and more clear, alias to 
+Simple, and more clear, alias to
 [`Events`](https://pytorch.org/ignite/generated/ignite.engine.events.Events.html)
 in PyTorch Ignite that are used during model training.
 """
@@ -234,7 +234,7 @@ def fire_event_handler_by_type(
         logger: Optional logger to use for logging the event firing.
 
     Notes:
-        The order in which event handlers for `event_type` is not guaranteed.
+        The order in which event handlers for `event_type` is _not_ guaranteed.
         Ensure that the logic of your given `Strategy` for federated learning
         with Flight does not rely on a certain order of these event handlers
         to run.
@@ -377,8 +377,6 @@ def get_event_handlers_by_genre(
         """
         for name, method in inspect.getmembers(obj, predicate):
             method_event_type = getattr(method, _ON_DECORATOR_META_FLAG, None)
-
-            print(f"{method_event_type=}  |  {_event_type=}")
 
             if isinstance(method_event_type, EventsList):
                 if _event_type in method_event_type:  # type: ignore

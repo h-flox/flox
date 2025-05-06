@@ -52,7 +52,6 @@ def federated_round(
 
     return  # TODO: Edit later.
     for node in relevant_nodes:
-
         if node.kind == "aggregator":
             runtime.submit(...)
 

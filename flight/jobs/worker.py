@@ -5,26 +5,26 @@ from dataclasses import dataclass, field
 
 if t.TYPE_CHECKING:
     import torch
+    from ignite.engine import Engine
+    from torch.optim import Optimizer  # noqa
 
     from flight.events import EventHandler
-    from flight.learning.module import TorchDataModule, TorchModule, Params
+    from flight.learning.module import Params, TorchDataModule, TorchModule
     from flight.strategy import Strategy
-
-    from ignite.engine import Engine
 
     ProcessFn: t.TypeAlias = t.Callable[[Engine, t.Any], t.Any]
     """
     As defined by Ignite (see [Engine][ignite.engine.Engine]), this is a function
     that receives a handle to the engine and the current batch in each iteration,
     and returns data to be stored in the engine's state.
-    
+
     Simply put, this function defines how an `Engine` processes a batch of data during
     training, testing, and evaluation.
     """
 
     UnwrappedProcessFn: t.TypeAlias = t.Callable[
         [
-            tuple[torch.nn.Module, torch.optim.Optimizer, torch.nn.Module],
+            tuple[torch.nn.Module, Optimizer, torch.nn.Module],
             Engine,
             t.Any,
         ],
@@ -79,7 +79,7 @@ class IgniteConfig:
     supervised: bool = True
 
     # supervised_training_step_args with defaults
-    device: str | torch.DeviceObjType = "mps"  # TODO: Create `auto` default
+    device: str | torch.device | None = "mps"  # TODO: Create `auto` default
     non_blocking: bool = True
     prepare_batch: t.Callable = _default_prepare_batch
     model_transform: t.Callable[[t.Any], t.Any] = lambda output: output

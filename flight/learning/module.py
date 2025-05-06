@@ -486,6 +486,8 @@ class FederatedDataModule(TorchDataModule):
         node: Node | NodeID | None,
         indices: t.Mapping[NodeID, t.Sequence[int]],
     ) -> DataLoader:
+        from torch.utils.data import DataLoader
+
         node_id = self._resolve_node(node)
         subset = Subset(self.dataset, indices[node_id])
         return DataLoader(subset, **self.dataloader_kwargs)
@@ -493,7 +495,9 @@ class FederatedDataModule(TorchDataModule):
     def _resolve_node(self, node_or_idx: Node | NodeID | None = None) -> NodeID:
         if node_or_idx is None:
             raise ValueError(
-                f"`node` argument for {self.__class__.__name__} cannot be `None`."
+                "`node` argument for {} cannot be `None`.".format(
+                    self.__class__.__name__
+                )
             )
         elif isinstance(node_or_idx, Node):
             node_id = node_or_idx.idx

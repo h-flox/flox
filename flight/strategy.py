@@ -54,11 +54,11 @@ class AggregationPolicy(t.Protocol):
 
 class WorkerSelectionPolicy(t.Protocol):
     """
-    ...
+    Definition of a worker selection policy function / callable.
     """
 
     # TODO
-    def __call__(self, *args, **kwargs) -> list[NodeID]:
+    def __call__(self, topo: Topology) -> list[NodeID]:
         """
         ...
         """
@@ -297,5 +297,6 @@ class DefaultStrategy(Strategy):
     def aggregation_policy(self, *args, **kwargs):
         return  # TODO: Change this when we have this working in `fitter.py`.
 
-    def selection_policy(self, *args, **kwargs):
-        return  # TODO: Change this when we have this working in `fitter.py`.
+    def selection_policy(self, topo: Topology, *args, **kwargs):
+        # TODO: Change this when we have this working in `fitter.py`.
+        return topo.workers

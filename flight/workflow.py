@@ -5,11 +5,11 @@ import typing as t
 from dataclasses import dataclass, field
 
 from .events import (
-    CoordinatorEvents,
-    fire_event_handler_by_type,
     AggregatorEvents,
-    get_event_handlers_by_genre,
+    CoordinatorEvents,
     WorkerEvents,
+    fire_event_handler_by_type,
+    get_event_handlers_by_genre,
 )
 from .jobs.worker import worker_job
 from .runtime import Runtime
@@ -50,9 +50,13 @@ class FederationWorkflow:
     strategy: Strategy
     runtime: Runtime
 
-    def __init__(self, topology: Topology, strategy: Strategy):
+    def __init__(self, topology: Topology, strategy: Strategy, num_rounds: int = 10):
         self.topology = topology
         self.strategy = strategy
+        self.keep_going = False
+        self.runtime = Runtime.simple_setup()
+
+        self.num_rounds = num_rounds
 
     def start(self):
         """
@@ -60,52 +64,63 @@ class FederationWorkflow:
         """
         context: dict[str, t.Any] = {}
         state: CoordinatorState = CoordinatorState()
-
+        self.keep_going = True
         self._fire_event_handler(CoordinatorEvents.STARTED, context)
 
-        while True:
+        while self.keep_going:
             self._fire_event_handler(CoordinatorEvents.ROUND_STARTED, context)
-
-            self._fire_event_handler(
-                CoordinatorEvents.WORKER_SELECTION_STARTED, context
-            )
-            selected_workers = self.strategy.select_workers(self.topology)
-            self._fire_event_handler(
-                CoordinatorEvents.WORKER_SELECTION_COMPLETED, context
-            )
-
-            relevant_nodes = get_relevant_nodes(self.topology, selected_workers)
-            # parent_child_nodes = [(parent, child) for ...]
-            for node in relevant_nodes:
-                self.launch_node_jobs(node, ...)
-
-            state.update(incr_round=True)
-
+            self.coordinator_round(state, context)
             self._fire_event_handler(CoordinatorEvents.ROUND_COMPLETED, context)
-
-            if None:
-                break
 
         self._fire_event_handler(CoordinatorEvents.COMPLETED, context)
 
+    def coordinator_round(self, state: CoordinatorState, context):
+        # WORKER SELECTION
+        self._fire_event_handler(CoordinatorEvents.WORKER_SELECTION_STARTED, context)
+        selected_workers = self.strategy.select_workers(self.topology)
+        self._fire_event_handler(CoordinatorEvents.WORKER_SELECTION_COMPLETED, context)
+
+        relevant_nodes = get_relevant_nodes(self.topology, selected_workers)
+        for node in relevant_nodes:
+            print(f"[Roound:{state.round}] - Launching job on {node=}.")
+            self.launch_node_jobs(node, ...)
+
+        state.update(incr_round=True)
+
+        # TODO: Let's plan to implement a `Terminator` class/protocol that implements
+        #       the logic to update this `keep_going` attribute. This can take in the
+        #       `state` and `context` objects and update the `keep_going` attribute
+        #       according to almost anything, number of rounds versus a total number of
+        #       rounds for a federation, whether the test accuracy of the global model
+        #       has converged by some threshold, etc.
+        self.keep_going = state.round <= self.num_rounds
+
     def launch_node_jobs(
         self,
-        node: NodeID | None = None,
+        node_id: NodeID | None = None,
         parent: NodeID | None = None,
     ) -> Future:
-        if node is None:
+        if node_id is None:
             node = self.topology.coordinator
         else:
-            node = self.topology[node]
+            node = self.topology[node_id]
 
         if node.kind is NodeKind.AGGREGATOR:
-            aggr_job = lambda x: None  # TODO
-            event_handlers = self.strategy.get_event_handlers_by_genre(AggregatorEvents)
+
+            def aggr_job(x):
+                return None  # TODO
+
+            event_handlers = get_event_handlers_by_genre(
+                self.strategy,
+                AggregatorEvents,
+            )
             return self.runtime.submit(aggr_job, ...)
 
         elif node.kind is NodeKind.WORKER:
-            worker_event_handlers = get_event_handlers_by_genre(WorkerEvents)
-
+            worker_event_handlers = get_event_handlers_by_genre(
+                self.strategy,
+                WorkerEvents,
+            )
             return self.runtime.submit(worker_job, ...)
 
         else:
@@ -129,15 +144,15 @@ def get_relevant_nodes(
     selected_workers: list[NodeID],
 ) -> list[NodeID]:
     """
-    Given a set of selected workers, this function returns _all_ the nodes relevant to
-    the execution of a federation.
+    Given a set of selected workers, this function returns _all_ the relevant nodes
+    (that are _not_ the `Coordinator`) to the execution of a federation.
 
     Args:
         topology (Topology): ...
         selected_workers (list[NodeID]): ...
 
     Returns:
-        ...
+        The relevant nodes to the federation, not including the `Coordinator` node.
 
     Examples:
         ```mermaid

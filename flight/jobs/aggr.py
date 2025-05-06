@@ -4,8 +4,8 @@ import typing as t
 
 if t.TYPE_CHECKING:
     from flight.jobs.types import Result
-    from flight.system.topology import NodeID
     from flight.learning.module import Params, TorchModule
+    from flight.system.topology import NodeID
 
 AggrJobArgs: t.TypeAlias = t.Any
 

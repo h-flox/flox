@@ -4,9 +4,9 @@ import typing as t
 from dataclasses import dataclass, field
 
 if t.TYPE_CHECKING:
+    from flight.learning.module import Params
     from flight.state import AbstractNodeState
     from flight.system.topology import Node
-    from flight.learning.module import Params
 
 
 @dataclass

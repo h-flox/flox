@@ -8,11 +8,12 @@ from torch.utils.data import DataLoader
 
 from flight.commons import proportion_split, random_generator
 from flight.learning.module import FederatedDataModule
+from flight.system.topology import NodeKind
 
 if t.TYPE_CHECKING:
     from torch.utils.data import Dataset
 
-    from flight.system.topology import NodeID, NodeKind, Topology
+    from flight.system.topology import NodeID, Topology
 
 
 IID: t.Final[float] = 1e8
@@ -109,7 +110,7 @@ def federated_split(
             then the number of samples across workers will look very uniform. The
             distribution of labels behaves similarly.
         - It is worth experimenting with this function using the
-            [`fed_barplot`][flight.learning.utils.fed_barplot] function
+            [`fed_barplot`][flight.utils.fed_data.fed_barplot] function
             to visualize the distribution of the federated data module.
         - The `allow_overlapping_samples` feature is ==**not yet implemented**==.
 
@@ -123,6 +124,9 @@ def federated_split(
             length given by `__len__()`.
         - `IndexError`: Is thrown if the label is of type `float`.
     """
+
+    # TODO: Adjust this function to have two random generators for label and sample alpha (respectively)
+    #       such that the distribution of data points is replicated across each independently.
     if label_alpha <= 0 or sample_alpha <= 0:
         raise ValueError(
             "Both `label_alpha` and `sample_alpha` must be greater than 0."
@@ -136,11 +140,15 @@ def federated_split(
         err.add_note("The provided dataset must have `__len__()` implemented.")
         raise err
 
-    generator = random_generator(rng)
+    tmp = random_generator(rng)
+    seed = tmp.integers(0, 2**32)
+
+    rng = random_generator(rng)
     num_workers = topo.number_of_nodes(NodeKind.WORKER)
-    sample_distr = generator.dirichlet(np.full(num_workers, sample_alpha))
-    label_distr = generator.dirichlet(
-        np.full(num_labels, label_alpha), size=num_workers
+    sample_distr = rng.dirichlet(np.full(num_workers, sample_alpha))
+    label_distr = rng.dirichlet(
+        np.full(num_labels, label_alpha),
+        size=num_workers,
     )
     num_samples = (sample_distr * train_data_len).astype(int)
 
@@ -176,7 +184,7 @@ def federated_split(
         probs_norm = probs_norm / probs_norm.sum()
 
         if len(temp_workers) > 0:
-            chosen_worker = generator.choice(temp_workers, p=probs_norm)
+            chosen_worker = rng.choice(temp_workers, p=probs_norm)
             indices[chosen_worker].append(idx)
             worker_samples[chosen_worker] += 1
 
@@ -227,3 +235,75 @@ def federated_split(
         test_indices=test_indices,
         valid_indices=valid_indices,
     )
+
+
+def fed_barplot(
+    data: FederatedDataModule,
+    num_labels: int,
+    width: float = 0.5,
+    ax: Axes | None = None,
+    **kwargs,
+):
+    """
+    Plots the distribution of a `FederatedDataModule` instance as a stacked bar plot.
+
+    Args:
+        data (FederatedDataModule): Federated data module.
+        num_labels (int): Number of labels in the dataset.
+        width (float): Width of the bars.
+        ax (Axes | None): Axes object to draw onto. If `None` is provided, then one
+            will be created.
+        **kwargs: Keyword arguments to pass to the `ax.bar()` method.
+
+    Returns:
+        Axes object that has distribution of federated data module plotted
+            as a stacked bar plot.
+
+    Throws:
+        - `ValueError`: If the number of labels is less than 1.
+        - `TypeError`: If the `fed_data` argument is not an instance of
+            `FederatedDataModule`.
+    """
+
+    if num_labels < 1:
+        raise ValueError("The number of labels must be at least 1.")
+
+    if not isinstance(data, FederatedDataModule):
+        raise TypeError(
+            f"`fed_data` must be an instance of `FederatedDataModule` "
+            f"(got `{type(data)}`)."
+        )
+
+    label_counts_per_worker = {
+        label: np.zeros(len(data), dtype=np.int32) for label in range(num_labels)
+    }
+
+    i = 0  # worker index -- we use this instead of the actual worker ID to start at 0
+    for node, _ in data:
+        for batch in data.train_data(node):
+            _, labels = batch
+            for label in labels:
+                label_counts_per_worker[label.item()][i] += 1
+
+        i += 1  # increment worker index
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    bottom = np.zeros(len(data))
+    workers = list(range(len(data)))
+    for label, worker_count in label_counts_per_worker.items():
+        ax.bar(
+            workers,
+            worker_count,
+            width,
+            bottom=bottom,
+            label=label,
+            **kwargs,
+        )
+        bottom += worker_count
+
+    ax.set_xlabel("workers")
+    ax.set_ylabel("label counts")
+
+    return ax

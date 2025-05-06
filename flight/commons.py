@@ -81,11 +81,11 @@ def random_generator(
     match rng:
         case np.random.Generator():
             return rng
-        case int() | None:
+        case int() | np.int32() | np.int64() | np.uint32() | np.uint64() | None:
             return np.random.default_rng(rng)
         case _:
             raise ValueError(
                 f"Illegal value type for arg `rng`; expected a "
-                f"`numpy.random.Generator`, int, or `None`, got "
+                f"`numpy.random.Generator`, int, NumPy integer, or `None`, got "
                 f"{type(rng)}."
             )

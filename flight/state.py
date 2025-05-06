@@ -4,7 +4,7 @@ import abc
 import typing as t
 from dataclasses import dataclass, field
 
-from .events import CoordinatorEvents, AggregatorEvents, WorkerEvents
+from .events import AggregatorEvents, CoordinatorEvents, WorkerEvents
 
 if t.TYPE_CHECKING:
     from datetime import datetime

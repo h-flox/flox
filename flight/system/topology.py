@@ -104,11 +104,11 @@ class Topology:
         for node in self.nodes():
             yield node.idx
 
-    def __getitem__(self, idx: NodeID) -> Node:
+    def __getitem__(self, node: Node | NodeID) -> Node:
         """Get the `Node` in the `Topology` by `NodeID`.
 
         Args:
-            idx (NodeID): ID of the `Node` to return.
+            node (Node | NodeID): The `Node`, or the ID of the `Node`, to return.
 
         Returns:
             The `Node` in the `Topology` with the given `NodeID`.
@@ -116,10 +116,16 @@ class Topology:
         Throws:
             - `NodeNotFoundError`: Thrown if no `Node` with the given `NodeID` exists in
               the `Topology`.
+            - `ValueError`: Illegal value given for argument `node`.
         """
-        if idx not in self:
-            raise NodeNotFoundError()
-        return self._nodes[idx]
+        if node not in self:
+            raise NodeNotFoundError("Node not found in `Topology`.")
+
+        if isinstance(node, Node):
+            return self._nodes[node.idx]
+        elif isinstance(node, NodeID):
+            return self._nodes[node]
+        raise ValueError("Illegal value for argument `node`.")
 
     def __len__(self) -> int:
         """Total number of nodes in the `Topology`.
@@ -128,6 +134,18 @@ class Topology:
             Number of nodes in the `Topology`.
         """
         return len(self.nodes())
+
+    def __repr__(self) -> str:
+        """String representation of the `Topology` object.
+
+        Returns:
+            String representation of the `Topology`.
+        """
+        return "Topology(workers={}, aggrs={}, height={})".format(
+            len(self.workers),
+            len(self.aggregators),
+            self.height,
+        )
 
     def number_of_edges(self) -> int:
         """
@@ -333,6 +351,17 @@ class Topology:
     def source(self) -> pathlib.Path | None:
         """Indicates the file used to instantiate the `Topology` (if one was used)."""
         return self._source
+
+    @property
+    def height(self) -> int:
+        """
+        Property of the Topology that returns the height of the topology, i.e.,
+        the longest path from the `Coordinator` node to any `Worker` node.
+
+        Returns:
+            The height of the `Topology`.
+        """
+        return nx.algorithms.dag.dag_longest_path_length(self.graph)
 
     ###################################################################################
 
