@@ -12,6 +12,7 @@ from .events import (
     get_event_handlers_by_genre,
 )
 from .jobs.worker import worker_job
+from .logging import init_logger
 from .runtime import Runtime
 from .system.topology import NodeKind
 
@@ -57,6 +58,7 @@ class FederationWorkflow:
         self.runtime = Runtime.simple_setup()
 
         self.num_rounds = num_rounds
+        self.logger = init_logger()
 
     def start(self):
         """
@@ -82,7 +84,7 @@ class FederationWorkflow:
 
         relevant_nodes = get_relevant_nodes(self.topology, selected_workers)
         for node in relevant_nodes:
-            print(f"[Roound:{state.round}] - Launching job on {node=}.")
+            self.logger.info(f"[Roound:{state.round}] - Launching job on {node=}.")
             self.launch_node_jobs(node, ...)
 
         state.update(incr_round=True)
