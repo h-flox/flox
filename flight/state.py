@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import abc
 import typing as t
 from dataclasses import dataclass, field
 
@@ -14,7 +13,7 @@ if t.TYPE_CHECKING:
 
 
 @dataclass
-class AbstractNodeState(abc.ABC):
+class AbstractNodeState:
     def __new__(cls, *args, **kwargs):
         if cls == AbstractNodeState:  # or cls.__bases__[0] == AbstractNodeState:
             raise TypeError("Cannot instantiate abstract class.")

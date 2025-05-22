@@ -143,13 +143,24 @@ class WorkerEvents(FlightEventEnum):
     """
     Triggered at the start of a worker's job.
     """
+
+    BEFORE_TRAINING = "before_training"
+    """
+    Triggered before the training loop starts with `Ignite` via `train_engine.run(...)`.
+    """
+
+    AFTER_TRAINING = "after_training"
+    """
+    Triggered after the training loop ends with `Ignite` via `train_engine.run(...)`.
+    """
+
     COMPLETED = "completed"
     """
     Triggered at the end of a worker's.
     """
 
 
-IgniteEvents = Events
+IgniteEvents: t.TypeAlias = Events
 """
 Simple, and more clear, alias to
 [`Events`](https://pytorch.org/ignite/generated/ignite.engine.events.Events.html)
@@ -166,10 +177,11 @@ GenericEvents: t.TypeAlias = t.Union[
 A union type of all event types usable in Flight (defined in Flight and Ignite).
 """
 
-EventHandler: t.TypeAlias = t.Callable[
-    [dict[str, t.Any]],  # context
-    None,
-]
+Context: t.TypeAlias = dict[str, t.Any]
+"""
+Contextual information that is passed to event handlers when they are executed.
+"""
+EventHandler: t.TypeAlias = t.Callable[[Context], None]
 """
 Callable definition for functions that are called on the firing of an event.
 """
@@ -333,7 +345,7 @@ def get_event_handlers_by_genre(
     obj: t.Any,
     event_genre: type[EventEnum] | t.Iterable[type[EventEnum]],
     predicate: t.Callable[..., bool] | None = None,
-) -> list[tuple[str, EventHandler]]:
+) -> list[tuple[GenericEvents, EventHandler]]:
     """
     Given an object, get all of its event handler attributes that are designated
     to be run for a given genre of events (e.g.,
@@ -363,9 +375,9 @@ def get_event_handlers_by_genre(
         >>>        print("Hello, world!")
         >>>
         >>> get_event_handlers_by_genre(obj, WorkerEvents)
-        ["foo", <bound method MyStrategy.foo of ...]
+        [(WorkerEvents.STARTED, <bound method MyStrategy.foo of ...)]
     """
-    handlers: list[tuple[str, EventHandler]] = []
+    handlers: list[tuple[GenericEvents, EventHandler]] = []
     if predicate is None:
         predicate = inspect.ismethod
 
@@ -375,17 +387,20 @@ def get_event_handlers_by_genre(
         """
         Check for and add (if any) event handlers for the given event type.
         """
-        for name, method in inspect.getmembers(obj, predicate):
+        for _name, method in inspect.getmembers(obj, predicate):
             method_event_type = getattr(method, _ON_DECORATOR_META_FLAG, None)
 
+            # Check if the event decorators for the event handler is an `EventsList`
+            # (i.e., `|` operator was used to combine multiple event types).
             if isinstance(method_event_type, EventsList):
                 if _event_type in method_event_type:  # type: ignore
-                    handlers.append((name, method))
+                    handlers.append((method_event_type, method))  # type: ignore
+
+            # Check if the event decorator for the event handler is a single
+            # `EventEnum` type.
             elif isinstance(method_event_type, GenericEvents):  # type: ignore
                 if isinstance(method_event_type, _event_type):
-                    handlers.append((name, method))
-            # if isinstance(method_event_type, _event_type):
-            #     handlers.append((name, method))
+                    handlers.append((method_event_type, method))  # type: ignore
 
     def _process_iterable_of_event_enums(
         _event_types: t.Iterable[type[EventEnum]],
@@ -403,13 +418,13 @@ def get_event_handlers_by_genre(
         if issubclass(event_genre, EventEnum):
             _process_single_event_enum(event_genre)
         else:
-            raise TypeError
+            raise TypeError("`event_genre` must be a subclass of `EventEnum`.")
 
     elif isinstance(event_genre, Iterable):
         is_subclass_mask: list[bool] = [issubclass(e, EventEnum) for e in event_genre]
         if all(is_subclass_mask):
             _process_iterable_of_event_enums(event_genre)
         else:
-            raise ValueError
+            raise ValueError("`event_genre` must be a subclass of `EventEnum`.")
 
     return handlers

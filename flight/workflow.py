@@ -51,7 +51,12 @@ class FederationWorkflow:
     strategy: Strategy
     runtime: Runtime
 
-    def __init__(self, topology: Topology, strategy: Strategy, num_rounds: int = 10):
+    def __init__(
+        self,
+        topology: Topology,
+        strategy: Strategy,
+        num_rounds: int = 10,
+    ):
         self.topology = topology
         self.strategy = strategy
         self.keep_going = False
@@ -60,7 +65,7 @@ class FederationWorkflow:
         self.num_rounds = num_rounds
         self.logger = init_logger()
 
-    def start(self):
+    def start(self) -> None:
         """
         TODO
         """
@@ -78,14 +83,11 @@ class FederationWorkflow:
 
     def coordinator_round(self, state: CoordinatorState, context):
         # WORKER SELECTION
-        self._fire_event_handler(CoordinatorEvents.WORKER_SELECTION_STARTED, context)
-        selected_workers = self.strategy.select_workers(self.topology)
-        self._fire_event_handler(CoordinatorEvents.WORKER_SELECTION_COMPLETED, context)
-
+        selected_workers = self.client_selection(context)
         relevant_nodes = get_relevant_nodes(self.topology, selected_workers)
         for node in relevant_nodes:
-            self.logger.info(f"[Roound:{state.round}] - Launching job on {node=}.")
-            self.launch_node_jobs(node, ...)
+            self.logger.info(f"[Round:{state.round}] - Launching job on {node=}.")
+            self.launch_node_jobs(node, None)
 
         state.update(incr_round=True)
 
@@ -96,6 +98,14 @@ class FederationWorkflow:
         #       rounds for a federation, whether the test accuracy of the global model
         #       has converged by some threshold, etc.
         self.keep_going = state.round <= self.num_rounds
+
+    def client_selection(self, context: t.Any = None) -> list[NodeID]:
+        self.logger.info("Start of client selection phase.")
+        self._fire_event_handler(CoordinatorEvents.WORKER_SELECTION_STARTED, context)
+        selected_workers = self.strategy.select_workers(self.topology)
+        self._fire_event_handler(CoordinatorEvents.WORKER_SELECTION_COMPLETED, context)
+        self.logger.info("End of client selection phase.")
+        return selected_workers
 
     def launch_node_jobs(
         self,
@@ -112,21 +122,21 @@ class FederationWorkflow:
             def aggr_job(x):
                 return None  # TODO
 
-            event_handlers = get_event_handlers_by_genre(
+            event_handlers = get_event_handlers_by_genre(  # noqa
                 self.strategy,
                 AggregatorEvents,
             )
             return self.runtime.submit(aggr_job, ...)
 
         elif node.kind is NodeKind.WORKER:
-            worker_event_handlers = get_event_handlers_by_genre(
+            worker_event_handlers = get_event_handlers_by_genre(  # noqa
                 self.strategy,
                 WorkerEvents,
             )
             return self.runtime.submit(worker_job, ...)
 
         else:
-            raise ValueError
+            raise ValueError("Invalid node kind.")
 
     def _fire_event_handler(
         self,

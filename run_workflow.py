@@ -7,7 +7,10 @@ def main():
     topo = flat_topology(5)
     print(topo)
 
-    workflow = FederationWorkflow(topo, DefaultStrategy())
+    workflow = FederationWorkflow(
+        topo,
+        DefaultStrategy(),
+    )
     workflow.start()
 
 

@@ -5,6 +5,7 @@ import inspect
 import typing as t
 
 from .events import get_event_handlers, get_event_handlers_by_genre
+from .learning.module import Params
 
 if t.TYPE_CHECKING:
     from ignite.engine.events import EventsList
@@ -46,7 +47,7 @@ class AggregationPolicy(t.Protocol):
     """
 
     # TODO
-    def __call__(self, *args, **kwargs):
+    def __call__(self, modules: dict[NodeID, Params], *args, **kwargs):
         """
         ...
         """
@@ -195,6 +196,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
             with Flight does not rely on a certain order of these event handlers
             to run.
         """
+
         # NOTE: Should this be in the Federation instead? Need to think this over.
         #       Remember, this has to run on the different nodes
         #       (coordinator/aggregator/workers)
@@ -205,8 +207,6 @@ class Strategy(metaclass=_EnforceSuperMeta):
             print("Inherited a context")
 
         for _name, handler in get_event_handlers(self, event_type):
-            # TODO: Log the activation of the event here in the state.
-            print(_name, handler)
             handler(context)
 
     @t.final

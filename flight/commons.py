@@ -78,14 +78,18 @@ def random_generator(
     Throws:
         - `ValueError`: Is thrown if an illegal value type is passed in as an argument.
     """
-    match rng:
-        case np.random.Generator():
-            return rng
-        case int() | np.int32() | np.int64() | np.uint32() | np.uint64() | None:
-            return np.random.default_rng(rng)
-        case _:
-            raise ValueError(
-                f"Illegal value type for arg `rng`; expected a "
-                f"`numpy.random.Generator`, int, NumPy integer, or `None`, got "
-                f"{type(rng)}."
-            )
+    if isinstance(rng, np.random.Generator):
+        return rng
+    elif any(
+        [
+            isinstance(rng, (int, np.int32, np.int64, np.uint32, np.uint64)),
+            rng is None,
+        ]
+    ):
+        return np.random.default_rng(rng)
+    else:
+        raise ValueError(
+            f"Illegal value type for arg `rng`; expected a "
+            f"`numpy.random.Generator`, int, NumPy integer, or `None`, got "
+            f"{type(rng)}."
+        )

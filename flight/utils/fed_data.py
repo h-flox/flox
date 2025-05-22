@@ -11,6 +11,7 @@ from flight.learning.module import FederatedDataModule
 from flight.system.topology import NodeKind
 
 if t.TYPE_CHECKING:
+    from matplotlib.axes import Axes
     from torch.utils.data import Dataset
 
     from flight.system.topology import NodeID, Topology
@@ -125,8 +126,9 @@ def federated_split(
         - `IndexError`: Is thrown if the label is of type `float`.
     """
 
-    # TODO: Adjust this function to have two random generators for label and sample alpha (respectively)
-    #       such that the distribution of data points is replicated across each independently.
+    # TODO: Adjust this function to have two random generators for label and sample
+    #       alpha (respectively) such that the distribution of data points is
+    #       replicated across each independently.
     if label_alpha <= 0 or sample_alpha <= 0:
         raise ValueError(
             "Both `label_alpha` and `sample_alpha` must be greater than 0."
@@ -139,9 +141,6 @@ def federated_split(
     except NotImplementedError as err:
         err.add_note("The provided dataset must have `__len__()` implemented.")
         raise err
-
-    tmp = random_generator(rng)
-    seed = tmp.integers(0, 2**32)
 
     rng = random_generator(rng)
     num_workers = topo.number_of_nodes(NodeKind.WORKER)
@@ -288,6 +287,8 @@ def fed_barplot(
         i += 1  # increment worker index
 
     if ax is None:
+        import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots()
 
     bottom = np.zeros(len(data))

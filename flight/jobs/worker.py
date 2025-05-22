@@ -5,36 +5,35 @@ from dataclasses import dataclass, field
 
 if t.TYPE_CHECKING:
     import torch
-    from ignite.engine import Engine
     from torch.optim import Optimizer  # noqa
+    from torch.utils.data import DataLoader, Dataset
 
     from flight.events import EventHandler
     from flight.learning.module import Params, TorchDataModule, TorchModule
     from flight.strategy import Strategy
+    from flight.system.node import Node
 
-    ProcessFn: t.TypeAlias = t.Callable[[Engine, t.Any], t.Any]
-    """
-    As defined by Ignite (see [Engine][ignite.engine.Engine]), this is a function
-    that receives a handle to the engine and the current batch in each iteration,
-    and returns data to be stored in the engine's state.
+    from .protocols import ProcessFn, Result
 
-    Simply put, this function defines how an `Engine` processes a batch of data during
-    training, testing, and evaluation.
-    """
 
-    UnwrappedProcessFn: t.TypeAlias = t.Callable[
-        [
-            tuple[torch.nn.Module, Optimizer, torch.nn.Module],
-            Engine,
-            t.Any,
-        ],
-        t.Any,
-    ]
+def _default_dataset_cfg() -> dict[str, t.Any]:
     """
-    A function that has access to the model, optimizer, and loss function, and processes
-    in a broader scope than a `ProcessFn`. This function type is used to wrap a
-    `ProcessFn` with these dependencies in context.
+    Default dataset configuration for the DataLoader.
+
+    Returns:
+        Default configuration for the DataLoader.
     """
+    return {
+        "batch_size": 64,
+    }
+
+
+class WorkerJobProto(t.Protocol):
+    @staticmethod
+    def __call__(args: WorkerJobArgs) -> Result:
+        """
+        This method is called when the WORKER job is launched.
+        """
 
 
 @dataclass
@@ -42,15 +41,15 @@ class WorkerJobArgs:
     strategy: Strategy
 
     model: TorchModule
-    data: TorchDataModule
+    data: TorchDataModule | DataLoader | Dataset
     params: Params
 
-    train_step: t.Any
+    node: Node | None = None
+
+    train_step: t.Any | None = None
     supervised: bool = field(default=True)  # TODO: Move to `TorchModule`?
 
-    dataset_cfg: t.Mapping[str, t.Any] = field(
-        default_factory=lambda: {"batch_size": 64}
-    )
+    dataset_cfg: dict[str, t.Any] = field(default_factory=_default_dataset_cfg)
 
 
 def _default_prepare_batch(
@@ -85,7 +84,12 @@ class IgniteConfig:
     model_transform: t.Callable[[t.Any], t.Any] = lambda output: output
     output_transform: t.Callable[
         [t.Any, t.Any, t.Any, torch.Tensor], t.Any
-    ] = lambda x, y, y_pred, loss: loss.item()
+    ] = lambda x, y_true, y_pred, loss: (
+        # x,
+        y_true,
+        y_pred,
+        # loss.item(),
+    )
     gradient_accumulation_steps: int = 1
     model_fn: t.Callable[[torch.nn.Module, t.Any], t.Any] = lambda model, x: model(x)
 
@@ -96,7 +100,8 @@ def worker_job(args: WorkerJobArgs):
     from ignite.engine import Engine, create_supervised_trainer
     from torch.utils.data import DataLoader, Dataset
 
-    from flight.events import WorkerEvents
+    from flight.events import IgniteEvents, WorkerEvents
+    from flight.jobs.protocols import Result
     from flight.learning.module import TorchDataModule, TorchModule
 
     context: dict[str, t.Any] = {}
@@ -118,7 +123,9 @@ def worker_job(args: WorkerJobArgs):
     if args.train_step is not None:
         wrapped_train_step: ProcessFn = functools.partial(
             args.train_step,
-            (args.model, optimizer, loss_fn),
+            args.model,
+            optimizer,
+            loss_fn,
         )
         trainer = Engine(wrapped_train_step)
 
@@ -143,30 +150,29 @@ def worker_job(args: WorkerJobArgs):
             "unsupervised training."
         )
 
-    ####################################################################################
-
-    local_state = context
-
-    train_handlers: list[tuple[str, EventHandler]] = []  # TODO
-    valid_handlers: list[tuple[str, EventHandler]] = []  # TODO
-    test_handlers: list[tuple[str, EventHandler]] = []  # TODO
-
     validator: Engine | None = None  # TODO: Implement this.
     tester: Engine | None = None  # TODO: Implement this.
 
+    ####################################################################################
+
+    train_handlers = args.strategy.get_event_handlers_by_genre(IgniteEvents)
     for event, handler in train_handlers:
-        # handler_with_state = functools.partial(handler, local_state)
-        # trainer.add_event_handler(event, handler_with_state)
-        trainer.add_event_handler(event, handler, local_state)
+        print(f">>> Adding train_handler `{handler.__name__}` to `trainer` Engine.")
+        handler_with_state = functools.partial(handler, trainer, context)
+        trainer.add_event_handler(event, handler_with_state)
 
     if validator:
+        # NOTE: We need to figure out how we will discern between the handlers
+        #       meant for the trainer versus the validator and the test.
+        valid_handlers: list[tuple[str, EventHandler]] = []  # TODO
         for event, handler in valid_handlers:
-            handler_with_state = functools.partial(handler, local_state)
+            handler_with_state = functools.partial(handler, trainer, context)
             validator.add_event_handler(event, handler_with_state)
 
     if tester:
+        test_handlers: list[tuple[str, EventHandler]] = []  # TODO
         for event, handler in test_handlers:
-            handler_with_state = functools.partial(handler, local_state)
+            handler_with_state = functools.partial(handler, context)
             tester.add_event_handler(event, handler_with_state)
 
     ####################################################################################
@@ -180,8 +186,22 @@ def worker_job(args: WorkerJobArgs):
     else:
         raise ValueError
 
+    context = locals()
+    args.strategy.fire_event_handler(WorkerEvents.BEFORE_TRAINING, context)
+
+    trainer_state = trainer.run(train_loader, max_epochs=3, epoch_length=None)
+
+    context = locals()
+    args.strategy.fire_event_handler(WorkerEvents.AFTER_TRAINING, context)
+
     ####################################################################################
 
     args.strategy.fire_event_handler(WorkerEvents.COMPLETED, context)
 
-    return None
+    return Result(
+        node=args.node,
+        state=None,
+        params=args.model.get_params(),
+        module=args.model,
+        extra={},
+    )
