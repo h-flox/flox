@@ -25,16 +25,31 @@ from __future__ import annotations
 
 import typing as t
 
+from ignite.engine import EventEnum
+
 from flight.strategy import Strategy
 
 if t.TYPE_CHECKING:
     from ignite.engine import Engine
 
 
+class FedProxEvents(EventEnum):
+    BACKWARD_STARTED = "BACKWARD_STARTED"
+    BACKWARD_COMPLETED = "BACKWARD_COMPLETED"
+    OPTIM_STEP_COMPLETED = "OPTIM_STEP_COMPLETED"
+
+
 class FedProx(Strategy):
     def __init__(self, mu: float = 0.3):
         super().__init__()
         self.mu = mu
+
+    @staticmethod
+    def make_train_step(self) -> t.Callable | None:
+        def train_step():
+            ...
+
+        return train_step
 
     # TODO: This has to be a custom event, see:
     # https://pytorch-ignite.ai/how-to-guides/08-custom-events/
@@ -54,3 +69,12 @@ class FedProx(Strategy):
         y_pred = engine.state.output
         loss = criterion(y_pred, y_true) + (self.mu / 2) * proximal_term
         return loss
+
+
+if __name__ == "__main__":
+
+    def cbk(self, engine, context):
+        print("Callback executed with context")
+
+    my_fed_prox = FedProx()
+    my_fed_prox.add_event_handler(FedProxEvents.BACKWARD_STARTED, cbk)

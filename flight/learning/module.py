@@ -206,6 +206,7 @@ class TorchModule(abc.ABC, nn.Module):
             The optimizer object to be used for training.
         """
 
+    @t.final
     def get_params(self) -> Params:
         """
         Getter method for the parameters of a trainable module (i.e., neural network)
@@ -237,6 +238,7 @@ class TorchModule(abc.ABC, nn.Module):
 
         return Params(params)
 
+    @t.final
     def set_params(self, params: Params) -> None:
         """
         Setter method for the parameters of a trainable module (i.e., neural network)

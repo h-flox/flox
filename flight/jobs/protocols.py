@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 from dataclasses import dataclass, field
+from uuid import UUID
 
 import torch
 from ignite.engine import Engine
@@ -22,10 +23,11 @@ class Result:
     """
 
     node: Node
-    state: AbstractNodeState
-    module: TorchModule
-    params: Params
-    extra: dict[str, t.Any] | None = field(default_factory=dict)
+    state: AbstractNodeState = field(repr=False)
+    module: TorchModule = field(repr=False)
+    params: Params = field(repr=False)
+    uuid: UUID | str | None = field(default=None, repr=True)
+    extra: dict[str, t.Any] | None = field(default_factory=dict, repr=False)
 
 
 ProcessFn: t.TypeAlias = t.Callable[[Engine, t.Any], t.Any]

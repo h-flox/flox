@@ -193,6 +193,21 @@ Name of the flag used in the [`on()`][flight.events.on] decorator.
 """
 
 
+def add_event_handler_to_obj(
+    obj,
+    event_type: GenericEvents | EventsList,
+    handler: EventHandler,
+):
+    handler_name: t.Final[str] = handler.__name__
+    if hasattr(obj, handler_name):
+        raise ValueError(
+            f"Object `{obj}` already has an attribute named `{handler_name}`."
+        )
+
+    decorator = on(event_type)
+    setattr(obj, handler_name, decorator(handler))
+
+
 # TODO: Add a `priority` functionality on each event so that we can
 #       sort the event ordering by priority. This would look like:
 #       `@on(WorkerEvents.STARTED(priority=2))`.

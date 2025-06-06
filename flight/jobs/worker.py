@@ -184,18 +184,25 @@ def worker_job(args: WorkerJobArgs):
     elif isinstance(args.data, Dataset):
         train_loader = DataLoader(args.data, **args.dataset_cfg)
     else:
-        raise ValueError
+        raise ValueError("`data` must be a TorchDataModule, DataLoader, or Dataset.")
 
     context = locals()
     args.strategy.fire_event_handler(WorkerEvents.BEFORE_TRAINING, context)
 
-    trainer_state = trainer.run(train_loader, max_epochs=3, epoch_length=None)
+    max_epochs = 3  # TODO: Parameterize
+    epoch_length = None  # TODO: Parameterize
+    trainer_state = trainer.run(
+        train_loader,
+        max_epochs=max_epochs,
+        epoch_length=epoch_length,
+    )
 
     context = locals()
     args.strategy.fire_event_handler(WorkerEvents.AFTER_TRAINING, context)
 
     ####################################################################################
 
+    context = locals()
     args.strategy.fire_event_handler(WorkerEvents.COMPLETED, context)
 
     return Result(

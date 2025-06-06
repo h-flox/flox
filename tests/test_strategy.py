@@ -1,6 +1,12 @@
 import pytest
 
-from flight.strategy import _EnforceSuperMeta, _SUPER_META_FLAG, Strategy
+from flight.events import on, CoordinatorEvents
+from flight.strategy import (
+    _EnforceSuperMeta,
+    _SUPER_META_FLAG,
+    Strategy,
+    DefaultStrategy,
+)
 
 
 def test_enforce_super_meta():
@@ -12,7 +18,7 @@ def test_enforce_super_meta():
         Invalid()
 
     class InvalidChild(Invalid):
-        def __init__(self):
+        def __init__(self):  # noqa
             self.name = "invalid_child"
 
     with pytest.raises(AttributeError):
@@ -42,10 +48,10 @@ def test_enforce_super_meta():
     class ValidFailingChild(Valid):
         """This class should *fail* on construction."""
 
-        def __init__(self):
+        def __init__(self):  # noqa
             self.name = "valid_failing_child"
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(AttributeError):
         ValidFailingChild()
 
 
@@ -74,4 +80,16 @@ def test_strategy_def_with_arg_policies():
 
 
 def test_strategy_event():
-    pass
+    class TestStrategy(DefaultStrategy):
+        def __init__(self):
+            super().__init__()
+
+        @on(CoordinatorEvents.STARTED)
+        def test_event_handler(self, context):
+            context["event_handled"] = True
+
+    strategy = TestStrategy()
+    with pytest.raises(ValueError):
+        strategy.add_event_handler(
+            CoordinatorEvents.STARTED, strategy.test_event_handler
+        )

@@ -25,4 +25,20 @@ block-beta
     end
 ```
 
+```mermaid
+block-beta
+    columns 3
+
+    data_plane:3
+
+    client
+    aggregator
+
+    block:worker
+        data[("Local\nData")]
+    end
+
+    control_plane:3
+```
+
 """

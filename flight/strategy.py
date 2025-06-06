@@ -4,7 +4,11 @@ import abc
 import inspect
 import typing as t
 
-from .events import get_event_handlers, get_event_handlers_by_genre
+from .events import (
+    add_event_handler_to_obj,
+    get_event_handlers,
+    get_event_handlers_by_genre,
+)
 from .learning.module import Params
 
 if t.TYPE_CHECKING:
@@ -31,7 +35,12 @@ class _EnforceSuperMeta(abc.ABCMeta):
 
     def __call__(cls, *args, **kwargs):
         """
-        ...
+        Ensures that the `__init__()` method of the class calls `super().__init__()`
+        before returning an instance of the class.
+
+        Raises:
+            - `AttributeError`: If the `__init__()` method does not call
+              `super().__init__()`.
         """
         instance = super().__call__(*args, **kwargs)
         if not getattr(instance, _SUPER_META_FLAG, False):
@@ -174,6 +183,25 @@ class Strategy(metaclass=_EnforceSuperMeta):
         return "aggregation_policy", "selection_policy"
 
     #################################################################################
+
+    def add_event_handler(
+        self,
+        event_type: GenericEvents | EventsList,
+        handler: EventHandler,
+    ):
+        """
+        A functional shorthand function to add an event handler to the `Strategy`. This
+        is an alternative to using the `@on` decorator.
+
+        Args:
+            event_type (GenericEvents | EventsList): The event type(s) to add the
+                `handler` to. This can be a single event type or a list of event types.
+            handler (EventHandler): The event handler to add to the `Strategy`.
+
+        Returns:
+
+        """
+        add_event_handler_to_obj(self, event_type, handler)
 
     def fire_event_handler(
         self,
