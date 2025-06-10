@@ -371,10 +371,15 @@ def get_event_handlers_by_genre(
     /[`IgniteEvents`][flight.events.IgniteEvents]).
 
     Args:
-        obj (t.Any): ...
+        obj (t.Any): Object that contains event handlers within its definitions.
         event_genre (type[EventEnum] | typing.Iterable[type[EventEnum]]):
-            ...
-        predicate (typing.Callable[..., bool | None): ...
+            The type event genre(s) to get the handlers for. This can be a single
+            event genre type (e.g., `WorkerEvents`) or an iterable of event genre
+            types (e.g., given by `WorkerEvents | AggregatorEvents`).
+        predicate (t.Callable[..., bool | None]): Passed to the `predicate`
+            argument in the [`inspect.getmembers()`](
+                https://docs.python.org/3.11/library/inspect.html#inspect.getmembers
+            ) function.
 
     Returns:
         List of tuples with the `EventHandler`s in `obj` belonging to the given
