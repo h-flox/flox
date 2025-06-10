@@ -9,10 +9,11 @@ if t.TYPE_CHECKING:
     from torch.utils.data import DataLoader, Dataset
 
     from flight.events import EventHandler
-    from flight.learning.module import Params, TorchDataModule, TorchModule
-    from flight.strategy import Strategy
+    from flight.learning.module import TorchDataModule, TorchModule
+    from flight.strategies.strategy import Strategy
     from flight.system.node import Node
 
+    from ..learning.parameters import Params
     from .protocols import ProcessFn, Result
 
 

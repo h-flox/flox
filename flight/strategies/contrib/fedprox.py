@@ -27,7 +27,7 @@ import typing as t
 
 from ignite.engine import EventEnum
 
-from flight.strategy import Strategy
+from flight.strategies.strategy import Strategy
 
 if t.TYPE_CHECKING:
     from ignite.engine import Engine

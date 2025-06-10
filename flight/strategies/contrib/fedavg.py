@@ -1,4 +1,4 @@
-from flight.strategy import Strategy
+from flight.strategies.strategy import Strategy
 
 
 class FedAvg(Strategy):

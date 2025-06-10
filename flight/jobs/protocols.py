@@ -8,7 +8,8 @@ import torch
 from ignite.engine import Engine
 from torch.optim import Optimizer
 
-from flight.learning.module import Params, TorchModule
+from flight.learning.module import TorchModule
+from flight.learning.parameters import Params
 from flight.state import AbstractNodeState
 from flight.system.node import Node
 

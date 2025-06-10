@@ -2,175 +2,17 @@ from __future__ import annotations
 
 import abc
 import collections as c
-import enum
-import functools
 import typing as t
 
-import numpy as np
-import torch
 import torch.nn as nn
 from torch.utils.data import Subset
 
+from flight.learning.parameters import _DEFAULT_INCLUDE_STATE, Params, parameters
 from flight.system.topology import Node, NodeID
 
 if t.TYPE_CHECKING:
     from torch.optim import Optimizer
     from torch.utils.data import DataLoader, Dataset
-
-
-_DEFAULT_INCLUDE_STATE: t.Final[bool] = False
-"""
-Default constant for whether to include the state in the parameters of a
-[`TorchModule`][flight.learning.torch.module.TorchModule].
-"""
-
-NpParams: t.TypeAlias = dict[str, np.ndarray]
-"""
-Type alias for model parameters as a mapping where the keys are strings and
-the values are Numpy `ndarray`s.
-"""
-
-TorchParams: t.TypeAlias = dict[str, torch.Tensor]
-"""
-Type alias for model parameters as a mapping where the keys are strings and
-the values are parameters as PyTorch `Tensor`s.
-"""
-
-
-class UnsupportedParameterKindError(ValueError):
-    """
-    An Exception raised when an unsupported parameter kind is detected.
-    """
-
-    def __init__(self, message: str | None = None, *args):
-        if message is None:
-            message = (
-                "The parameter kind is unknown or unsupported. "
-                "Please refer to the docs."
-            )
-        super().__init__(message, *args)
-
-
-class InconsistentParamValuesError(ValueError):
-    """
-    An Exception raised when the parameter value kinds are inconsistent.
-    """
-
-    def __init__(self, message: str | None = None, *args):
-        if message is None:
-            message = "The parameter values are inconsistent. Please refer to the docs."
-        super().__init__(message, *args)
-
-
-class ParamKinds(enum.Enum):
-    """
-    An enumeration of the kinds of parameters supported by Flight.
-    """
-
-    NUMPY = enum.auto()
-    """
-    Parameters implemented as NumPy `ndarray`s.
-    """
-
-    TORCH = enum.auto()
-    """
-    Parameters implemented as PyTorch `Tensor`s.
-    """
-
-
-def infer_param_kind(param: np.ndarray | torch.Tensor) -> ParamKinds:
-    """
-    Detect the kind of parameter.
-
-    Args:
-        param (np.ndarray | torch.Tensor): The parameter to infer the type for.
-
-    Returns:
-        The kind of parameter.
-
-    Throws:
-        - `UnsupportedParameterKindError`: If the parameter kind is unknown/unsupported.
-    """
-    if isinstance(param, np.ndarray):
-        return ParamKinds.NUMPY
-    elif isinstance(param, torch.Tensor):
-        return ParamKinds.TORCH
-    else:
-        raise UnsupportedParameterKindError()
-
-
-def validate_param_kind(params: dict[str, t.Any]) -> ParamKinds:
-    """
-    Validate the kind of parameters.
-
-    This function returns the kind of parameters (similar to `infer_param_kind`), but
-    it will throw an error in the case where the parameters are not of the same kind.
-
-    Args:
-        params (dict[str, t.Any]): Parameters to infer the kind of.
-
-    Returns:
-        The kind of parameters if they are of the same kind. Otherwise, an error is
-        thrown.
-
-    Throws:
-        - `InconsistentParamValuesError`: If the parameter values are inconsistent.
-        - `UnsupportedParameterKindError`: If the parameter kind is unknown/unsupported.
-            This will be thrown by the `infer_param_kind` function.
-    """
-    param_kinds = set(map(infer_param_kind, params.values()))
-    if len(param_kinds) != 1:
-        raise InconsistentParamValuesError()
-    return param_kinds.pop()
-
-
-class Params(c.OrderedDict):
-    """
-    A wrapper class for model parameters, implemented as an `OrderedDict`.
-
-    Throws:
-        - `InconsistentParamValuesError`: If the parameter values are inconsistent.
-        - `UnsupportedParameterKindError`: If the parameter kind is unknown/unsupported.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def numpy(self) -> NpParams:
-        """
-        Convert the parameters to NumPy `ndarray`s.
-
-        Returns:
-            The parameters in NumPy `ndarray`s.
-        """
-        match self.inferred_kind:
-            case ParamKinds.NUMPY:
-                return self
-            case ParamKinds.TORCH:
-                return Params((k, v.numpy()) for k, v in self.items())
-
-    def torch(self) -> TorchParams:
-        """
-        Convert the parameters to PyTorch `Tensor`s.
-
-        Returns:
-            The parameters in the PyTorch `Tensor`s.
-        """
-        match self.inferred_kind:
-            case ParamKinds.TORCH:
-                return self
-            case ParamKinds.NUMPY:
-                return Params((k, torch.from_numpy(v)) for k, v in self.items())
-
-    @functools.cached_property
-    def inferred_kind(self) -> ParamKinds:
-        """
-        The inferred kind of the parameters.
-
-        Returns:
-            The kind of parameters.
-        """
-        return validate_param_kind(self)
 
 
 class TorchModule(abc.ABC, nn.Module):
@@ -236,7 +78,7 @@ class TorchModule(abc.ABC, nn.Module):
                 (name, param.data) for name, param in self.named_parameters()
             )
 
-        return Params(params)
+        return parameters(params)
 
     @t.final
     def set_params(self, params: Params) -> None:

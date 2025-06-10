@@ -9,7 +9,7 @@ from torchvision.datasets import MNIST
 from flight.events import *
 from flight.jobs.worker import worker_job, WorkerJobArgs
 from flight.learning.module import TorchModule
-from flight.strategy import DefaultStrategy
+from flight.strategies.strategy import DefaultStrategy
 
 if t.TYPE_CHECKING:
     from ignite.engine import Engine

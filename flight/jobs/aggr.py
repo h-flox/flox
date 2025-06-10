@@ -4,10 +4,11 @@ import typing as t
 from dataclasses import dataclass
 
 if t.TYPE_CHECKING:
-    from flight.learning.module import Params, TorchModule
+    from flight.learning.module import TorchModule
+    from flight.strategies.strategy import Strategy
     from flight.system.topology import NodeID
 
-    from ..strategy import Strategy
+    from ..learning.parameters import Params
     from ..system.node import Node
     from .protocols import Result
 

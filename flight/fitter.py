@@ -6,7 +6,8 @@ from .events import CoordinatorEvents
 from .runtime import Runtime
 
 if t.TYPE_CHECKING:
-    from .strategy import Strategy
+    from flight.strategies.strategy import Strategy
+
     from .system.topology import Topology
 
 

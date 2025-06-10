@@ -4,19 +4,19 @@ import abc
 import inspect
 import typing as t
 
-from .events import (
+from flight.events import (
     add_event_handler_to_obj,
     get_event_handlers,
     get_event_handlers_by_genre,
 )
-from .learning.module import Params
+from flight.learning.parameters import Params
 
 if t.TYPE_CHECKING:
     from ignite.engine.events import EventsList
 
-    from .events import EventEnum, EventHandler, GenericEvents
-    from .system import Topology
-    from .system.types import NodeID
+    from flight.events import EventEnum, EventHandler, GenericEvents
+    from flight.system import Topology
+    from flight.system.types import NodeID
 
 
 _SUPER_META_FLAG: t.Final[str] = "__super_is_initialized"
@@ -68,7 +68,7 @@ class WorkerSelectionPolicy(t.Protocol):
     """
 
     # TODO
-    def __call__(self, topo: Topology) -> list[NodeID]:
+    def __call__(self, topo: Topology, *args, **kwargs) -> list[NodeID]:
         """
         ...
         """
@@ -120,7 +120,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
         def __init__(self):
             super().__init__(...) # pass required logic
 
-        @on(WorkerEvents.STARTED):
+        @on(WorkerEvents.STARTED)
         def say_hello(context):
             r = context.state.round  # Access inherited state from context.
             print(f"Hello, this is the start of round #{r}.")
@@ -296,7 +296,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
 
         Examples:
             >>> from flight.events import on, WorkerEvents
-            >>> from flight.strategy import DefaultStrategy
+            >>> from flight.strategies import DefaultStrategy
             >>>
             >>> class MyStrategy(DefaultStrategy):
             >>>    @on(WorkerEvents.STARTED)
@@ -322,9 +322,11 @@ class DefaultStrategy(Strategy):
     def __init__(self):
         super().__init__()
 
+    # noinspection PyMethodMayBeStatic
     def aggregation_policy(self, *args, **kwargs):
         return  # TODO: Change this when we have this working in `fitter.py`.
 
+    # noinspection PyMethodMayBeStatic
     def selection_policy(self, topo: Topology, *args, **kwargs):
         # TODO: Change this when we have this working in `fitter.py`.
         return topo.workers
