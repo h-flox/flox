@@ -82,11 +82,11 @@ class Strategy(metaclass=_EnforceSuperMeta):
     There are **two** logical pieces that must be included in a `Strategy`
     implementation:
 
-    1. **Aggregation Policy**: A callable [object][flight.strategy.AggregationPolicy]
+    1. **Aggregation Policy**: A callable [object][flight.strategies.AggregationPolicy]
        that defines how models are aggregated in a `Strategy` during federation.
 
     2. **Worker Selection Policy**: A callable
-       [object][flight.strategy.WorkerSelectionPolicy] that defines how
+       [object][flight.strategies.WorkerSelectionPolicy] that defines how
        a `Strategy` should do worker selection in a given federation round.
 
     These logical pieces can be included directly by passing them to
@@ -131,6 +131,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
         self,
         aggregation_policy: AggregationPolicy | None = None,
         selection_policy: WorkerSelectionPolicy | None = None,
+        process_fn_hooks: EventEnum | None = None,
     ) -> None:
         """
         Args:
@@ -142,6 +143,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
                 object/function that defines how worker nodes are selected
                 to perform local training at each aggregation round.
                 Defaults to `None`.
+            process_fn_hooks (EventEnum | None): TODO
         """
         super().__init__()
         setattr(self, _SUPER_META_FLAG, True)
@@ -156,6 +158,8 @@ class Strategy(metaclass=_EnforceSuperMeta):
                 raise AttributeError(
                     f"`{self.__class__.__name__}` missing `{attr}` implementation."
                 )
+
+        self.process_fn_hooks = process_fn_hooks
 
     def aggregate(self, *args, **kwargs):
         """
@@ -312,6 +316,23 @@ class Strategy(metaclass=_EnforceSuperMeta):
             event_genre,
             predicate=inspect.ismethod,
         )
+
+    #################################################################################
+
+    @property
+    def requires_hooked_process_fn(self) -> bool:
+        """
+        Flag to indicate whether the `Strategy` requires a hooked process function.
+
+        This depends on whether the `process_fn_hooks` attribute being set to a
+        `None` or not; if so then this evaluates to `False`, otherwise it evaluates to
+        `True`.
+
+        Returns:
+            `True` if the `Strategy` requires a hooked process function,
+                `False` otherwise.
+        """
+        return self.process_fn_hooks is not None
 
 
 class DefaultStrategy(Strategy):

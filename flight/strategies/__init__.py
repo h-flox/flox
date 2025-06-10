@@ -5,6 +5,11 @@ In addition, this module has other strategy implementations provided in the `con
 submodule.
 """
 
-from .strategy import DefaultStrategy, Strategy
+from .strategy import (
+    AggregationPolicy,
+    DefaultStrategy,
+    Strategy,
+    WorkerSelectionPolicy,
+)
 
-__all__ = ["Strategy", "DefaultStrategy"]
+__all__ = ["Strategy", "DefaultStrategy", "AggregationPolicy", "WorkerSelectionPolicy"]

@@ -9,7 +9,15 @@ import numpy as np
 import torch
 
 _T = t.TypeVar("_T", np.ndarray, torch.Tensor)
+"""
+Type variable representing the type of parameter values.
+It can be either a NumPy `ndarray` or a PyTorch `Tensor`.
+"""
+
 _DEFAULT_INCLUDE_STATE: t.Final[bool] = False
+"""
+A default value for the `include_state` parameter in the `Params` class.
+"""
 
 
 class ParamKinds(str, enum.Enum):
