@@ -1,11 +1,9 @@
-import pytest
-
 import networkx as nx
-import typing as t
+import pytest
 
 from flight.events import *
 from flight.fitter import simple_federated_fit
-from flight.strategy import Strategy, DefaultStrategy
+from flight.strategies.strategy import DefaultStrategy
 from flight.system.topology import Topology
 
 
