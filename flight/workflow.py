@@ -19,7 +19,8 @@ from .system.topology import NodeKind
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from .strategy import Strategy
+    from flight.strategies.strategy import Strategy
+
     from .system.topology import Topology
     from .system.types import NodeID
 
