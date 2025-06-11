@@ -2,8 +2,7 @@
 
 # Flight
 
-[![CI/CD](https://github.com/h-flox/flox/actions/workflows/ci.yaml/badge.svg?branch=numpy-params)](https://github.com/h-flox/flox/actions/workflows/ci.yaml)
-[![tests](https://github.com/h-flox/flox/actions/workflows/tests.yaml/badge.svg?branch=numpy-params)](https://github.com/h-flox/flox/actions/workflows/tests.yaml)
+[![tests](https://github.com/h-flox/flox/actions/workflows/tests.yaml/badge.svg)](https://github.com/h-flox/flox/actions/workflows/tests.yaml)
 
 **Flight** (**F**ederated **L**earning **I**n **G**eneralized **H**ierarchical **T**
 opologies)
