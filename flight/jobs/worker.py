@@ -79,7 +79,7 @@ class IgniteConfig:
     supervised: bool = True
 
     # supervised_training_step_args with defaults
-    device: str | torch.device | None = "mps"  # TODO: Create `auto` default
+    device: str | torch.device | None = "cpu"  # TODO: Create `auto` default
     non_blocking: bool = True
     prepare_batch: t.Callable = _default_prepare_batch
     model_transform: t.Callable[[t.Any], t.Any] = lambda output: output

@@ -23,9 +23,11 @@ def synthetic_mnist() -> Dataset:
     Returns:
         A dataset containing random tensors and labels.
     """
+    g_cpu = torch.Generator()
+    g_cpu.manual_seed(42)
     num_samples = 1000
-    inputs = torch.randn(num_samples, 1, 28, 28)  # Random images
-    targets = torch.randint(0, 10, (num_samples,))  # Random labels from 0 to 9
+    inputs = torch.randn(num_samples, 1, 28, 28, generator=g_cpu)
+    targets = torch.randint(0, 10, (num_samples,), generator=g_cpu)
     return TensorDataset(inputs, targets)
 
 
@@ -112,7 +114,7 @@ class SimpleModule(TorchModule):
 
 def test_worker_job(synthetic_mnist):
     torch.manual_seed(42)
-    model = SimpleModule().to("mps")
+    model = SimpleModule()
     trainloader = DataLoader(synthetic_mnist, batch_size=32)
 
     worker_job(
@@ -129,7 +131,7 @@ def test_worker_job(synthetic_mnist):
 
 def test_worker_job_with_custom_train_fn(synthetic_mnist):
     torch.manual_seed(42)
-    model = SimpleModule().to("cpu")
+    model = SimpleModule()
     trainloader = DataLoader(synthetic_mnist, batch_size=32)
 
     def train_step(module, optimizer, criterion, engine: Engine, batch):
