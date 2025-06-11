@@ -69,7 +69,7 @@ def _default_prepare_batch(
 
 
 @dataclass
-class IgniteConfig:
+class TrainingConfig:
     # loss_fn: nn.Module
     # optimizer_cls: type[optim.Optimizer]
     #
@@ -94,6 +94,10 @@ class IgniteConfig:
     gradient_accumulation_steps: int = 1
     model_fn: t.Callable[[torch.nn.Module, t.Any], t.Any] = lambda model, x: model(x)
 
+    # TODO: Parametrize these.
+    max_epochs = 3
+    epoch_length = None
+
 
 def worker_job(args: WorkerJobArgs):
     import functools
@@ -101,21 +105,29 @@ def worker_job(args: WorkerJobArgs):
     from ignite.engine import Engine, create_supervised_trainer
     from torch.utils.data import DataLoader, Dataset
 
-    from flight.events import IgniteEvents, WorkerEvents
-    from flight.jobs.protocols import Result
+    from flight.events import _ON_DECORATOR_WHEN_FLAG, IgniteEvents, WorkerEvents
+    from flight.jobs.protocols import JobStatus, Result
     from flight.learning.module import TorchDataModule, TorchModule
 
-    context: dict[str, t.Any] = {}
+    result = Result(
+        node=args.node,
+        # status=...,
+        state=None,
+        module=args.model,
+        params=args.model.get_params(),
+        # uuid=args.node.globus_compute_id,
+    )
+    extra: dict[str, t.Any] = {}
+    args.strategy.fire_event_handler(WorkerEvents.STARTED, locals())
 
     ####################################################################################
 
-    args.strategy.fire_event_handler(WorkerEvents.STARTED, context)
-
-    assert isinstance(args.model, TorchModule)
+    if not isinstance(args.model, TorchModule):
+        raise TypeError("The `model` argument must be a subclass of `TorchModule`.")
 
     optimizer = args.model.configure_optimizers()
-    loss_fn = args.model.configure_criterion()
-    ignite_cfg = IgniteConfig()
+    criterion = args.model.configure_criterion()
+    train_config = TrainingConfig()
 
     ####################################################################################
     # Setup the PyTorch-Ignite trainer `Engine`.
@@ -126,20 +138,20 @@ def worker_job(args: WorkerJobArgs):
             args.train_step,
             args.model,
             optimizer,
-            loss_fn,
+            criterion,
         )
         trainer = Engine(wrapped_train_step)
 
     elif args.supervised:
-        trainer = create_supervised_trainer(
+        trainer = create_supervised_trainer(  # TODO: Convert to our hooked function.
             args.model,
             optimizer,
-            loss_fn,
-            device=ignite_cfg.device,
-            non_blocking=ignite_cfg.non_blocking,
-            prepare_batch=ignite_cfg.prepare_batch,
-            output_transform=ignite_cfg.output_transform,
-            gradient_accumulation_steps=ignite_cfg.gradient_accumulation_steps,
+            criterion,
+            device=train_config.device,
+            non_blocking=train_config.non_blocking,
+            prepare_batch=train_config.prepare_batch,
+            output_transform=train_config.output_transform,
+            gradient_accumulation_steps=train_config.gradient_accumulation_steps,
         )
 
     else:
@@ -156,24 +168,29 @@ def worker_job(args: WorkerJobArgs):
 
     ####################################################################################
 
-    train_handlers = args.strategy.get_event_handlers_by_genre(IgniteEvents)
+    ignite_events = args.strategy.get_event_handlers_by_genre(IgniteEvents)
+
+    train_handlers = filter(
+        lambda h: getattr(h, _ON_DECORATOR_WHEN_FLAG, None) == "train",
+        ignite_events,
+    )
     for event, handler in train_handlers:
         print(f">>> Adding train_handler `{handler.__name__}` to `trainer` Engine.")
-        handler_with_state = functools.partial(handler, trainer, context)
+        handler_with_state = functools.partial(handler, trainer, locals())
         trainer.add_event_handler(event, handler_with_state)
 
     if validator:
-        # NOTE: We need to figure out how we will discern between the handlers
+        # TODO: We need to figure out how we will discern between the handlers
         #       meant for the trainer versus the validator and the test.
         valid_handlers: list[tuple[str, EventHandler]] = []  # TODO
         for event, handler in valid_handlers:
-            handler_with_state = functools.partial(handler, trainer, context)
+            handler_with_state = functools.partial(handler, trainer, locals())
             validator.add_event_handler(event, handler_with_state)
 
     if tester:
         test_handlers: list[tuple[str, EventHandler]] = []  # TODO
         for event, handler in test_handlers:
-            handler_with_state = functools.partial(handler, context)
+            handler_with_state = functools.partial(handler, locals())
             tester.add_event_handler(event, handler_with_state)
 
     ####################################################################################
@@ -185,21 +202,21 @@ def worker_job(args: WorkerJobArgs):
     elif isinstance(args.data, Dataset):
         train_loader = DataLoader(args.data, **args.dataset_cfg)
     else:
-        raise ValueError("`data` must be a TorchDataModule, DataLoader, or Dataset.")
+        err = ValueError("`data` must be a TorchDataModule, DataLoader, or Dataset.")
+        result.status = JobStatus.SUCCESS
+        result.errors.append(err)
+        return result
 
-    context = locals()
-    args.strategy.fire_event_handler(WorkerEvents.BEFORE_TRAINING, context)
+    args.strategy.fire_event_handler(WorkerEvents.BEFORE_TRAINING, locals())
 
-    max_epochs = 3  # TODO: Parameterize
-    epoch_length = None  # TODO: Parameterize
     trainer_state = trainer.run(
         train_loader,
-        max_epochs=max_epochs,
-        epoch_length=epoch_length,
+        max_epochs=train_config.max_epochs,
+        epoch_length=train_config.epoch_length,
     )
 
     context = locals()
-    args.strategy.fire_event_handler(WorkerEvents.AFTER_TRAINING, context)
+    args.strategy.fire_event_handler(WorkerEvents.AFTER_TRAINING, locals())
 
     ####################################################################################
 
@@ -208,8 +225,9 @@ def worker_job(args: WorkerJobArgs):
 
     return Result(
         node=args.node,
+        # status=...,
         state=None,
         params=args.model.get_params(),
         module=args.model,
-        extra={},
+        extra=extra,
     )

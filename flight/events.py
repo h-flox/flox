@@ -1,17 +1,6 @@
-"""
-```mermaid
-sequenceDiagram
-    participant Coordinator
-    participant Aggregator
-    participant Worker
-
-    Coordinator->>Aggregator
-    Coordinator->>Worker
-```
-"""
-
 from __future__ import annotations
 
+import enum
 import functools
 import inspect
 import typing as t
@@ -160,6 +149,45 @@ class WorkerEvents(FlightEventEnum):
     """
 
 
+class TrainProcessFnEvents(FlightEventEnum):
+    """
+    Process function events for the training loop.
+
+    These events are used to signal the start and end of various stages of the
+    process function in PyTorch Ignite.
+
+    Notes:
+
+    """
+
+    BATCH_PREPARE_STARTED = "batch_prepare_started"
+    """
+    Triggered before preparing a batch for training.
+    """
+    BATCH_PREPARE_COMPLETED = "batch_prepare_completed"
+    """
+    Triggered after preparing a batch for training.
+    """
+
+    BACKWARD_STARTED = "backward_started"
+    """
+    Triggered before backpropagation starts.
+    """
+    BACKWARD_COMPLETED = "backward_completed"
+    """
+    Triggered after backpropagation ends.
+    """
+
+    OPTIM_STEP_STARTED = "optim_step_started"
+    """
+    Triggered before an optimization step starts.
+    """
+    OPTIM_STEP_COMPLETED = "optim_step_completed"
+    """
+    Triggered after an optimization step ends.
+    """
+
+
 IgniteEvents: t.TypeAlias = Events
 """
 Simple, and more clear, alias to
@@ -171,6 +199,7 @@ GenericEvents: t.TypeAlias = t.Union[
     CoordinatorEvents,
     AggregatorEvents,
     WorkerEvents,
+    TrainProcessFnEvents,
     IgniteEvents,
 ]
 """
@@ -192,26 +221,56 @@ _ON_DECORATOR_META_FLAG: t.Final[str] = "_event_type"
 Name of the flag used in the [`on()`][flight.events.on] decorator.
 """
 
+_ON_DECORATOR_WHEN_FLAG: t.Final[str] = "_when_in_ignite"
+
+
+class IgniteEventKinds(str, enum.Enum):
+    TRAIN: str = "train"
+    VALIDATE: str = "validate"
+    TEST: str = "test"
+
 
 def add_event_handler_to_obj(
     obj,
     event_type: GenericEvents | EventsList,
     handler: EventHandler,
+    when: str | IgniteEventKinds | None = None,
 ):
+    """
+    Adds an event handler to an object with the given `event_type`.
+
+    Args:
+        obj (t.Any):
+            Object to add the event handler to.
+        event_type (GenericEvents | EventsList):
+            The event type(s) to fire the decorated function for.
+            This can be a single event type or a list of event types combined with
+            the `|` operator.
+        handler (EventHandler):
+            The event handler function to add to the object. This function should
+            accept a single argument, which is the context dictionary.
+        when (str | IgniteEventKinds | None):
+            Specifies whether the event handler is for training, validation,
+            or testing. Defaults to `None`, which then defaults to
+            `IgniteEventKinds.TRAIN` in [`on()`][flight.events.on].
+    """
     handler_name: t.Final[str] = handler.__name__
     if hasattr(obj, handler_name):
         raise ValueError(
             f"Object `{obj}` already has an attribute named `{handler_name}`."
         )
 
-    decorator = on(event_type)
+    decorator = on(event_type, when=when)
     setattr(obj, handler_name, decorator(handler))
 
 
 # TODO: Add a `priority` functionality on each event so that we can
 #       sort the event ordering by priority. This would look like:
 #       `@on(WorkerEvents.STARTED(priority=2))`.
-def on(event_type: GenericEvents | EventsList):
+def on(
+    event_type: GenericEvents | EventsList,
+    when: str | IgniteEventKinds | None = IgniteEventKinds.TRAIN,
+) -> t.Callable[[EventHandler], t.Callable]:
     """
     Decorator function that wraps a function with the given `event_type`.
 
@@ -227,10 +286,32 @@ def on(event_type: GenericEvents | EventsList):
         def greet(self, context) -> None:
             print("Start")
     ```
+
+    Args:
+        event_type (GenericEvents | EventsList):
+            The event type(s) to fire the decorated function for.
+            This can be a single event type or a list of event types combined with
+            the `|` operator.
+        when (str | IgniteEventKinds):
+            Specifies whether the event handler is for training, validation,
+            or testing. Defaults to `IgniteEventKinds.TRAIN`.
+
+    Notes:
+        The `when` argument is _only_ useful when used for `IgniteEvents`.
+        Specifically, it is used to specify whether the event handler is for
+        training, validation, or testing.
+
+        It defaults to `IgniteEventKinds.TRAIN` for all decorators.
+        However, for clarity, you should always specify this `when` argument
+        for `IgniteEvents` to avoid confusion.
     """
 
+    if when is None:
+        when = IgniteEventKinds.TRAIN
+
     def decorator(func: EventHandler):
-        setattr(func, _ON_DECORATOR_META_FLAG, event_type)  # Store metadata
+        setattr(func, _ON_DECORATOR_META_FLAG, event_type)  # Store flag metadata.
+        setattr(func, _ON_DECORATOR_WHEN_FLAG, when)  # Only relevant to IgniteEvents.
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -277,6 +358,7 @@ def get_event_handlers(
     obj: t.Any,
     event_type: GenericEvents | EventsList,
     predicate: t.Callable[..., bool] | None = None,
+    when: str | IgniteEventKinds | None = None,
 ) -> list[tuple[str, EventHandler]]:
     """
     Given an object with implemented `EventHandler`s, this function returns a list
@@ -286,13 +368,18 @@ def get_event_handlers(
     of event or a list of events via the `|` operator.
 
     Args:
-        obj (t.Any): Object that contains event handlers within its definitions.
-        event_type (GenericEvents | EventsList): Event type(s) to get the handlers
-            for.
-        predicate (t.Callable[[...], bool] | None): A filtering method used by
-            `inspect.getmembers` to filter out members of `obj` to search for
-            `EventHandler`s. Defaults to `None`; which will set
+        obj (t.Any):
+            Object that contains event handlers within its definitions.
+        event_type (GenericEvents | EventsList):
+            Event type(s) to get the handlers for.
+        predicate (t.Callable[[...], bool] | None):
+            A filtering method used by `inspect.getmembers` to filter out members of
+            `obj` to search for `EventHandler`s. Defaults to `None`; which will set
             `predicate=inspect.ismethod`.
+        when (str | IgniteEventKinds | None):
+            Specifies whether the event handler is for training, validation,
+            or testing. Defaults to `None`. If not specified, all event handlers
+            are returned regardless of their `when` value.
 
     Returns:
         List of tuples with the `EventHandler`s in `obj`. Each tuple in the list
@@ -353,6 +440,14 @@ def get_event_handlers(
             case _:
                 raise TypeError("Illegal types for `event_type`.")
 
+    if when is not None:
+        # Filter out handlers that do not match the `when` argument.
+        handlers = [
+            (event, handler)
+            for event, handler in handlers
+            if getattr(handler, _ON_DECORATOR_WHEN_FLAG, None) == when
+        ]
+
     return handlers
 
 
@@ -360,6 +455,7 @@ def get_event_handlers_by_genre(
     obj: t.Any,
     event_genre: type[EventEnum] | t.Iterable[type[EventEnum]],
     predicate: t.Callable[..., bool] | None = None,
+    when: str | IgniteEventKinds | None = None,
 ) -> list[tuple[EventEnum, EventHandler]]:
     """
     Given an object, get all of its event handler attributes that are designated
@@ -376,10 +472,14 @@ def get_event_handlers_by_genre(
             The type event genre(s) to get the handlers for. This can be a single
             event genre type (e.g., `WorkerEvents`) or an iterable of event genre
             types (e.g., given by `WorkerEvents | AggregatorEvents`).
-        predicate (t.Callable[..., bool | None]): Passed to the `predicate`
-            argument in the [`inspect.getmembers()`](
+        predicate (t.Callable[..., bool | None]):
+            Passed to the `predicate` argument in the [`inspect.getmembers()`](
                 https://docs.python.org/3.11/library/inspect.html#inspect.getmembers
             ) function.
+        when (str | IgniteEventKinds | None):
+            Specifies whether the event handler is for training, validation,
+            or testing. Defaults to `None`. If not specified, all event handlers
+            are returned regardless of their `when` value.
 
     Returns:
         List of tuples with the `EventHandler`s in `obj` belonging to the given
@@ -387,6 +487,8 @@ def get_event_handlers_by_genre(
             `EventHandler` and the callable function itself.
 
     Examples:
+        This function allows you to quickly fetch all event handlers belonging to a
+        genre of events. Below, we just have to indicate `WorkerEvents`:
         >>> from flight.events import on, WorkerEvents
         >>>
         >>> class MyObject:
@@ -396,6 +498,34 @@ def get_event_handlers_by_genre(
         >>>
         >>> get_event_handlers_by_genre(obj, WorkerEvents)
         [(WorkerEvents.STARTED, <bound method MyStrategy.foo of ...)]
+
+        Additionally, if you wish to decorate event handlers to be run specifically for
+        training, validation, or testing, you can use the `when` argument:
+        >>> class MyClass:
+        >>>     '''Strategy-like class.'''
+        >>>
+        >>>     def __init__(self):
+        >>>         super().__init__()
+        >>>
+        >>>     @on(IgniteEvents.STARTED, when="train")
+        >>>     def train_started(self, context):
+        >>>         print("Training started!")
+        >>>
+        >>>     @on(IgniteEvents.COMPLETED, when="test")
+        >>>     def test_completed(self, context):
+        >>>         print("Training completed!")
+        >>>
+        >>>     @on(IgniteEvents.STARTED, when="validate")
+        >>>     def validate_started(self, context):
+        >>>         print("Validation started!")
+        >>>
+        >>> instance = MyClass()
+        >>> get_event_handlers_by_genre(obj, IgniteEvents, when="train")
+        [(IgniteEvents.STARTED, <bound method MyClass.train_started of ...>)]
+
+        It is worth noting that the above `when` argument is only relevant
+        for `IgniteEvents` and is ignored for other event genres (e.g.,
+        `WorkerEvents`, `AggregatorEvents`, and `CoordinatorEvents`).
     """
     handlers: list[tuple[EventEnum, EventHandler]] = []
     if predicate is None:
@@ -458,5 +588,13 @@ def get_event_handlers_by_genre(
             "`event_genre` must be a subclass of `EventEnum` or an iterable "
             "of subclasses of `EventEnum`."
         )
+
+    if when is not None:
+        # Filter out handlers that do not match the `when` argument.
+        handlers = [
+            (event, handler)
+            for event, handler in handlers
+            if getattr(handler, _ON_DECORATOR_WHEN_FLAG, None) == when
+        ]
 
     return handlers

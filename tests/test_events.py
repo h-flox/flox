@@ -143,3 +143,47 @@ def test_get_event_handlers_by_genre():
     worker_coord_handler_names = set([h[1].__name__ for h in worker_coord_handlers])
 
     assert worker_coord_handler_names == {"cache", "cleanup", "coord_hello"}
+
+
+def test_ignite_event_handlers_with_when_argument():
+    class MyClass:
+        """Strategy-like class."""
+
+        def __init__(self):
+            super().__init__()
+
+        @on(IgniteEvents.STARTED, when="train")
+        def train_started(self, context):
+            print("Training started!")
+
+        @on(IgniteEvents.STARTED, when="test")
+        def test_started(self, context):
+            print("Training completed!")
+
+        @on(IgniteEvents.STARTED, when="validate")
+        def validate_started(self, context):
+            print("Validation started!")
+
+    instance = MyClass()
+
+    ####################################################################################
+
+    handlers = get_event_handlers(instance, IgniteEvents.STARTED)
+    assert len(handlers) == 3
+
+    for where in ["train", "validate", "test"]:
+        handlers = get_event_handlers(instance, IgniteEvents.STARTED, when=where)
+        assert len(handlers) == 1
+        assert handlers[0][0] == f"{where}_started"
+        assert handlers[0][1].__name__ == f"{where}_started"
+
+    ####################################################################################
+
+    ignite_handlers = get_event_handlers_by_genre(instance, IgniteEvents)
+    assert len(ignite_handlers) == 3
+
+    for where in ["train", "validate", "test"]:
+        handlers = get_event_handlers_by_genre(instance, IgniteEvents, when=where)
+        assert len(handlers) == 1
+        assert handlers[0][0] == IgniteEvents.STARTED
+        assert handlers[0][1].__name__ == f"{where}_started"

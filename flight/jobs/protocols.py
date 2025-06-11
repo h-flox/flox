@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import typing as t
 from dataclasses import dataclass, field
 from uuid import UUID
@@ -17,6 +18,10 @@ if t.TYPE_CHECKING:
     pass
 
 
+class JobStatus(str, enum.Enum):
+    SUCCESS = "success"
+
+
 @dataclass
 class Result:
     """
@@ -28,6 +33,8 @@ class Result:
     module: TorchModule = field(repr=False)
     params: Params = field(repr=False)
     uuid: UUID | str | None = field(default=None, repr=True)
+    status: JobStatus | None = field(default=None, repr=True)
+    errors: list[BaseException] = field(default_factory=list)
     extra: dict[str, t.Any] | None = field(default_factory=dict, repr=False)
 
 

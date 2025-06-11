@@ -1,4 +1,4 @@
-<img src="docs/graphics/flight-logo.png" style="max-width: 400px;">
+<img src="docs/graphics/flight-logo.png" style="max-width: 200px;">
 
 # Flight
 
