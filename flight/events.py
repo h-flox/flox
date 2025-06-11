@@ -360,7 +360,7 @@ def get_event_handlers_by_genre(
     obj: t.Any,
     event_genre: type[EventEnum] | t.Iterable[type[EventEnum]],
     predicate: t.Callable[..., bool] | None = None,
-) -> list[tuple[GenericEvents, EventHandler]]:
+) -> list[tuple[EventEnum, EventHandler]]:
     """
     Given an object, get all of its event handler attributes that are designated
     to be run for a given genre of events (e.g.,
@@ -397,30 +397,36 @@ def get_event_handlers_by_genre(
         >>> get_event_handlers_by_genre(obj, WorkerEvents)
         [(WorkerEvents.STARTED, <bound method MyStrategy.foo of ...)]
     """
-    handlers: list[tuple[GenericEvents, EventHandler]] = []
+    handlers: list[tuple[EventEnum, EventHandler]] = []
     if predicate is None:
         predicate = inspect.ismethod
 
     #######################################################################
 
-    def _process_single_event_enum(_event_type: type[EventEnum]) -> None:
+    def _process_single_event_enum(_genre: type[EventEnum]) -> None:
         """
         Check for and add (if any) event handlers for the given event type.
         """
-        for _name, method in inspect.getmembers(obj, predicate):
-            method_event_type = getattr(method, _ON_DECORATOR_META_FLAG, None)
+        for _name, event_handler in inspect.getmembers(obj, predicate):
+            event = getattr(event_handler, _ON_DECORATOR_META_FLAG, None)
+
+            # If the event decorator is not set (i.e., not an event handler),
+            # skip this method.
+            if event is None:
+                continue
 
             # Check if the event decorators for the event handler is an `EventsList`
             # (i.e., `|` operator was used to combine multiple event types).
-            if isinstance(method_event_type, EventsList):
-                if _event_type in method_event_type:  # type: ignore
-                    handlers.append((method_event_type, method))  # type: ignore
+            elif isinstance(event, EventsList):
+                for e in event:
+                    if isinstance(e, _genre):
+                        handlers.append((e, event_handler))
 
             # Check if the event decorator for the event handler is a single
             # `EventEnum` type.
-            elif isinstance(method_event_type, GenericEvents):  # type: ignore
-                if isinstance(method_event_type, _event_type):
-                    handlers.append((method_event_type, method))  # type: ignore
+            elif isinstance(event, GenericEvents):
+                if isinstance(event, _genre):
+                    handlers.append((event, event_handler))
 
     def _process_iterable_of_event_enums(
         _event_types: t.Iterable[type[EventEnum]],
@@ -446,5 +452,11 @@ def get_event_handlers_by_genre(
             _process_iterable_of_event_enums(event_genre)
         else:
             raise ValueError("`event_genre` must be a subclass of `EventEnum`.")
+
+    else:
+        raise TypeError(
+            "`event_genre` must be a subclass of `EventEnum` or an iterable "
+            "of subclasses of `EventEnum`."
+        )
 
     return handlers

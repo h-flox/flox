@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 import torch
-from tests.learning.test_parameters import param_data
 from torch.utils.data import DataLoader, TensorDataset
 
 from flight.learning.module import (
@@ -27,7 +26,7 @@ class SimpleTestModule(TorchModule):
         return torch.optim.SGD(self.parameters(), lr=0.1)
 
 
-def test_valid_torch_module(param_data):
+def test_valid_torch_module():
     # PART 1: Ensure initialization of `TorchModule` works.
     class MyModule(SimpleTestModule):
         def __init__(self):

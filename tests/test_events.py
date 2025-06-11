@@ -1,5 +1,4 @@
 import itertools
-import pytest
 
 from flight.events import *
 
@@ -83,8 +82,10 @@ def test_get_event_handlers():
         MyClass(),
         WorkerEvents.STARTED | WorkerEvents.COMPLETED,
     )
-    assert len(start_and_comp_handlers) == 2
-    assert {name for name, _ in start_and_comp_handlers} == {"cache", "cleanup"}
+    start_and_comp_handler_names = {name for name, _ in start_and_comp_handlers}
+
+    assert len(start_and_comp_handler_names) == 2
+    assert start_and_comp_handler_names == {"cache", "cleanup"}
 
     # Ensure that event handlers that do not exist in `MyClass` are not returned.
     other_handlers = get_event_handlers(MyClass(), AggregatorEvents.STARTED)
@@ -128,10 +129,9 @@ def test_get_event_handlers_by_genre():
     aggr_handlers = get_event_handlers_by_genre(instance, AggregatorEvents)
     coord_handlers = get_event_handlers_by_genre(instance, CoordinatorEvents)
 
-    worker_handler_names = set(h[0] for h in worker_handlers)
-    aggr_handler_names = set(h[0] for h in aggr_handlers)
-    print(aggr_handlers)
-    coord_handler_names = set(h[0] for h in coord_handlers)
+    worker_handler_names = set(h[1].__name__ for h in worker_handlers)
+    aggr_handler_names = set(h[1].__name__ for h in aggr_handlers)
+    coord_handler_names = set(h[1].__name__ for h in coord_handlers)
 
     assert worker_handler_names == {"cache", "cleanup"}
     assert aggr_handler_names == {"greet"}
@@ -140,6 +140,6 @@ def test_get_event_handlers_by_genre():
     worker_coord_handlers = get_event_handlers_by_genre(
         instance, [WorkerEvents, CoordinatorEvents]
     )
-    worker_coord_handler_names = set([h[0] for h in worker_coord_handlers])
+    worker_coord_handler_names = set([h[1].__name__ for h in worker_coord_handlers])
 
     assert worker_coord_handler_names == {"cache", "cleanup", "coord_hello"}
