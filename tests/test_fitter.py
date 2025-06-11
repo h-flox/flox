@@ -7,7 +7,7 @@ from flight.strategies.strategy import DefaultStrategy
 from flight.system.topology import Topology
 
 
-class TestStrategy(DefaultStrategy):
+class SimpleStrategy(DefaultStrategy):
     @on(
         CoordinatorEvents.STARTED
         | CoordinatorEvents.COMPLETED
@@ -43,7 +43,7 @@ def test_federated_fit_without_failure(topology):
 
 
 def test_federated_fit_event_hooks(topology):
-    strategy = TestStrategy()
+    strategy = SimpleStrategy()
     handlers = strategy.get_event_handlers(CoordinatorEvents.STARTED)
     context = simple_federated_fit(topology, strategy=strategy, rounds=1)
     assert context["invocations"] == 6

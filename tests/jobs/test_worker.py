@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import pytest
 import torch
-from torch.utils.data import DataLoader
-from torchvision import transforms as transforms
-from torchvision.datasets import MNIST
+from torch.utils.data import DataLoader, TensorDataset
 
 from flight.events import *
 from flight.jobs.worker import worker_job, WorkerJobArgs
@@ -13,19 +11,22 @@ from flight.strategies.strategy import DefaultStrategy
 
 if t.TYPE_CHECKING:
     from ignite.engine import Engine
+    from torch.utils.data import Dataset
 
 
 @pytest.fixture
-def mnist() -> MNIST:
+def synthetic_mnist() -> Dataset:
     """
-    Fixture to download and return the MNIST dataset.
+    Generates synthetic random data (with the dimensionality of MNIST)
+    for testing purposes.
+
+    Returns:
+        A dataset containing random tensors and labels.
     """
-    return MNIST(
-        root="~/Research/Data/Torch-Data/",
-        train=False,
-        download=False,
-        transform=transforms.ToTensor(),
-    )
+    num_samples = 1000
+    inputs = torch.randn(num_samples, 1, 28, 28)  # Random images
+    targets = torch.randint(0, 10, (num_samples,))  # Random labels from 0 to 9
+    return TensorDataset(inputs, targets)
 
 
 class SimpleStrategy(DefaultStrategy):
@@ -109,10 +110,10 @@ class SimpleModule(TorchModule):
         return torch.nn.CrossEntropyLoss()
 
 
-def test_worker_job(mnist):
+def test_worker_job(synthetic_mnist):
     torch.manual_seed(42)
     model = SimpleModule().to("mps")
-    trainloader = DataLoader(mnist, batch_size=32)
+    trainloader = DataLoader(synthetic_mnist, batch_size=32)
 
     worker_job(
         args=WorkerJobArgs(
@@ -126,10 +127,10 @@ def test_worker_job(mnist):
     )
 
 
-def test_worker_job_with_custom_train_fn(mnist):
+def test_worker_job_with_custom_train_fn(synthetic_mnist):
     torch.manual_seed(42)
     model = SimpleModule().to("cpu")
-    trainloader = DataLoader(mnist, batch_size=32)
+    trainloader = DataLoader(synthetic_mnist, batch_size=32)
 
     def train_step(module, optimizer, criterion, engine: Engine, batch):
         x, y = batch
