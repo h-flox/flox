@@ -8,7 +8,6 @@ if t.TYPE_CHECKING:
     from torch.optim import Optimizer  # noqa
     from torch.utils.data import DataLoader, Dataset
 
-    from flight.events import EventHandler
     from flight.learning.module import TorchDataModule, TorchModule
     from flight.strategies.strategy import Strategy
     from flight.system.node import Node
@@ -105,7 +104,7 @@ def worker_job(args: WorkerJobArgs):
     from ignite.engine import Engine, create_supervised_trainer
     from torch.utils.data import DataLoader, Dataset
 
-    from flight.events import _ON_DECORATOR_WHEN_FLAG, IgniteEvents, WorkerEvents
+    from flight.events import IgniteEvents, WorkerEvents
     from flight.jobs.protocols import JobStatus, Result
     from flight.learning.module import TorchDataModule, TorchModule
 
@@ -168,28 +167,24 @@ def worker_job(args: WorkerJobArgs):
 
     ####################################################################################
 
-    ignite_events = args.strategy.get_event_handlers_by_genre(IgniteEvents)
-
-    train_handlers = filter(
-        lambda h: getattr(h, _ON_DECORATOR_WHEN_FLAG, None) == "train",
-        ignite_events,
-    )
-    for event, handler in train_handlers:
+    for event, handler in args.strategy.get_event_handlers_by_genre(
+        IgniteEvents, when="train"
+    ):
         print(f">>> Adding train_handler `{handler.__name__}` to `trainer` Engine.")
         handler_with_state = functools.partial(handler, trainer, locals())
         trainer.add_event_handler(event, handler_with_state)
 
     if validator:
-        # TODO: We need to figure out how we will discern between the handlers
-        #       meant for the trainer versus the validator and the test.
-        valid_handlers: list[tuple[str, EventHandler]] = []  # TODO
-        for event, handler in valid_handlers:
+        for event, handler in args.strategy.get_event_handlers_by_genre(
+            IgniteEvents, when="validation"
+        ):
             handler_with_state = functools.partial(handler, trainer, locals())
             validator.add_event_handler(event, handler_with_state)
 
     if tester:
-        test_handlers: list[tuple[str, EventHandler]] = []  # TODO
-        for event, handler in test_handlers:
+        for event, handler in args.strategy.get_event_handlers_by_genre(
+            IgniteEvents, when="test"
+        ):
             handler_with_state = functools.partial(handler, locals())
             tester.add_event_handler(event, handler_with_state)
 
