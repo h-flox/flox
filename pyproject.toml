@@ -32,6 +32,7 @@ dependencies = [
     "pandas",
     "parsl",
     "proxystore>=0.7.1",
+    "pytorch-ignite>=0.5.0",
     "scipy",
     "scikit-learn",
     "tqdm",
