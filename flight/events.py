@@ -193,6 +193,36 @@ IgniteEvents: t.TypeAlias = Events
 Simple, and more clear, alias to
 [`Events`](https://pytorch.org/ignite/generated/ignite.engine.events.Events.html)
 in PyTorch Ignite that are used during model training.
+
+Below is an overview of the events that exist within `Events`/`IgniteEvents`:
+
+- `STARTED` :
+  triggered when engine’s run is started
+- `EPOCH_STARTED` :
+  triggered when the epoch is started
+- `GET_BATCH_STARTED` :
+  triggered before next batch is fetched
+- `GET_BATCH_COMPLETED` :
+  triggered after the batch is fetched
+- `ITERATION_STARTED` :
+  triggered when an iteration is started
+- `ITERATION_COMPLETED` :
+  triggered when the iteration is ended
+- `DATALOADER_STOP_ITERATION` :
+  engine’s specific event triggered when dataloader has no more data to provide
+- `EXCEPTION_RAISED` :
+  triggered when an exception is encountered
+- `TERMINATE_SINGLE_EPOCH` :
+  triggered when the run is about to end the current epoch, after receiving
+  a terminate_epoch() or terminate() call.
+- `EPOCH_COMPLETED` :
+  triggered when the epoch is ended. This is triggered even when terminate_epoch()
+  is called, unless the flag skip_epoch_completed is set to True.
+- `TERMINATE` :
+  triggered when the run is about to end completely, after receiving terminate() call.
+- `COMPLETED` :
+  triggered when engine’s run is completed or terminated with terminate(), unless
+  the flag skip_completed is set to True.
 """
 
 GenericEvents: t.TypeAlias = t.Union[
@@ -304,6 +334,34 @@ def on(
         It defaults to `IgniteEventKinds.TRAIN` for all decorators.
         However, for clarity, you should always specify this `when` argument
         for `IgniteEvents` to avoid confusion.
+
+        **Finally, do *not* use multiple `on()` decorators on the same class method.
+        hat is not supported at this time. If you have repeat functionality for
+        different events, we recommend the following:**
+
+        ```python
+        class SharedFunctionality:
+            ...
+
+            def shared_functionality(self, context):
+                print("Shared functionality executed!")
+                if "shared" in context:
+                    context["shared"] += 1
+                else:
+                    context["shared"] = 1
+
+            @on(IgniteEvents.STARTED, when="train")
+            def train_test_started_1(self, context):
+                self.shared_functionality(context)
+
+            @on(IgniteEvents.STARTED, when="test")
+            def train_test_started_2(self, context):
+                self.shared_functionality(context)
+        ```
+
+        In the above example, we delegate the shared functionality to a separate
+        class method and simply call that from separate decorated methods
+        for the respective event types they are meant to activate for.
     """
 
     if when is None:
