@@ -611,10 +611,11 @@ def get_event_handlers_by_genre(
                         handlers.append((e, event_handler))
 
             # Check if the event decorator for the event handler is a single
-            # `EventEnum` type.
-            elif isinstance(event, GenericEvents):
-                if isinstance(event, _genre):
-                    handlers.append((event, event_handler))
+            # `EventEnum` type (namely belonging to `GenericEvents`). For note,
+            # we do not explicitly check if `event` is an instance of `GenericEvents`
+            # to make `mypy` happy.
+            elif isinstance(event, _genre):
+                handlers.append((event, event_handler))
 
     def _process_iterable_of_event_enums(
         _event_types: t.Iterable[type[EventEnum]],
@@ -626,7 +627,7 @@ def get_event_handlers_by_genre(
         for _event_type in _event_types:
             _process_single_event_enum(_event_type)
 
-    #######################################################################
+    ####################################################################################
 
     if inspect.isclass(event_genre):
         if issubclass(event_genre, EventEnum):

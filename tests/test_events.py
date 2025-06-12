@@ -181,22 +181,32 @@ def test_ignite_event_handlers_with_when_argument(strategy_like_cls):
     handlers = get_event_handlers(instance, IgniteEvents.STARTED)
     assert len(handlers) == 3
 
-    for where in ["train", "validate", "test"]:
-        handlers = get_event_handlers(instance, IgniteEvents.STARTED, when=where)
-        assert len(handlers) == 1
-        assert handlers[0][0] == f"{where}_started"
-        assert handlers[0][1].__name__ == f"{where}_started"
+    for when_enum in IgniteEventKinds:
+        when_str = when_enum.value
+
+        # We wish to confirm that the enum value and the raw string value both work
+        # for the `when` argument.
+        for when in [when_str, when_enum]:
+            handlers = get_event_handlers(instance, IgniteEvents.STARTED, when=when)
+            assert len(handlers) == 1
+            assert handlers[0][0] == f"{when_str}_started"
+            assert handlers[0][1].__name__ == f"{when_str}_started"
 
     ####################################################################################
 
     ignite_handlers = get_event_handlers_by_genre(instance, IgniteEvents)
     assert len(ignite_handlers) == 3
 
-    for where in ["train", "validate", "test"]:
-        handlers = get_event_handlers_by_genre(instance, IgniteEvents, when=where)
-        assert len(handlers) == 1
-        assert handlers[0][0] == IgniteEvents.STARTED
-        assert handlers[0][1].__name__ == f"{where}_started"
+    for when_enum in IgniteEventKinds:
+        when_str = when_enum.value
+
+        # We wish to confirm that the enum value and the raw string value both work
+        # for the `when` argument.
+        for when in [when_str, when_enum]:
+            handlers = get_event_handlers_by_genre(instance, IgniteEvents, when=when)
+            assert len(handlers) == 1
+            assert handlers[0][0] == IgniteEvents.STARTED
+            assert handlers[0][1].__name__ == f"{when_str}_started"
 
 
 def test_ignite_event_handlers_with_multiple_when_decorators(strategy_like_cls):
@@ -208,6 +218,7 @@ def test_ignite_event_handlers_with_multiple_when_decorators(strategy_like_cls):
     class MultipleWhens(strategy_like_cls):
         """Strategy-like class with multiple `when` decorators."""
 
+        # noinspection PyMethodMayBeStatic
         def shared_functionality(self, context):
             print("Shared functionality executed!")
             if "shared" in context:
