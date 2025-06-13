@@ -21,3 +21,10 @@ def test_runtime_with_processes():
     assert runtime.submit(double_fn, 10).result() == 20
     assert runtime.submit(square_fn, 10).result() == 100
     assert runtime.transfer(10) == 10
+
+
+def test_with_context_manager():
+    with Runtime.simple_setup() as runtime:
+        assert runtime.submit(double_fn, 10).result() == 20
+        assert runtime.submit(square_fn, 10).result() == 100
+        assert runtime.transfer(10) == 10

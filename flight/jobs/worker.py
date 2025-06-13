@@ -107,9 +107,15 @@ def worker_job(args: WorkerJobArgs):
     from flight.events import IgniteEvents, WorkerEvents
     from flight.jobs.protocols import JobStatus, Result
     from flight.learning.module import TorchDataModule, TorchModule
+    from flight.system import Node
+
+    if args.node is None:
+        node = Node(idx=-1, kind="worker")
+    else:
+        node = args.node
 
     result = Result(
-        node=args.node,
+        node=node,
         # status=...,
         state=None,
         module=args.model,
@@ -219,7 +225,7 @@ def worker_job(args: WorkerJobArgs):
     args.strategy.fire_event_handler(WorkerEvents.COMPLETED, context)
 
     return Result(
-        node=args.node,
+        node=node,
         # status=...,
         state=None,
         params=args.model.get_params(),

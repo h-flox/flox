@@ -2,7 +2,18 @@ import itertools
 
 import pytest
 
-from flight.events import *
+from flight.events import (
+    CoordinatorEvents,
+    AggregatorEvents,
+    WorkerEvents,
+    IgniteEvents,
+    EventsList,
+    IgniteEventKinds,
+    fire_event_handler_by_type,
+    get_event_handlers,
+    get_event_handlers_by_genre,
+    on,
+)
 
 
 def test_non_overlapping_event_names():

@@ -6,6 +6,7 @@ import inspect
 import typing as t
 from collections.abc import Iterable
 
+from ignite.engine import Engine
 from ignite.engine.events import EventEnum, Events, EventsList
 
 
@@ -240,9 +241,33 @@ Context: t.TypeAlias = dict[str, t.Any]
 """
 Contextual information that is passed to event handlers when they are executed.
 """
-EventHandler: t.TypeAlias = t.Callable[[Context], None]
+
+# TODO: Generalize and standardize the `EventHandler` definition.
+#       Specifically, PyTorch-Ignite expects an `Engine` argument first. Whereas that
+#       is not the case for all other event-handlers.
+
+FlightEventHandler: t.TypeAlias = t.Callable[[Context], None]
 """
 Callable definition for functions that are called on the firing of an event.
+
+Notes:
+    This is only for events that are fired by Flight (namely, all event types
+    in [`GenericEvents`][flight.events.GenericEvents] *except* for `IgniteEvents`).
+"""
+
+IgniteEventHandler: t.TypeAlias = t.Callable[[Engine, Context], None]
+"""
+Callable definition for functions that are called on the firing of an event.
+
+Notes:
+    This is specifically for events that are fired by PyTorch-Ignite (namely
+    the `Engine` object using `IgniteEvents`.
+"""
+
+# _EventHandler: t.TypeAlias = FlightEventHandler | IgniteEventHandler
+EventHandler: t.TypeAlias = t.Callable[..., None]
+"""
+Type alias for all event handlers in both Flight and Ignite.
 """
 
 
@@ -371,6 +396,10 @@ def on(
         setattr(func, _ON_DECORATOR_META_FLAG, event_type)  # Store flag metadata.
         setattr(func, _ON_DECORATOR_WHEN_FLAG, when)  # Only relevant to IgniteEvents.
 
+        # TODO: I think we can add another attribute for priority. We would need to
+        #       add a sorting mechanism in the `get_event_handlers()` function and
+        #       other related functions to ensure they accomplish this feature.
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
@@ -383,6 +412,8 @@ def on(
 def fire_event_handler_by_type(
     obj: t.Any,
     event_type: GenericEvents | EventsList,
+    # TODO: We can maybe make `context` a keyword-only argument and provide **kwargs for
+    #       additional arguments?
     context: dict[str, t.Any] | None = None,
     logger: t.Any = None,
 ) -> None:
@@ -391,13 +422,15 @@ def fire_event_handler_by_type(
     event types.
 
     Args:
-        obj (t.Any): Object that has attributes with event handlers which are
-            decorated by the [`on()`][flight.events.on] decorator.
-        event_type (GenericEvents | EventsList): The event type(s) to fire with
-            the given context.
-        context (dict[str, typing.Any] | None): Optional context that the event
-            handler is run with. Defaults to `None`.
-        logger: Optional logger to use for logging the event firing.
+        obj (t.Any):
+            Object that has attributes with event handlers which are decorated by the
+            [`on()`][flight.events.on] decorator.
+        event_type (GenericEvents | EventsList):
+            The event type(s) to fire with the given context.
+        context (dict[str, typing.Any] | None):
+            Optional context that the event handler is run with. Defaults to `None`.
+        logger:
+            Optional logger to use for logging the event firing.
 
     Notes:
         The order in which event handlers for `event_type` is _not_ guaranteed.
@@ -405,10 +438,13 @@ def fire_event_handler_by_type(
         with Flight does not rely on a certain order of these event handlers
         to run.
     """
+    # TODO: Incorporate the `logger` argument.
+
     if context is None:
         context = {}
 
     for _name, handler in get_event_handlers(obj, event_type):
+        # logger.log(f"Firing event handler: {_name}")
         handler(context)
 
 

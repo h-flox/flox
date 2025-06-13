@@ -30,3 +30,14 @@ class ControlPlane(t.Protocol):
         Returns:
             Future object representing the asynchronous execution of the function.
         """
+
+    def shutdown(self, wait: bool = True, *, cancel_futures: bool = False) -> None:
+        """
+        Shuts down the control plane.
+
+        Args:
+            wait (bool):
+                If `True`, wait for all pending futures to complete. Defaults to `True`.
+            cancel_futures (bool):
+                If `True`, cancel all pending futures. Defaults to `False`.
+        """
