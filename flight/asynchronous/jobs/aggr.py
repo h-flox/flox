@@ -8,38 +8,34 @@ if t.TYPE_CHECKING:
     from flight.strategies.strategy import Strategy
     from flight.system.topology import NodeID
 
-    from learning.parameters import Params
-    from system.node import Node
+    from flight.learning.parameters import Params
+    from flight.system.node import Node
     from flight.jobs.protocols import Result
-
 
 @dataclass
 class AggrJobArgs:
     """
     The arguments for the aggregator job.
     """
-
     node: Node
-    child_results: list[Result]
+    child_results: list["Result"]
     round_num: int
     handlers: list[t.Any]
-    strategy: Strategy
-
+    strategy: "Strategy"
 
 class AggregatorJobProto(t.Protocol):
     @staticmethod
-    def __call__(args: AggrJobArgs) -> Result:
+    async def __call__(args: AggrJobArgs) -> "Result":
         """
         This method is called when the AGGREGATOR job is launched.
         """
 
-
-async def aggregator_job(args: AggrJobArgs) -> Result:
+async def aggregator_job(args: AggrJobArgs) -> "Result":
     from flight.state import AggregatorState, WorkerState
 
-    child_states: dict[NodeID, AggregatorState | WorkerState] = {}
-    child_params: dict[NodeID, Params] = {}
-    child_modules: dict[NodeID, TorchModule] = {}
+    child_states: dict["NodeID", AggregatorState | WorkerState] = {}
+    child_params: dict["NodeID", "Params"] = {}
+    child_modules: dict["NodeID", "TorchModule"] = {}
 
     for result in args.child_results:
         idx = result.node.idx
@@ -54,13 +50,14 @@ async def aggregator_job(args: AggrJobArgs) -> Result:
 
     aggr_state = AggregatorState()
 
-    # If aggreagate is asynchronous, await it
+    # Await the async aggregate method
     aggr_params = await args.strategy.aggregate(child_params)
 
-    return Result(
+    return type(args.child_results[0])(
         node=args.node,
         state=aggr_state,
         params=aggr_params,
+        module=None,
         extra={
             "child_states": child_states,
             "child_modules": child_modules,

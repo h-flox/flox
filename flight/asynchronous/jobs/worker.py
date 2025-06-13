@@ -1,14 +1,11 @@
 from __future__ import annotations
-import asyncio
 import typing as t
 from dataclasses import dataclass, field
 
 if t.TYPE_CHECKING:
     import torch
-    from torch.optim import Optimizer
     from torch.utils.data import DataLoader, Dataset
 
-    from flight.events import EventHandler
     from flight.learning.module import TorchDataModule, TorchModule
     from flight.strategies.strategy import Strategy
     from flight.system.node import Node
