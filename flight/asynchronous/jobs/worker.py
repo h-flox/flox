@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing as t
+import asyncio
 from dataclasses import dataclass, field
 
 if t.TYPE_CHECKING:

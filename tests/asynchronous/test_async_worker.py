@@ -10,9 +10,6 @@ from flight.strategies.strategy import DefaultStrategy
 from flight.learning.parameters import Params
 from flight.system.node import Node
 
-if torch.__version__ < "2":
-    torch.set_default_dtype(torch.float32)
-
 if t.TYPE_CHECKING:
     from ignite.engine import Engine
     from torch.utils.data import Dataset
