@@ -52,6 +52,7 @@ async def aggregator_job(args: AggrJobArgs) -> "Result":
 
     # Await the async aggregate method
     aggr_params = await args.strategy.aggregate(child_params)
+    print(f"Aggregation Results: {aggr_params}")
 
     return type(args.child_results[0])(
         node=args.node,
