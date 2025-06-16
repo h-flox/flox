@@ -1,7 +1,8 @@
 from __future__ import annotations
-import asyncio
+
 import typing as t
 from dataclasses import dataclass
+from flight.jobs.protocols import Result
 
 if t.TYPE_CHECKING:
     from flight.learning.module import TorchModule
@@ -10,7 +11,6 @@ if t.TYPE_CHECKING:
 
     from flight.learning.parameters import Params
     from flight.system.node import Node
-    from flight.jobs.protocols import Result
 
 @dataclass
 class AggrJobArgs:
@@ -18,51 +18,59 @@ class AggrJobArgs:
     The arguments for the aggregator job.
     """
     node: Node
-    child_results: list["Result"]
+    child_results: list[Result]
     round_num: int
     handlers: list[t.Any]
-    strategy: "Strategy"
+    strategy: Strategy
 
 class AggregatorJobProto(t.Protocol):
     @staticmethod
-    async def __call__(args: AggrJobArgs) -> "Result":
+    def __call__(args: AggrJobArgs) -> Result:
         """
         This method is called when the AGGREGATOR job is launched.
         """
 
-async def aggregator_job(args: AggrJobArgs) -> "Result":
+def aggregator_job(args: AggrJobArgs) -> Result:
     from flight.state import AggregatorState, WorkerState
 
-    child_states: dict["NodeID", AggregatorState | WorkerState] = {}
-    child_params: dict["NodeID", "Params"] = {}
-    child_modules: dict["NodeID", "TorchModule"] = {}
+    # Only aggregate the latest result (simulate "as soon as received")
+    if not args.child_results:
+        raise ValueError("No child results to aggregate.")
+
+    # Use only the latest result for incremental aggregation
+    latest_result = args.child_results[-1]
+    idx = latest_result.node.idx
+
+    # Build the state/params/modules dicts for all received so far
+    child_states: dict[NodeID, AggregatorState | WorkerState] = {}
+    child_params: dict[NodeID, 'Params'] = {}
+    child_modules: dict[NodeID, 'TorchModule'] = {}
 
     for result in args.child_results:
-        idx = result.node.idx
-        child_states[idx] = result.state
-        child_params[idx] = result.params
+        i = result.node.idx
+        child_states[i] = result.state
+        child_params[i] = result.params
         if isinstance(result.state, (AggregatorState, WorkerState)):
-            child_modules[idx] = result.module
+            child_modules[i] = result.module
         else:
             raise TypeError(
                 "Child state must be either `WorkerState` or `AggregatorState`."
             )
 
     aggr_state = AggregatorState()
+    # Aggregate using all received so far (or just the latest, if that's your policy)
+    aggr_params = args.strategy.aggregate(child_params)
 
-    # Await the async aggregate method
-    aggr_params = await args.strategy.aggregate(child_params)
-    print(f"Aggregation Results: {aggr_params}")
-
-    return type(args.child_results[0])(
+    return Result(
         node=args.node,
         state=aggr_state,
         params=aggr_params,
-        module=None,
         extra={
             "child_states": child_states,
             "child_modules": child_modules,
             "round_num": args.round_num,
-            "is_async": True,
+            "last_updated_worker": idx,
+            "is_async_style": True,  # Mark this as "async-style" aggregation
         },
+        module=None
     )

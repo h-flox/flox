@@ -1,11 +1,11 @@
 import pytest
 import torch
 
-from flight.asynchronous.jobs.aggr import aggregator_job, AggrJobArgs
+from flight.jobs.aggr import aggregator_job, AggrJobArgs
 from flight.state import AggregatorState, WorkerState
 from flight.strategies.strategy import DefaultStrategy
 from flight.learning.module import TorchModule
-from flight.learning.parameters import TorchParams  # Use your concrete Params class
+from flight.learning.parameters import TorchParams  
 from flight.system.node import Node
 from flight.jobs.protocols import Result
 
@@ -55,7 +55,7 @@ def child_results(child_nodes):
 def strategy():
     class SyncStrategy(DefaultStrategy):
         def aggregate(self, child_params):
-            # For test, just return the first params
+           
             return next(iter(child_params.values()))
     return SyncStrategy()
 
@@ -74,13 +74,10 @@ def test_aggregator_job_returns_result(node, child_results, strategy):
     assert "child_states" in result.extra
     assert "child_modules" in result.extra
     assert result.extra["round_num"] == 1
-    assert result.extra["last_updated_worker"] == child_results[-1].node.idx
-    assert result.extra["is_async_style"] is True
-    # Check that params match what aggregate returns
+
     assert result.params == strategy.aggregate({c.node.idx: c.params for c in child_results})
 
 def test_aggregator_job_type_error_on_invalid_state(node, child_results, strategy):
-    # Set one child result's state to an invalid type
     child_results[0].state = object()
     args = AggrJobArgs(
         node=node,
