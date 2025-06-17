@@ -1,4 +1,3 @@
-# Sana
 from __future__ import annotations
 
 import typing as t
@@ -36,9 +35,8 @@ async def aggregator_job(args: AggrJobArgs, result_event:asyncio.Event) -> Resul
     from flight.state import AggregatorState, WorkerState
 
     # Only aggregate the latest result (simulate "as soon as received")
-    while not args.child_results:
-        await result_event.wait()
-        result_event.clear()
+    await result_event.wait()
+    result_event.clear()
 
     # Use only the latest result for incremental aggregation
     latest_result = args.child_results[-1]
@@ -77,3 +75,4 @@ async def aggregator_job(args: AggrJobArgs, result_event:asyncio.Event) -> Resul
         },
         module=None
     )
+
