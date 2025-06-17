@@ -1,7 +1,9 @@
+# Sana
 from __future__ import annotations
 
 import typing as t
 from dataclasses import dataclass
+import asyncio
 from flight.jobs.protocols import Result
 
 if t.TYPE_CHECKING:
@@ -30,12 +32,13 @@ class AggregatorJobProto(t.Protocol):
         This method is called when the AGGREGATOR job is launched.
         """
 
-def aggregator_job(args: AggrJobArgs) -> Result:
+async def aggregator_job(args: AggrJobArgs, result_event:asyncio.Event) -> Result:
     from flight.state import AggregatorState, WorkerState
 
     # Only aggregate the latest result (simulate "as soon as received")
-    if not args.child_results:
-        raise ValueError("No child results to aggregate.")
+    while not args.child_results:
+        await result_event.wait()
+        result_event.clear()
 
     # Use only the latest result for incremental aggregation
     latest_result = args.child_results[-1]
