@@ -1,4 +1,4 @@
-from flight.strategy import DefaultStrategy
+from flight.strategies.strategy import DefaultStrategy
 from flight.system import flat_topology
 from flight.workflow import FederationWorkflow
 

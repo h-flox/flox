@@ -1,6 +1,19 @@
 import itertools
 
-from flight.events import *
+import pytest
+
+from flight.events import (
+    CoordinatorEvents,
+    AggregatorEvents,
+    WorkerEvents,
+    IgniteEvents,
+    EventsList,
+    IgniteEventKinds,
+    fire_event_handler_by_type,
+    get_event_handlers,
+    get_event_handlers_by_genre,
+    on,
+)
 
 
 def test_non_overlapping_event_names():
@@ -143,3 +156,111 @@ def test_get_event_handlers_by_genre():
     worker_coord_handler_names = set([h[1].__name__ for h in worker_coord_handlers])
 
     assert worker_coord_handler_names == {"cache", "cleanup", "coord_hello"}
+
+
+@pytest.fixture
+def strategy_like_cls():
+    class StrategyLikeClass:
+        """Strategy-like class."""
+
+        def __init__(self):
+            super().__init__()
+
+        @on(IgniteEvents.STARTED, when="train")
+        def train_started(self, context):
+            print("Training started!")
+
+        @on(IgniteEvents.STARTED, when="test")
+        def test_started(self, context):
+            print("Training completed!")
+
+        @on(IgniteEvents.STARTED, when="validate")
+        def validate_started(self, context):
+            print("Validation started!")
+
+    return StrategyLikeClass
+
+
+def test_ignite_event_handlers_with_when_argument(strategy_like_cls):
+    """
+    Test that the `when` argument in the `@on` decorator
+    """
+    instance = strategy_like_cls()
+
+    ####################################################################################
+
+    handlers = get_event_handlers(instance, IgniteEvents.STARTED)
+    assert len(handlers) == 3
+
+    for when_enum in IgniteEventKinds:
+        when_str = when_enum.value
+
+        # We wish to confirm that the enum value and the raw string value both work
+        # for the `when` argument.
+        for when in [when_str, when_enum]:
+            handlers = get_event_handlers(instance, IgniteEvents.STARTED, when=when)
+            assert len(handlers) == 1
+            assert handlers[0][0] == f"{when_str}_started"
+            assert handlers[0][1].__name__ == f"{when_str}_started"
+
+    ####################################################################################
+
+    ignite_handlers = get_event_handlers_by_genre(instance, IgniteEvents)
+    assert len(ignite_handlers) == 3
+
+    for when_enum in IgniteEventKinds:
+        when_str = when_enum.value
+
+        # We wish to confirm that the enum value and the raw string value both work
+        # for the `when` argument.
+        for when in [when_str, when_enum]:
+            handlers = get_event_handlers_by_genre(instance, IgniteEvents, when=when)
+            assert len(handlers) == 1
+            assert handlers[0][0] == IgniteEvents.STARTED
+            assert handlers[0][1].__name__ == f"{when_str}_started"
+
+
+def test_ignite_event_handlers_with_multiple_when_decorators(strategy_like_cls):
+    """
+    Test that the `when` argument in the `@on` decorator can handle
+    multiple decorators.
+    """
+
+    class MultipleWhens(strategy_like_cls):
+        """Strategy-like class with multiple `when` decorators."""
+
+        # noinspection PyMethodMayBeStatic
+        def shared_functionality(self, context):
+            print("Shared functionality executed!")
+            if "shared" in context:
+                context["shared"] += 1
+            else:
+                context["shared"] = 1
+
+        @on(IgniteEvents.STARTED, when="train")
+        def train_test_started_1(self, context):
+            self.shared_functionality(context)
+
+        @on(IgniteEvents.STARTED, when="test")
+        def train_test_started_2(self, context):
+            self.shared_functionality(context)
+
+    instance = MultipleWhens()
+
+    handlers = get_event_handlers_by_genre(instance, IgniteEvents)
+    for h in handlers:
+        print(h)
+    assert len(handlers) == 5  # 1 per method
+
+    handlers = get_event_handlers_by_genre(instance, IgniteEvents, when="train")
+    assert len(handlers) == 2
+
+    handlers = get_event_handlers_by_genre(instance, IgniteEvents, when="validate")
+    assert len(handlers) == 1
+
+    handlers = get_event_handlers_by_genre(instance, IgniteEvents, when="test")
+    assert len(handlers) == 2
+
+    context = {}
+    fire_event_handler_by_type(instance, IgniteEvents.STARTED, context)
+    assert context["shared"] == 2

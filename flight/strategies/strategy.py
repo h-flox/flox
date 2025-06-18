@@ -5,6 +5,7 @@ import inspect
 import typing as t
 
 from flight.events import (
+    IgniteEventKinds,
     add_event_handler_to_obj,
     get_event_handlers,
     get_event_handlers_by_genre,
@@ -192,35 +193,48 @@ class Strategy(metaclass=_EnforceSuperMeta):
         self,
         event_type: GenericEvents | EventsList,
         handler: EventHandler,
+        when: str | IgniteEventKinds | None = None,
     ):
         """
         A functional shorthand function to add an event handler to the `Strategy`. This
         is an alternative to using the `@on` decorator.
 
         Args:
-            event_type (GenericEvents | EventsList): The event type(s) to add the
-                `handler` to. This can be a single event type or a list of event types.
-            handler (EventHandler): The event handler to add to the `Strategy`.
-
-        Returns:
-
+            event_type (GenericEvents | EventsList):
+                The event type(s) to add the `handler` to.
+                This can be a single event type or a list of event types.
+            handler (EventHandler):
+                The event handler to add to the `Strategy`.
+            when (str | IgniteEventKinds | None):
+                Optional parameter to specify when the event handler should be run.
+                This is used for `IgniteEvents` to specify if event handlers for
+                training, validation, or testing should be run. This can be a string
+                or an `IgniteEventKinds` enum value. Defaults to `None`.
         """
-        add_event_handler_to_obj(self, event_type, handler)
+        add_event_handler_to_obj(self, event_type, handler, when=when)
 
     def fire_event_handler(
         self,
         event_type: GenericEvents | EventsList,
         context: dict[str, t.Any] | None = None,
+        when: str | IgniteEventKinds | None = None,
     ) -> None:
         """
         Fires the event handler implementations for a single event type or a list of
         event types.
 
         Args:
-            event_type (GenericEvents | EventsList): The event type(s) to fire with
-                the given context.
-            context (dict[str, typing.Any] | None): Optional context that the event
-                handler is run with. Defaults to `None`.
+            event_type (GenericEvents | EventsList):
+                The event type(s) to fire with the given context.
+            context (dict[str, typing.Any] | None):
+                Optional context that the event handler is run with.
+                Defaults to `None`.
+            when (str | IgniteEventKinds | None):
+                Optional parameter to specify when the event handler should be run.
+                This is used for `IgniteEvents` to specify if event handlers for
+                training, validation, or testing should be run. This can be a string
+                or an `IgniteEventKinds` enum value. Defaults to `None`.
+
 
         Notes:
             The order in which event handlers for `event_type` is not guaranteed.
@@ -238,21 +252,28 @@ class Strategy(metaclass=_EnforceSuperMeta):
         else:
             print("Inherited a context")
 
-        for _name, handler in get_event_handlers(self, event_type):
+        for _name, handler in get_event_handlers(self, event_type, when=when):
             handler(context)
 
     @t.final
     def get_event_handlers(
         self,
         event_type: GenericEvents | EventsList,
+        when: str | IgniteEventKinds | None = None,
     ) -> list[tuple[str, EventHandler]]:
         """
         Returns all the implemented event handlers included in a `Strategy` that are
         marked to be for `event_type` by its decorator.
 
         Args:
-            event_type (GenericEvents | EventList): The type of event to (or list of
-                event types) to grab the event handlers for.
+            event_type (GenericEvents | EventList):
+                The type of event to (or list of event types) to grab the event
+                handlers for.
+            when (str | IgniteEventKinds | None):
+                Optional parameter to specify when the event handler should be run.
+                This is used for `IgniteEvents` to specify if event handlers for
+                training, validation, or testing should be run. This can be a string
+                or an `IgniteEventKinds` enum value. Defaults to `None`.
 
         Returns:
             List of event handlers meant for the provided `event_type`.
@@ -266,12 +287,14 @@ class Strategy(metaclass=_EnforceSuperMeta):
             self,
             event_type,
             predicate=inspect.ismethod,
+            when=when,
         )
 
     @t.final
     def get_event_handlers_by_genre(
         self,
         event_genre: type[EventEnum] | t.Iterable[type[EventEnum]],
+        when: str | IgniteEventKinds | None = None,
     ):
         """
         Returns all the implemented event handlers in a `Strategy` that are
@@ -287,6 +310,11 @@ class Strategy(metaclass=_EnforceSuperMeta):
         Args:
             event_genre (type[EventEnum] | typing.Iterable[type[EventEnum]]):
                 The genre of events to grab the event handlers for.
+            when (str | IgniteEventKinds | None):
+                Optional parameter to specify when the event handler should be run.
+                This is used for `IgniteEvents` to specify if event handlers for
+                training, validation, or testing should be run. This can be a string
+                or an `IgniteEventKinds` enum value. Defaults to `None`.
 
         Returns:
             List of tuples with the `EventHandler`s in `obj` belonging to the given
@@ -312,9 +340,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
             ["foo", <bound method MyStrategy.foo of ...]
         """
         return get_event_handlers_by_genre(
-            self,
-            event_genre,
-            predicate=inspect.ismethod,
+            self, event_genre, predicate=inspect.ismethod, when=when
         )
 
     #################################################################################

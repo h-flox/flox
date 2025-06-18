@@ -49,6 +49,12 @@ class Runtime:
         self.control_plane = control_plane
         self.data_plane = data_plane
 
+    def __enter__(self):
+        return self  # TODO
+
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        pass  # TODO
+
     def submit(self, fn: t.Callable, /, *args, **kwargs) -> Future:
         """
         Shorthand method for submitting a function to be executed by the control plane.
@@ -95,7 +101,8 @@ class Runtime:
                 Defaults to "process".
 
         Returns:
-
+            An instance of the `Runtime` class with the specified control and
+                data planes.
         """
         from concurrent.futures import Executor, ProcessPoolExecutor, ThreadPoolExecutor
 
@@ -108,6 +115,7 @@ class Runtime:
             case _:
                 raise ValueError(f"Unsupported exec_kind: {exec_kind}")
 
+        # noinspection PyTypeChecker
         return cls(control_plane=control_plane, data_plane=make_default_data_plane())
 
 

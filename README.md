@@ -1,8 +1,8 @@
-<img src="docs/graphics/flight-logo.png" style="max-width: 400px;">
+<img src="docs/graphics/flight-logo.png" style="max-width: 200px;">
 
 # Flight
 
-[![tests](https://github.com/h-flox/flox/actions/workflows/tests.yaml/badge.svg)](https://github.com/h-flox/flox/actions/workflows/tests.yaml)
+[![tests](https://github.com/h-flox/flox/actions/workflows/tests.yaml/badge.svg?branch=ignite)](https://github.com/h-flox/flox/actions/workflows/tests.yaml)
 
 **Flight** (**F**ederated **L**earning **I**n **G**eneralized **H**ierarchical **T**
 opologies)

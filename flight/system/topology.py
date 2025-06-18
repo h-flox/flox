@@ -93,7 +93,7 @@ class Topology:
             return node.idx in self._nodes
         elif isinstance(node, NodeID):
             return node in self._nodes
-        raise ValueError("Illegal value for argument `node`.")
+        raise ValueError(f"Illegal value for argument `node` ({node=}).")
 
     def __iter__(self) -> t.Iterator[NodeID]:
         """Returns an iterator through the `NodeID`s of each `Node` in the `Topology`.
@@ -119,7 +119,7 @@ class Topology:
             - `ValueError`: Illegal value given for argument `node`.
         """
         if node not in self:
-            raise NodeNotFoundError("Node not found in `Topology`.")
+            raise NodeNotFoundError(f"Node ({node=}) not found in `Topology`.")
 
         if isinstance(node, Node):
             return self._nodes[node.idx]
@@ -255,7 +255,20 @@ class Topology:
             List of child nodes.
         """
         idx = resolve_node_or_idx(node)
-        return [child for child in self.graph.successors(idx)]
+        if idx not in self:
+            raise NodeNotFoundError
+
+        node = self[idx]
+        if node.kind is NodeKind.WORKER:
+            raise TopologyException(
+                f"{node.kind.value.title()} nodes do not have children."
+            )
+
+        children: list[Node] = []
+        for child in self.graph.successors(idx):
+            children.append(self[child])
+
+        return children
 
     def globus_compute_ready(self) -> bool:
         """Returns a boolean for whether the given `Topology` has the necessary data
