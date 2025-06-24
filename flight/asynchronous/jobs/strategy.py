@@ -24,8 +24,6 @@ if t.TYPE_CHECKING:
     from flight.strategies.strategy import Strategy
     from flight.system.topology import Topology  
     from flight.system.node import Node
-    from flight.system.types import NodeID
-
 
 class AsyncStrategyEvents(FlightEventEnum):
     STARTED = "started"
@@ -40,7 +38,7 @@ class AsyncStrategyState:
     global_params: Params
     worker_params: dict = field(default_factory=dict)
     worker_rounds: dict = field(default_factory=dict)
-    completed_worker_jobs: int = 0  # Renamed for clarity
+    completed_worker_jobs: int = 0  
 
 
 class AsyncStrategy:
@@ -65,7 +63,7 @@ class AsyncStrategy:
 
         for worker in self.topology.workers:
             self.state.worker_rounds[worker.idx] = 0
-            self.state.worker_params[worker.idx] = deepcopy(initial_params)  # NOTE: deepcopy can be expensive for large models
+            self.state.worker_params[worker.idx] = deepcopy(initial_params)  
 
     def start(self) -> tuple[TorchModule, t.Any]:
         self.fire_event_handler(AsyncStrategyEvents.STARTED)
@@ -134,7 +132,7 @@ class AsyncStrategy:
         if not valid_params:
             return
 
-        # Compute n_k for each worker (number of samples in their dataset)
+        
         n_k = {}
         for node_id in valid_params:
             worker_dataset = self._get_dataset_for_worker(node_id)
@@ -145,9 +143,9 @@ class AsyncStrategy:
         weights = {node_id: n_k[node_id] / n for node_id in valid_params}
 
         first_params = next(iter(valid_params.values()))
-        aggregated_params = deepcopy(first_params)  # NOTE: deepcopy can be expensive for large models
+        aggregated_params = deepcopy(first_params) 
         for key in aggregated_params:
-            aggregated_params[key] = aggregated_params[key] * 0.0  # Zero out for sum
+            aggregated_params[key] = aggregated_params[key] * 0.0  
 
         for node_id, params in valid_params.items():
             for key in aggregated_params:
