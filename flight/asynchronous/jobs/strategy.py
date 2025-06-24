@@ -12,6 +12,7 @@ from flight.events import (
     add_event_handler_to_obj,
     fire_event_handler_by_type,
 )
+
 from flight.jobs.protocols import Result
 from flight.jobs.worker import worker_job, WorkerJobArgs
 from flight.learning.module import TorchModule
