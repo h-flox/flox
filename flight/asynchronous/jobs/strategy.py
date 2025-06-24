@@ -22,7 +22,8 @@ from flight.runtime import Runtime
 if t.TYPE_CHECKING:
     from flight.learning.parameters import Params
     from flight.strategies.strategy import Strategy
-    from flight.system import Topology, Node
+    from flight.system.topology import Topology  
+    from flight.system.node import Node
     from flight.system.types import NodeID
 
 
@@ -37,20 +38,20 @@ class AsyncStrategyEvents(FlightEventEnum):
 @dataclass
 class AsyncStrategyState:
     global_params: Params
-    worker_params: dict[NodeID, Params] = field(default_factory=dict)
-    worker_rounds: dict[NodeID, int] = field(default_factory=dict)
-    completed_rounds: int = 0
+    worker_params: dict = field(default_factory=dict)
+    worker_rounds: dict = field(default_factory=dict)
+    completed_worker_jobs: int = 0  # Renamed for clarity
 
 
 class AsyncStrategy:
     def __init__(
         self,
         runtime: Runtime,
-        topology: Topology,
+        topology: 'Topology',
         num_global_rounds: int,
         module: TorchModule,
         dataset: TensorDataset,
-        strategy: Strategy,
+        strategy: 'Strategy',
     ):
         self.runtime = runtime
         self.topology = topology
@@ -64,7 +65,7 @@ class AsyncStrategy:
 
         for worker in self.topology.workers:
             self.state.worker_rounds[worker.idx] = 0
-            self.state.worker_params[worker.idx] = deepcopy(initial_params)
+            self.state.worker_params[worker.idx] = deepcopy(initial_params)  # NOTE: deepcopy can be expensive for large models
 
     def start(self) -> tuple[TorchModule, t.Any]:
         self.fire_event_handler(AsyncStrategyEvents.STARTED)
@@ -77,7 +78,11 @@ class AsyncStrategy:
             dones, futures = wait(futures, return_when=FIRST_COMPLETED)
 
             for future in dones:
-                result: Result = future.result()
+                try:
+                    result: Result = future.result()
+                except Exception as exc:
+                    print(f"Worker job failed with exception: {exc}")
+                    continue
                 worker_node_id = result.node.idx
 
                 if result.params is not None:
@@ -88,7 +93,7 @@ class AsyncStrategy:
                 )
 
                 self.partial_aggregation_policy(last_updated_node=worker_node_id)
-                self.state.completed_rounds += 1
+                self.state.completed_worker_jobs += 1
 
                 if self.state.worker_rounds[worker_node_id] < self.num_global_rounds:
                     self.state.worker_rounds[worker_node_id] += 1
@@ -97,9 +102,9 @@ class AsyncStrategy:
 
         self.fire_event_handler(AsyncStrategyEvents.COMPLETED)
         self.module.set_params(self.state.global_params)
-        return self.module, None # No history for now
+        return self.module, None 
 
-    def _dispatch_worker_job(self, worker_node: Node) -> Future:
+    def _dispatch_worker_job(self, worker_node: 'Node') -> Future:
         worker_dataset = self._get_dataset_for_worker(worker_node.idx)
         args = WorkerJobArgs(
             strategy=self.strategy,
@@ -112,63 +117,65 @@ class AsyncStrategy:
         self.fire_event_handler(AsyncStrategyEvents.WORKER_JOB_STARTED, {"worker_id": worker_node.idx})
         return future
 
-    def partial_aggregation_policy(self, last_updated_node: t.Optional[NodeID] = None, *args, **kwargs):
+    def partial_aggregation_policy(self, last_updated_node: t.Optional[int] = None, *args, **kwargs):
         """
-        Implements partial aggregation policy using FedAvg algorithm.
-        
-        This method aggregates model parameters from all workers using weighted averaging.
-        In asynchronous FL, we consider all workers to have participated by contributing
-        their most recent parameters.
-        
-        Args:
-            last_updated_node: The node that just completed its training round
-            *args: Additional positional arguments
-            **kwargs: Additional keyword arguments
+        Implements partial aggregation policy using the FedAvg algorithm.
+        Aggregates model parameters from all workers using weighted averaging,
+        where each worker's weight is proportional to the number of data samples it holds.
         """
         if not self.state.worker_params:
             return
-            
+
         valid_params = {
-            node_id: params 
-            for node_id, params in self.state.worker_params.items() 
+            node_id: params
+            for node_id, params in self.state.worker_params.items()
             if params is not None
         }
-        
         if not valid_params:
             return
 
-    
+        # Compute n_k for each worker (number of samples in their dataset)
+        n_k = {}
+        for node_id in valid_params:
+            worker_dataset = self._get_dataset_for_worker(node_id)
+            n_k[node_id] = len(worker_dataset)
+        n = sum(n_k.values())
+        if n == 0:
+            return  # Avoid division by zero
+        weights = {node_id: n_k[node_id] / n for node_id in valid_params}
+
         first_params = next(iter(valid_params.values()))
-        aggregated_params = deepcopy(first_params)
-        
+        aggregated_params = deepcopy(first_params)  # NOTE: deepcopy can be expensive for large models
+        for key in aggregated_params:
+            aggregated_params[key] = aggregated_params[key] * 0.0  # Zero out for sum
+
         for node_id, params in valid_params.items():
-            if params is first_params:
-                continue
-                
             for key in aggregated_params:
                 if key in params:
-                    aggregated_params[key] += params[key]
-        
-        num_workers = len(valid_params)
-        for key in aggregated_params:
-            aggregated_params[key] /= num_workers
-            
+                    aggregated_params[key] += params[key] * weights[node_id]
+
         self.state.global_params = aggregated_params
-        
+
         self.fire_event_handler(
             AsyncStrategyEvents.AGGREGATION_COMPLETED,
             {
-                "completed_aggregations": self.state.completed_rounds,
-                "num_workers_aggregated": num_workers,
+                "completed_worker_jobs": self.state.completed_worker_jobs,
+                "num_workers_aggregated": len(valid_params),
                 "last_updated_node": last_updated_node,
-                "worker_ids": list(valid_params.keys())
+                "worker_ids": list(valid_params.keys()),
+                "weights": weights,
+                "n_k": n_k,
+                "n": n,
             },
         )
 
-    def _get_dataset_for_worker(self, worker_id: NodeID) -> Subset:
+    def _get_dataset_for_worker(self, worker_id: int):
         all_workers = list(self.topology.workers)
         worker_indices = list(range(len(self.dataset)))
-        worker_idx = [n.idx for n in all_workers].index(worker_id)
+        try:
+            worker_idx = [n.idx for n in all_workers].index(worker_id)
+        except ValueError:
+            raise ValueError(f"Worker ID {worker_id} not found in topology workers.")
         num_workers = len(all_workers)
         indices_per_worker = len(worker_indices) // num_workers
         start = worker_idx * indices_per_worker
