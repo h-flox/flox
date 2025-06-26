@@ -115,7 +115,7 @@ class AsyncStrategy:
         self.fire_event_handler(AsyncStrategyEvents.WORKER_JOB_STARTED, {"worker_id": worker_node.idx})
         return future
 
-    def partial_aggregation_policy(self, last_updated_node: t.Optional[int] = None, *args, **kwargs):
+    def partial_aggregation_policy(self, last_updated_node: t.Optional[int] = None):
         """
         Implements partial aggregation policy using the FedAvg algorithm.
         Aggregates model parameters from all workers using weighted averaging,
