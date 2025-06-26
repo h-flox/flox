@@ -42,6 +42,10 @@ class AsyncStrategyState:
 
 
 class AsyncStrategy:
+    """
+    Handles the asynchronous strategy for federated learning, managing the dispatching and
+    aggregation of worker jobs.
+    """
     def __init__(
         self,
         runtime: Runtime,
@@ -66,6 +70,7 @@ class AsyncStrategy:
             self.state.worker_params[worker.idx] = deepcopy(initial_params)  
 
     def start(self) -> tuple[TorchModule, t.Any]:
+        """Starts the asynchronous federated learning strategy by dispatching worker jobs"""
         self.fire_event_handler(AsyncStrategyEvents.STARTED)
 
         futures = {
@@ -103,6 +108,8 @@ class AsyncStrategy:
         return self.module, None 
 
     def _dispatch_worker_job(self, worker_node: 'Node') -> Future:
+        """"Dispatches a worker job to the specified worker node."""
+
         worker_dataset = self._get_dataset_for_worker(worker_node.idx)
         args = WorkerJobArgs(
             strategy=self.strategy,
@@ -168,6 +175,8 @@ class AsyncStrategy:
         )
 
     def _get_dataset_for_worker(self, worker_id: int):
+        """Returns a subset of the dataset for the specified worker ID."""
+        
         all_workers = list(self.topology.workers)
         worker_indices = list(range(len(self.dataset)))
         try:
@@ -188,3 +197,4 @@ class AsyncStrategy:
 
     def fire_event_handler(self, event_type, context=None):
         fire_event_handler_by_type(self, event_type, context)
+
