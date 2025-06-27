@@ -54,6 +54,7 @@ class AsyncStrategy:
         module: TorchModule,
         dataset: TensorDataset,
         strategy: 'Strategy',
+        aggregation_policy: t.Optional[t.Callable[[t.Any, t.Optional[int]], None]] = None,
     ):
         self.runtime = runtime
         self.topology = topology
@@ -61,6 +62,7 @@ class AsyncStrategy:
         self.module = module
         self.dataset = dataset
         self.strategy = strategy
+        self.aggregation_policy = aggregation_policy
 
         initial_params = self.module.get_params()
         self.state = AsyncStrategyState(global_params=initial_params)
@@ -95,7 +97,10 @@ class AsyncStrategy:
                     AsyncStrategyEvents.WORKER_JOB_COMPLETED, {"result": result}
                 )
 
-                self.partial_aggregation_policy(last_updated_node=worker_node_id)
+                if self.aggregation_policy:
+                    self.aggregation_policy(self, worker_node_id)
+                else:
+                    self.partial_aggregation_policy(last_updated_node=worker_node_id)
                 self.state.completed_worker_jobs += 1
 
                 if self.state.worker_rounds[worker_node_id] < self.num_global_rounds:

@@ -1,9 +1,9 @@
 from flight.runtime import Runtime
-from flight.asynchronous.jobs.strategy import AsyncStrategy
+from flight.asynchronous.workflow import AsyncStrategy
 from flight.learning.module import TorchModule
 from flight.system.utils import flat_topology
 from torch.utils.data import TensorDataset
-from flight.strategies.strategy import DefaultStrategy, Strategy
+from flight.strategies import DefaultStrategy, Strategy
 import typing as t
 import torch
 
