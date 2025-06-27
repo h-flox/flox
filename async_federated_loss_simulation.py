@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Async Federated Learning Loss Simulation - Minimal Version"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -14,13 +11,13 @@ from flight.runtime import Runtime
 from flight.system import flat_topology
 from flight.learning.module import TorchModule
 from flight.strategies.strategy import DefaultStrategy
-from flight.asynchronous.workflow import AsyncStrategy, AsyncStrategyEvents
+from flight.asynchronous.workflow import AsyncStrategy
 
 
 @dataclass
 class Config:
     num_workers: int = 5
-    num_rounds: int = 250
+    num_rounds: int = 20
     dataset_size: int = 1000
     input_features: int = 10
     hidden_size: int = 64
@@ -31,14 +28,14 @@ class SimpleModel(TorchModule):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_size, hidden_size), nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(hidden_size, hidden_size), nn.ReLU(), nn.Dropout(0.2),
+            nn.Linear(input_size, hidden_size), nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size), nn.ReLU(),
             nn.Linear(hidden_size, output_size)
         )
     
     def forward(self, x): return self.net(x)
     def configure_criterion(self): return nn.CrossEntropyLoss()
-    def configure_optimizers(self): return optim.SGD(self.parameters(), lr=0.01)
+    def configure_optimizers(self): return optim.SGD(self.parameters(), lr=0.1)
 
 
 class LossTracker:
@@ -87,7 +84,7 @@ def create_aggregation_policy(loss_tracker):
 
 def plot_results(loss_tracker, config):
     """Plot only the Global Loss vs Training Rounds graph."""
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(6, 4))
     
     # Global Loss vs Rounds (Main loss function graph)
     plt.plot(loss_tracker.rounds, loss_tracker.global_losses, 'b-', linewidth=3, marker='o', markersize=8)
