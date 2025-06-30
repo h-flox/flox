@@ -1,30 +1,29 @@
 from __future__ import annotations
 
+import time
 import typing as t
 from concurrent.futures import FIRST_COMPLETED, Future, wait
 from copy import deepcopy
 from dataclasses import dataclass, field
-from torch.utils.data import Subset, TensorDataset
-import time
+
 import torch
+from torch.utils.data import Subset, TensorDataset
 
 from flight.events import (
     FlightEventEnum,
     add_event_handler_to_obj,
     fire_event_handler_by_type,
 )
-
 from flight.jobs.protocols import Result
-from flight.jobs.worker import worker_job, WorkerJobArgs
+from flight.jobs.worker import WorkerJobArgs, worker_job
 from flight.learning.module import TorchModule
-from flight.learning.parameters import Params
 from flight.runtime import Runtime
 
 if t.TYPE_CHECKING:
-    from flight.learning.parameters import Params
     from flight.strategies.strategy import Strategy
-    from flight.system.topology import Topology  
     from flight.system.node import Node
+    from flight.system.topology import Topology
+
 
 class WorkerTimeTracker:
     def __init__(self, num_workers):
@@ -50,6 +49,7 @@ class WorkerTimeTracker:
                 f"record_job_end called for worker {worker_idx} but no start time "
                 f"found!"
             )
+
 
 class AsyncWorkflowEvents(FlightEventEnum):
     STARTED = "started"
@@ -80,7 +80,7 @@ class AsyncWorkflowEvents(FlightEventEnum):
 
 @dataclass
 class AsyncWorkflowState:
-    global_params: Params
+    global_params: t.Any
     """
     The global parameters of the model.
     """
@@ -92,7 +92,7 @@ class AsyncWorkflowState:
     """
     The number of rounds each worker has completed.
     """
-    completed_worker_jobs: int = 0  
+    completed_worker_jobs: int = 0
     """
     The number of completed worker jobs.
     """
@@ -113,7 +113,7 @@ def loss_function(model, data_loader, device=None):
     criterion = model.configure_criterion()
     total_loss = 0.0
     total_samples = 0
-    
+
     with torch.no_grad():
         for batch in data_loader:
             x, y = batch
@@ -125,14 +125,14 @@ def loss_function(model, data_loader, device=None):
             batch_size = x.size(0)
             total_loss += loss.item() * batch_size
             total_samples += batch_size
-    
+
     return total_loss / total_samples if total_samples > 0 else 0.0
 
 
 class AsyncWorkflow:
     """
-    Handles the asynchronous strategy for federated learning, managing the dispatching and
-    aggregation of worker jobs.
+    Handles the asynchronous strategy for federated learning, managing the dispatching
+    and aggregation of worker jobs.
 
     Args:
         runtime (Runtime): The runtime to use for the workflow.
@@ -141,19 +141,25 @@ class AsyncWorkflow:
         module (TorchModule): The model to train.
         dataset (TensorDataset): The dataset to use for training.
         strategy (Strategy): The strategy to use for the workflow.
-        aggregation_policy (Callable): The aggregation policy to use for the workflow.
-        worker_time_tracker (WorkerTimeTracker): The worker time tracker to use for the workflow.
-        loss_function (Callable): Function to compute loss, signature (model, data_loader, device) -> float.
+        aggregation_policy (Callable): The aggregation policy to use for the
+        workflow.
+        worker_time_tracker (WorkerTimeTracker): The worker time tracker to use for
+        the workflow.
+        loss_function (Callable): Function to compute loss, signature
+        (model, data_loader, device) -> float.
     """
+
     def __init__(
         self,
         runtime: Runtime,
-        topology: 'Topology',
+        topology: "Topology",
         num_global_rounds: int,
         module: TorchModule,
         dataset: TensorDataset,
-        strategy: 'Strategy',
-        aggregation_policy: t.Optional[t.Callable[[t.Any, t.Optional[int]], None]] = None,
+        strategy: "Strategy",
+        aggregation_policy: t.Optional[
+            t.Callable[[t.Any, t.Optional[int]], None]
+        ] = None,
         worker_time_tracker=None,
         loss_function=loss_function,
     ):
@@ -167,11 +173,14 @@ class AsyncWorkflow:
             module (TorchModule): The model to train.
             dataset (TensorDataset): The dataset to use for training.
             strategy (Strategy): The strategy to use for the workflow.
-            aggregation_policy (Callable): The aggregation policy to use for the workflow.
-            worker_time_tracker (WorkerTimeTracker): The worker time tracker to use for the workflow.
-            loss_function (Callable): Function to compute loss, signature (model, data_loader, device) -> float.
+            aggregation_policy (Callable): The aggregation policy to use for the
+            workflow.
+            worker_time_tracker (WorkerTimeTracker): The worker time tracker to
+            use for the workflow.
+            loss_function (Callable): Function to compute loss, signature (model,
+            data_loader, device) -> float.
         Returns:
-            None    
+            None
         """
         self.runtime = runtime
         self.topology = topology
@@ -188,26 +197,28 @@ class AsyncWorkflow:
 
         for worker in self.topology.workers:
             self.state.worker_rounds[worker.idx] = 0
-            self.state.worker_params[worker.idx] = deepcopy(initial_params)  
+            self.state.worker_params[worker.idx] = deepcopy(initial_params)
 
     def start(self) -> tuple[TorchModule, t.Any]:
         """
-        Starts the asynchronous federated learning strategy by dispatching worker jobs.
+        Starts the asynchronous federated learning strategy by dispatching worker
+        jobs.
 
         Returns:
-            tuple[TorchModule, t.Any]: The final model and any additional information.
+            tuple[TorchModule, t.Any]: The final model and any additional
+            information.
         """
         self.fire_event_handler(AsyncWorkflowEvents.STARTED)
 
         num_workers = len(self.topology.workers)
         max_jobs = num_workers * self.num_global_rounds
         jobs_completed = 0
-        #worker_ids = [worker.idx for worker in self.topology.workers]
+        # worker_ids = [worker.idx for worker in self.topology.workers]
         worker_idx_map = {worker.idx: worker for worker in self.topology.workers}
 
         # Assign one job to each worker at the start
         futures = set()
-        
+
         for worker in self.topology.workers:
             if self.state.worker_rounds[worker.idx] < self.num_global_rounds:
                 futures.add(self._dispatch_worker_job(worker))
@@ -222,12 +233,12 @@ class AsyncWorkflow:
                 except Exception as exc:
                     print(f"Worker job failed with exception: {exc}")
                     continue
-                
+
                 worker_node_id = result.node.idx
 
                 if result.params is not None:
                     self.state.worker_params[worker_node_id] = result.params
-                
+
                 if self.worker_time_tracker is not None:
                     self.worker_time_tracker.record_job_end(worker_node_id)
 
@@ -242,17 +253,18 @@ class AsyncWorkflow:
                 self.state.completed_worker_jobs += 1
                 jobs_completed += 1
 
-                # Assign a new job to this worker if they haven't reached their max rounds
                 if self.state.worker_rounds[worker_node_id] < self.num_global_rounds:
-                    new_future = self._dispatch_worker_job(worker_idx_map[worker_node_id])
+                    new_future = self._dispatch_worker_job(
+                        worker_idx_map[worker_node_id]
+                    )
                     futures.add(new_future)
                     self.state.worker_rounds[worker_node_id] += 1
 
         self.fire_event_handler(AsyncWorkflowEvents.COMPLETED)
         self.module.set_params(self.state.global_params)
-        return self.module, None 
+        return self.module, None
 
-    def _dispatch_worker_job(self, worker_node: 'Node') -> Future:
+    def _dispatch_worker_job(self, worker_node: "Node") -> Future:
         """
         Dispatches a worker job to the specified worker node.
 
@@ -261,7 +273,7 @@ class AsyncWorkflow:
 
         Returns:
             Future: The future representing the worker job.
-        """ 
+        """
 
         worker_dataset = self._get_dataset_for_worker(worker_node.idx)
         args = WorkerJobArgs(
@@ -275,14 +287,17 @@ class AsyncWorkflow:
         if self.worker_time_tracker is not None:
             self.worker_time_tracker.record_job_start(worker_node.idx)
         future = self.runtime.submit(worker_job, args)
-        self.fire_event_handler(AsyncWorkflowEvents.WORKER_JOB_STARTED, {"worker_id": worker_node.idx})
+        self.fire_event_handler(
+            AsyncWorkflowEvents.WORKER_JOB_STARTED, {"worker_id": worker_node.idx}
+        )
         return future
 
     def partial_aggregation_policy(self, last_updated_node: t.Optional[int] = None):
         """
         Implements partial aggregation policy using the FedAvg algorithm.
         Aggregates model parameters from all workers using weighted averaging,
-        where each worker's weight is proportional to the number of data samples it holds.
+        where each worker's weight is proportional to the number of data
+        samples it holds.
 
         Args:
             last_updated_node (int): The ID of the last updated node.
@@ -301,7 +316,6 @@ class AsyncWorkflow:
         if not valid_params:
             return
 
-        
         n_k = {}
         for node_id in valid_params:
             worker_dataset = self._get_dataset_for_worker(node_id)
@@ -312,9 +326,9 @@ class AsyncWorkflow:
         weights = {node_id: n_k[node_id] / n for node_id in valid_params}
 
         first_params = next(iter(valid_params.values()))
-        aggregated_params = deepcopy(first_params) 
+        aggregated_params = deepcopy(first_params)
         for key in aggregated_params:
-            aggregated_params[key] = aggregated_params[key] * 0.0  
+            aggregated_params[key] = aggregated_params[key] * 0.0
 
         for node_id, params in valid_params.items():
             for key in aggregated_params:
@@ -346,7 +360,6 @@ class AsyncWorkflow:
         Returns:
             Subset: The subset of the dataset for the specified worker.
         """
-        
         all_workers = list(self.topology.workers)
         worker_indices = list(range(len(self.dataset)))
         try:
@@ -359,7 +372,6 @@ class AsyncWorkflow:
         end = start + indices_per_worker
         if worker_idx == num_workers - 1:
             end = len(worker_indices)
-        
         return Subset(self.dataset, worker_indices[start:end])
 
     def add_event_handler(self, event_type, handler):
@@ -367,4 +379,3 @@ class AsyncWorkflow:
 
     def fire_event_handler(self, event_type, context=None):
         fire_event_handler_by_type(self, event_type, context)
-
