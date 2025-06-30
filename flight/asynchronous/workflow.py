@@ -27,6 +27,10 @@ if t.TYPE_CHECKING:
 
 class AsyncWorkflowEvents(FlightEventEnum):
     STARTED = "started"
+    """
+    ...
+    """
+
     COMPLETED = "completed"
     AGGREGATION_COMPLETED = "aggregation_completed"
     WORKER_JOB_STARTED = "worker_job_started"
@@ -57,6 +61,13 @@ class AsyncWorkflow:
         aggregation_policy: t.Optional[t.Callable[[t.Any, t.Optional[int]], None]] = None,
         worker_time_tracker=None,
     ):
+        """
+        DESCRIPTION
+
+        Args:
+            runtime (Runtime): ...
+            ...
+        """
         self.runtime = runtime
         self.topology = topology
         self.num_global_rounds = num_global_rounds
