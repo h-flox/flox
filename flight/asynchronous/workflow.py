@@ -25,7 +25,7 @@ if t.TYPE_CHECKING:
     from flight.system.topology import Topology  
     from flight.system.node import Node
 
-class AsyncStrategyEvents(FlightEventEnum):
+class AsyncWorkflowEvents(FlightEventEnum):
     STARTED = "started"
     COMPLETED = "completed"
     AGGREGATION_COMPLETED = "aggregation_completed"
@@ -34,14 +34,14 @@ class AsyncStrategyEvents(FlightEventEnum):
 
 
 @dataclass
-class AsyncStrategyState:
+class AsyncWorkflowState:
     global_params: Params
     worker_params: dict = field(default_factory=dict)
     worker_rounds: dict = field(default_factory=dict)
     completed_worker_jobs: int = 0  
 
 
-class AsyncStrategy:
+class AsyncWorkflow:
     """
     Handles the asynchronous strategy for federated learning, managing the dispatching and
     aggregation of worker jobs.
@@ -55,6 +55,7 @@ class AsyncStrategy:
         dataset: TensorDataset,
         strategy: 'Strategy',
         aggregation_policy: t.Optional[t.Callable[[t.Any, t.Optional[int]], None]] = None,
+        worker_time_tracker=None,
     ):
         self.runtime = runtime
         self.topology = topology
@@ -63,9 +64,10 @@ class AsyncStrategy:
         self.dataset = dataset
         self.strategy = strategy
         self.aggregation_policy = aggregation_policy
+        self.worker_time_tracker = worker_time_tracker
 
         initial_params = self.module.get_params()
-        self.state = AsyncStrategyState(global_params=initial_params)
+        self.state = AsyncWorkflowState(global_params=initial_params)
 
         for worker in self.topology.workers:
             self.state.worker_rounds[worker.idx] = 0
@@ -73,13 +75,22 @@ class AsyncStrategy:
 
     def start(self) -> tuple[TorchModule, t.Any]:
         """Starts the asynchronous federated learning strategy by dispatching worker jobs"""
-        self.fire_event_handler(AsyncStrategyEvents.STARTED)
+        self.fire_event_handler(AsyncWorkflowEvents.STARTED)
 
-        futures = {
-            self._dispatch_worker_job(worker) for worker in self.topology.workers
-        }
+        num_workers = len(self.topology.workers)
+        max_jobs = num_workers * self.num_global_rounds
+        jobs_completed = 0
+        worker_ids = [worker.idx for worker in self.topology.workers]
+        worker_idx_map = {worker.idx: worker for worker in self.topology.workers}
 
-        while futures:
+        # Assign one job to each worker at the start
+        futures = set()
+        for worker in self.topology.workers:
+            if self.state.worker_rounds[worker.idx] < self.num_global_rounds:
+                futures.add(self._dispatch_worker_job(worker))
+                self.state.worker_rounds[worker.idx] += 1
+
+        while futures and jobs_completed < max_jobs:
             dones, futures = wait(futures, return_when=FIRST_COMPLETED)
 
             for future in dones:
@@ -93,8 +104,11 @@ class AsyncStrategy:
                 if result.params is not None:
                     self.state.worker_params[worker_node_id] = result.params
                 
+                if self.worker_time_tracker is not None:
+                    self.worker_time_tracker.record_job_end(worker_node_id)
+
                 self.fire_event_handler(
-                    AsyncStrategyEvents.WORKER_JOB_COMPLETED, {"result": result}
+                    AsyncWorkflowEvents.WORKER_JOB_COMPLETED, {"result": result}
                 )
 
                 if self.aggregation_policy:
@@ -102,13 +116,15 @@ class AsyncStrategy:
                 else:
                     self.partial_aggregation_policy(last_updated_node=worker_node_id)
                 self.state.completed_worker_jobs += 1
+                jobs_completed += 1
 
+                # Assign a new job to this worker if they haven't reached their max rounds
                 if self.state.worker_rounds[worker_node_id] < self.num_global_rounds:
-                    self.state.worker_rounds[worker_node_id] += 1
-                    new_future = self._dispatch_worker_job(self.topology[worker_node_id])
+                    new_future = self._dispatch_worker_job(worker_idx_map[worker_node_id])
                     futures.add(new_future)
+                    self.state.worker_rounds[worker_node_id] += 1
 
-        self.fire_event_handler(AsyncStrategyEvents.COMPLETED)
+        self.fire_event_handler(AsyncWorkflowEvents.COMPLETED)
         self.module.set_params(self.state.global_params)
         return self.module, None 
 
@@ -123,8 +139,11 @@ class AsyncStrategy:
             params=self.state.global_params,
             node=worker_node,
         )
+        # Record job start
+        if self.worker_time_tracker is not None:
+            self.worker_time_tracker.record_job_start(worker_node.idx)
         future = self.runtime.submit(worker_job, args)
-        self.fire_event_handler(AsyncStrategyEvents.WORKER_JOB_STARTED, {"worker_id": worker_node.idx})
+        self.fire_event_handler(AsyncWorkflowEvents.WORKER_JOB_STARTED, {"worker_id": worker_node.idx})
         return future
 
     def partial_aggregation_policy(self, last_updated_node: t.Optional[int] = None):
@@ -167,7 +186,7 @@ class AsyncStrategy:
         self.state.global_params = aggregated_params
 
         self.fire_event_handler(
-            AsyncStrategyEvents.AGGREGATION_COMPLETED,
+            AsyncWorkflowEvents.AGGREGATION_COMPLETED,
             {
                 "completed_worker_jobs": self.state.completed_worker_jobs,
                 "num_workers_aggregated": len(valid_params),

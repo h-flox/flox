@@ -1,5 +1,5 @@
 from flight.runtime import Runtime
-from flight.asynchronous.workflow import AsyncStrategy
+from flight.asynchronous.workflow import AsyncWorkflow
 from flight.learning.module import TorchModule
 from flight.system.utils import flat_topology
 from torch.utils.data import TensorDataset
@@ -7,7 +7,7 @@ from flight.strategies import DefaultStrategy, Strategy
 import typing as t
 import torch
 
-class DefaultAsyncStrategy(AsyncStrategy):
+class DefaultAsyncStrategy(AsyncWorkflow):
     def __init__(
         self,
         runtime: Runtime,
@@ -25,43 +25,6 @@ class DefaultAsyncStrategy(AsyncStrategy):
             dataset=dataset,
             strategy=strategy,
         )
-
-class AsyncWorkflow:
-
-    def __init__(
-        self,
-        module: TorchModule,
-        topo: t.Any,
-        strategy: t.Optional[AsyncStrategy] = None,
-        dataset: t.Optional[TensorDataset] = None,
-        runtime: t.Optional[Runtime] = None,
-        num_global_rounds: int = 1,
-    ):
-        self.module = module
-        self.topo = topo
-        self.runtime = runtime or Runtime.simple_setup(max_workers=len(topo.workers))
-        self.dataset = dataset or self.default_dataset()
-        self.num_global_rounds = num_global_rounds
-        if strategy is None:
-            self.strategy = DefaultAsyncStrategy(
-                runtime=self.runtime,
-                topology=self.topo,
-                num_global_rounds=self.num_global_rounds,
-                module=self.module,
-                dataset=self.dataset,
-                strategy=DefaultStrategy(),
-            )
-        else:
-            self.strategy = strategy
-
-    def default_dataset(self):
-        X = torch.randn(100, 10)
-        y = torch.randint(0, 2, (100,))
-        return TensorDataset(X, y)
-
-    def start(self):
-        """Start the asynchronous federated learning workflow."""
-        return self.strategy.start()
 
 class MyModule(TorchModule):
     def __init__(self):
@@ -99,11 +62,11 @@ if __name__ == "__main__":
         strategy=DefaultStrategy(),
     )
     wf = AsyncWorkflow(
-        module=module,
-        topo=topology,
-        strategy=strategy,
-        dataset=dataset,
         runtime=runtime,
+        topology=topology,
         num_global_rounds=num_global_rounds,
+        module=module,
+        dataset=dataset,
+        strategy=DefaultStrategy(),
     )
     wf.start()
