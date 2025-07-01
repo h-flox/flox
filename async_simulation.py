@@ -1,5 +1,4 @@
 import time
-from concurrent.futures import as_completed
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -8,11 +7,8 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 from flight.asynchronous.workflow import (
     AsyncWorkflow,
-    AsyncWorkflowEvents,
-    WorkerTimeTracker,
 )
 from flight.jobs.protocols import Result
-from flight.jobs.worker import WorkerJobArgs
 from flight.learning.module import TorchModule
 from flight.runtime import Runtime
 from flight.strategies import DefaultStrategy
