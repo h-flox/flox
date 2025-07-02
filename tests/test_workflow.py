@@ -40,6 +40,12 @@ def hier_topo_dict() -> Topology:
 
 
 def test_get_relevant_nodes(hier_topo_from_fn, flat_topo, hier_topo_dict):
+    # Test with flat topology.
+    relevant_nodes = get_relevant_nodes(flat_topo, [1, 2])
+    assert len(relevant_nodes) == 1
+    assert set(relevant_nodes[0]) == {1, 2}
+
+    # Test with hierarchical topology.
     relevant_nodes = get_relevant_nodes(hier_topo_dict, [11, 12, 21])
     assert len(relevant_nodes) == 3
     assert set(relevant_nodes[0]) == {1, 2}

@@ -1,17 +1,20 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
 import torch
 
+from flight.events import TrainProcessFnEvents, WorkerEvents, on
 from flight.learning import TorchModule
 from flight.strategies.strategy import DefaultStrategy
 from flight.system.utils import flat_topology
 from flight.utils.fed_data import federated_split
-from flight.workflow import FederationWorkflow
+from flight.workflow import Federation, FederationWorkflow
 
 
 class MyDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         shape: tuple[int, ...] = (28, 28),
-        size: int = 100,
+        size: int = 1000,
         labels: int = 10,
         seed: int | None = None,
     ):
@@ -39,11 +42,16 @@ class MyModule(TorchModule):
     def __init__(self):
         super().__init__()
         # Define your layers here, for example:
-        self.layer = torch.nn.Linear(1, 1)
+        self.model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.Linear(28 * 28, 28),
+            torch.nn.ReLU(),
+            torch.nn.Linear(28, 10),
+        )
 
     def forward(self, x):
         # Define your forward pass here
-        return self.layer(x)
+        return self.model(x)
 
     def configure_optimizers(self):
         # Define your optimizer here
@@ -51,7 +59,31 @@ class MyModule(TorchModule):
 
     def configure_criterion(self):
         # Define your loss function here
-        return torch.nn.MSELoss()
+        return torch.nn.CrossEntropyLoss()
+
+
+class MyStrategy(DefaultStrategy):
+    @on(TrainProcessFnEvents.BACKWARD_COMPLETED)
+    def observe_loss(self, context):
+        _loss = context["loss"]  # noqa: F841
+
+    @on(WorkerEvents.AFTER_TRAINING)
+    def record_output(self, context):
+        import datetime
+
+        records = context["records"]
+        trainer_state = context["trainer_state"]
+        # print(trainer_state.output)
+
+        loss = trainer_state.output[-1]
+        records.append(
+            {
+                "loss": loss,
+                "time": datetime.datetime.now(),
+                "node": context["node"].idx,
+                "round": context["args"].round_num,
+            }
+        )
 
 
 def main():
@@ -65,13 +97,19 @@ def main():
     )
     print(topo)
 
-    workflow = FederationWorkflow(
-        topo,
-        DefaultStrategy(),
+    workflow = FederationWorkflow(topo, MyStrategy())
+    workflow = Federation(topo, MyStrategy())
+
+    results = workflow.start(
         MyModule(),
         data,
     )
-    workflow.start()
+
+    print(results.head())
+
+    results["node"] = results.node.astype(str)
+    sns.lineplot(results, x="round", y="loss", hue="node")
+    plt.show()
 
 
 if __name__ == "__main__":

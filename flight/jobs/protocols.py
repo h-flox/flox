@@ -9,6 +9,7 @@ import torch
 from ignite.engine import Engine
 from torch.optim import Optimizer
 
+from flight.commons import Record
 from flight.learning.module import TorchModule
 from flight.learning.parameters import Params
 from flight.state import AbstractNodeState
@@ -31,7 +32,9 @@ class Result:
     node: Node
     module: TorchModule | None = field(repr=False)
     params: Params | None = field(default=None, repr=False)
+    records: list[Record] = field(default_factory=list, repr=False)
     state: AbstractNodeState | None = field(default=None, repr=False)
+    round_num: int | None = None
     uuid: UUID | str | None = field(default=None, repr=True)
     status: JobStatus | None = field(default=None, repr=True)
     errors: list[BaseException] = field(default_factory=list)

@@ -4,39 +4,15 @@ import functools
 import typing as t
 
 import torch
+from ignite.engine import DeterministicEngine, Engine, _check_arg
 from ignite.utils import convert_tensor
 
-from flight.events import TrainProcessFnEvents
+from flight.events import Context, TrainProcessFnEvents
 from flight.strategies import Strategy
 
 if t.TYPE_CHECKING:
-    from ignite.engine import Engine
-
     Loss: t.TypeAlias = torch.Tensor
     ModelOutput: t.TypeAlias = torch.Tensor
-
-
-class ProcessFn(t.Protocol):
-    def __call__(self) -> Loss:
-        pass
-
-
-class HookedProcessFn(t.Protocol):
-    def __call__(self) -> ModelOutput:
-        pass
-
-
-def hooked_process_fn(model, batch, criterion, strategy, optimizer) -> Loss:
-    x, y_true = batch
-    y_pred = model(x)
-    loss = criterion(y_pred, y_true)
-
-    strategy.fire_event("BACKWARD_STARTED")
-    loss.backward()
-    strategy.fire_event("BACKWARD_COMPLETED")
-
-    optimizer.step()
-    return loss.item()
 
 
 def _prepare_batch(
@@ -55,15 +31,18 @@ def _prepare_batch(
 def fire_event_handler_if_strategy_exists(
     strategy: Strategy | None,
     event: TrainProcessFnEvents,
+    context: Context,
 ) -> None:
-    """Fire an event handler if a strategy is provided.
+    """
+    Fire an event handler if a strategy is provided.
 
     Args:
         strategy (Strategy): The strategy to check.
         event (TrainProcessFnEvents): The event to fire.
+        context (Context): The context containing the local variables.
     """
     if strategy:
-        strategy.fire_event_handler(event, locals())
+        strategy.fire_event_handler(event, context)
 
 
 ########################################################################################
@@ -83,6 +62,7 @@ def hooked_supervised_training_step(
     gradient_accumulation_steps: int = 1,
     model_fn: t.Callable[[torch.nn.Module, t.Any], t.Any] = lambda model, x: model(x),
     strategy: Strategy | None = None,
+    context: Context | None = None,
 ) -> t.Callable:
     """
     This factory function for supervised training.
@@ -186,11 +166,13 @@ def hooked_supervised_training_step(
         model.train()
 
         _fire_event_handler_if_strategy_exists(
-            event=TrainProcessFnEvents.BATCH_PREPARE_STARTED
+            event=TrainProcessFnEvents.BATCH_PREPARE_STARTED,
+            context=locals(),
         )
         x, y = prepare_batch(batch, device=device, non_blocking=non_blocking)
         _fire_event_handler_if_strategy_exists(
-            event=TrainProcessFnEvents.BATCH_PREPARE_COMPLETED
+            event=TrainProcessFnEvents.BATCH_PREPARE_COMPLETED,
+            context=locals(),
         )
 
         output = model_fn(model, x)
@@ -201,20 +183,24 @@ def hooked_supervised_training_step(
             loss = loss / gradient_accumulation_steps
 
         _fire_event_handler_if_strategy_exists(
-            event=TrainProcessFnEvents.BACKWARD_STARTED
+            event=TrainProcessFnEvents.BACKWARD_STARTED,
+            context=locals(),
         )
         loss.backward()
         _fire_event_handler_if_strategy_exists(
-            event=TrainProcessFnEvents.BACKWARD_COMPLETED
+            event=TrainProcessFnEvents.BACKWARD_COMPLETED,
+            context=locals(),
         )
 
         if engine.state.iteration % gradient_accumulation_steps == 0:
             _fire_event_handler_if_strategy_exists(
-                event=TrainProcessFnEvents.OPTIM_STEP_COMPLETED
+                event=TrainProcessFnEvents.OPTIM_STEP_COMPLETED,
+                context=locals(),
             )
             optimizer.step()
             _fire_event_handler_if_strategy_exists(
-                event=TrainProcessFnEvents.OPTIM_STEP_COMPLETED
+                event=TrainProcessFnEvents.OPTIM_STEP_COMPLETED,
+                context=locals(),
             )
 
         return output_transform(
@@ -294,6 +280,85 @@ def hooked_supervised_evaluation_step(
             return output_transform(x, y, y_pred)
 
     return evaluate_step
+
+
+def create_hooked_supervised_trainer(
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    loss_fn: t.Callable[[t.Any, t.Any], torch.Tensor] | torch.nn.Module,
+    device: str | torch.device | None = None,
+    non_blocking: bool = False,
+    prepare_batch: t.Callable = _prepare_batch,
+    model_transform: t.Callable[[t.Any], t.Any] = lambda output: output,
+    output_transform: t.Callable[
+        [t.Any, t.Any, t.Any, torch.Tensor], t.Any
+    ] = lambda x, y, y_pred, loss: loss.item(),
+    deterministic: bool = False,
+    amp_mode: str | None = None,
+    scaler: bool | torch.cuda.amp.GradScaler = False,
+    gradient_accumulation_steps: int = 1,
+    model_fn: t.Callable[[torch.nn.Module, t.Any], t.Any] = lambda model, x: model(x),
+    strategy: Strategy | None = None,
+    context: Context | None = None,
+) -> Engine:
+    """
+    Create a hooked supervised trainer engine.
+
+    This function mimics the logic of
+    [`create_supervised_trainer`](
+    https://docs.pytorch.org/ignite/generated/
+    ignite.engine.create_supervised_trainer.html#
+    ignite.engine.create_supervised_trainer)
+    provided by Ignite, but with the addition of Flight's own custom
+    event handling system via [`TrainProcessFnEvents`]
+    [flight.events.TrainProcessFnEvents] and [`hooked_supervised_training_step`]
+    [flight.learning.process_fns.hooked_supervised_training_step].
+
+    Args:
+        model:
+        optimizer:
+        loss_fn:
+        device:
+        non_blocking:
+        prepare_batch:
+        model_transform:
+        output_transform:
+        deterministic:
+        amp_mode:
+        scaler:
+        gradient_accumulation_steps:
+        model_fn:
+        strategy:
+        context:
+
+    Returns:
+
+    """
+    device_type = device.type if isinstance(device, torch.device) else device
+    on_tpu = "xla" in device_type if device_type is not None else False
+    on_mps = "mps" in device_type if device_type is not None else False
+    mode, _scaler = _check_arg(on_tpu, on_mps, amp_mode, scaler)
+
+    _update = hooked_supervised_training_step(
+        model,
+        optimizer,
+        loss_fn,
+        device,
+        non_blocking,
+        prepare_batch,
+        model_transform,
+        output_transform,
+        gradient_accumulation_steps,
+        model_fn,
+        strategy,
+        context,
+    )
+
+    trainer = Engine(_update) if not deterministic else DeterministicEngine(_update)
+    if _scaler and scaler and isinstance(scaler, bool):
+        trainer.state.scaler = _scaler  # type: ignore[attr-defined]
+
+    return trainer
 
 
 """

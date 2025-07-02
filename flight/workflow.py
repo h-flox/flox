@@ -6,6 +6,8 @@ import typing as t
 from concurrent.futures import Future, InvalidStateError
 from dataclasses import dataclass, field
 
+import pandas as pd
+
 from .events import Context, CoordinatorEvents, fire_event_handlers_by_type
 from .jobs.aggr import AggregatorJobProto, AggrJobArgs, aggregator_job
 from .jobs.protocols import Result
@@ -73,13 +75,31 @@ def _resolve_ambiguous_node(topology: Topology, node: Node | None) -> Node:
 
 
 def _set_parent_future(parent_fut: Future, child_fut: Future) -> t.Any:
+    """
+    Sets the result of the parent future based on the child future's result.
+
+    Args:
+        parent_fut (Future): The parent future to set the result on.
+        child_fut (Future): The child future that is done and whose result will be set
+            on the parent future.
+
+    Returns:
+        The result of the child future if it is done and has no exception; otherwise,
+        it raises an exception.
+
+    Throws:
+        - `ValueError`: If the `child_fut` is not done
+          (i.e., `child_fut.done() == False`).
+    """
     if not child_fut.done():
         raise ValueError(
             "set_parent_future(): Arg `child_fut` must be done "
             "(i.e., `child_fut.done() == True`)."
         )
+
     elif child_fut.exception():
         parent_fut.set_exception(child_fut.exception())
+
     else:
         result = child_fut.result()
         try:
@@ -90,12 +110,13 @@ def _set_parent_future(parent_fut: Future, child_fut: Future) -> t.Any:
 
 
 def _all_futures_finished(
+    _: Future,  # This was put first to avoid issues with `partial`.
+    *,
     job: AggregatorJobProto,
     args: AggrJobArgs,
     parent_fut: Future,
     child_futs: dict[NodeID, Future],
     runtime: Runtime,
-    _: Future,
     # children: t.Iterable[Node],
     # node: Node,
     # aggr_strategy: AggrStrategy,
@@ -156,7 +177,231 @@ class CoordinatorState:
             self.round += 1
 
 
+class Federation:
+    def __init__(self, topology: Topology, strategy: Strategy):
+        self.topology = topology
+        self.strategy = strategy
+        self.runtime = Runtime.simple_setup()
+        self.logger = init_logger()
+        self.round_num = 0
+
+        self.global_module: TorchModule | None = None
+        self.dataset: TorchDataModule | None = None
+
+    def start(
+        self,
+        module: TorchModule,
+        dataset: TorchDataModule,
+        num_rounds: int = 10,
+    ):
+        self.log(f"Starting federation with {num_rounds} rounds.")
+        self.global_module = module
+        self.dataset = dataset
+
+        results = []
+        self.round_num = 0
+
+        while True:
+            self.round_num += 1
+            self.log(f"Starting round {self.round_num}.")
+
+            try:
+                round_future = self.dispatch_jobs()
+                round_result = round_future.result()
+            except Exception as err:
+                # self.runtime.shutdown()
+                raise err
+
+            results.append(round_result)
+            # records.extend(round_result.records)
+
+            self.global_module.set_params(round_result.params)
+            self.log(f"Completed {self.round_num}.")
+            if self.round_num >= num_rounds:
+                break
+
+        # Combine all records from the results into a single DataFrame.
+        records = []
+        for res in results:
+            records.extend(res.records)
+        df = pd.DataFrame.from_records(records)
+
+        self.log("Federation completed successfully.")
+        return df
+
+    def log(
+        self,
+        msg: str,
+        level: t.Literal[
+            "notset", "debug", "info", "warning", "error", "critical"
+        ] = "info",
+    ) -> None:
+        """
+        Log a message at the given level.
+
+        Args:
+            level (str): The logging level. Defaults to "info".
+            msg (str): The message to log.
+        """
+        match level:
+            case "debug":
+                self.logger.debug(msg)
+            case "info":
+                self.logger.info(msg)
+            case "warning":
+                self.logger.warning(msg)
+            case "error":
+                self.logger.error(msg)
+            case "critical":
+                self.logger.critical(msg)
+            case _:
+                raise ValueError(
+                    f"Invalid logging level: {level}. Must be one of "
+                    f"'notset', 'debug', 'info', 'warning', 'error', or 'critical'."
+                )
+
+    ####################################################################################
+
+    def dispatch_jobs(
+        self,
+        node: Node | None = None,
+        parent: Node | None = None,
+    ) -> Future[Result]:
+        """
+        Dispatches jobs on the given node based on its kind.
+
+        Args:
+            node (Node | None): The node to dispatch jobs on.
+                If `None`, the coordinator node is used.
+            parent (Node | None): The parent node of the worker node.
+                If `None`, it is resolved from the topology.
+
+        Returns:
+            A future that resolves to the result of the corresponding job.
+        """
+        node = _resolve_ambiguous_node(self.topology, node)
+
+        match node.kind:
+            case NodeKind.COORDINATOR:
+                self.log(f"Launching COORDINATOR job and other tasks on {node.idx=}.")
+                return self.coordinator_job(node)
+
+            case NodeKind.AGGREGATOR:
+                self.log(f"Launching AGGREGATION job on {node.idx=}.")
+                return self.aggregator_job(node)
+
+            case NodeKind.WORKER:
+                self.log(f"Launching WORKER job on {node.idx=}.")
+                parent = _resolve_ambiguous_node(self.topology, parent)
+                return self.worker_job(node, parent)
+
+            case _:
+                raise ValueError(
+                    "Invalid node kind. Must be one of "
+                    "COORDINATOR, AGGREGATOR, or WORKER."
+                )
+
+    def coordinator_job(self, node: Node) -> Future[Result]:
+        """
+
+        Args:
+            node:
+
+        Returns:
+
+        Throws:
+            - `ValueError`: If the provided node is not a Coordinator node.
+        """
+        self.log("Started Coordinator Jobs.")
+
+        if node.kind is not NodeKind.COORDINATOR:
+            raise ValueError(
+                "The provided node must be a Coordinator node to run the "
+                "coordinator job."
+            )
+
+        selected_workers = self.strategy.select_workers(self.topology)
+        selected_worker_ids = list(map(lambda wrk: wrk.idx, selected_workers))
+        relevant_nodes = get_relevant_nodes(self.topology, selected_worker_ids)
+
+        # direct_children_of_coord = relevant_nodes[node.idx]
+        # for child in direct_children_of_coord:
+        #     if child.kind is NodeKind.AGGREGATOR:
+
+        future = self.aggregator_job(node, relevant_nodes[node.idx])
+        self.log("Ended coordinator tasks (waiting on other jobs to complete).")
+        return future
+
+    def aggregator_job(
+        self,
+        node: Node,
+        relevant_children: t.Sequence[NodeID],
+    ) -> Future[Result]:
+        self.log(f"START of dispatching aggregator job for node {node.idx}.")
+        self.log(
+            f"Creating futures for the following relevant nodes: {relevant_children}"
+        )
+        aggr_future = Future()
+        children_futures = {
+            child: self.dispatch_jobs(self.topology[child], node)
+            for child in relevant_children
+        }
+
+        aggr_args = AggrJobArgs(
+            node=node,
+            child_results={},
+            round_num=self.round_num,
+            strategy=self.strategy,
+            data_plane=self.runtime.data_plane,
+        )
+
+        # job: AggregatorJobProto,
+        # args: AggrJobArgs,
+        # parent_fut: Future,
+        # child_futs: dict[NodeID, Future],
+        # runtime: Runtime,
+        callback = functools.partial(
+            _all_futures_finished,
+            job=aggregator_job,
+            args=aggr_args,
+            parent_fut=aggr_future,
+            child_futs=children_futures,
+            runtime=self.runtime,
+        )
+
+        if not len(children_futures):
+            raise ValueError("No children futures to add callbacks to.")
+
+        for _, fut in children_futures.items():
+            fut.add_done_callback(callback)
+
+        self.log(f"END of dispatching aggregator job for node {node.idx}.")
+        return aggr_future
+
+    def worker_job(self, node: Node, parent: Node) -> Future[Result]:
+        self.log(f"START of dispatching worker job for node {node.idx}.")
+        args = WorkerJobArgs(
+            strategy=self.strategy,
+            module=self.global_module,
+            data=self.dataset,
+            params=self.global_module.get_params(),
+            node=node,
+            parent=parent,
+            round_num=self.round_num,
+            # train_step=
+        )
+        args = self.runtime.transfer(args)
+        future = self.runtime.submit(worker_job, args=args)
+        self.log(f"END of dispatching worker job for node {node.idx}.")
+        return future
+
+
+# TODO: Delete this class in favor of the above `Federation` class.
 class FederationWorkflow:
+    """
+    Outdated version: it proved to be more difficult to implement this way.
+    """
+
     topology: Topology
     strategy: Strategy
     runtime: Runtime
@@ -261,7 +506,6 @@ class FederationWorkflow:
 
     def launch_aggregator_job(self, node: Node) -> Future[Result]:
         parent_future: Future = Future()
-        print(f"{node.idx=}\n{self._relevant_nodes=}")
         children_futures: list[Future] = [
             self.launch_jobs(node=child, parent=node)
             for child in self._relevant_nodes[node.idx]
@@ -293,7 +537,7 @@ class FederationWorkflow:
         state = WorkerState()  # noqa: F841
         args = WorkerJobArgs(
             strategy=self.strategy,
-            model=self.global_module,
+            module=self.global_module,
             data=self.dataset,
             params=self.global_module.get_params(),
             node=node,

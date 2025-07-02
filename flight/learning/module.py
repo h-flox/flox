@@ -299,6 +299,9 @@ class FederatedDataModule(TorchDataModule):
 
         Returns:
             `True` if the node exists in the federated data module; `False` otherwise.
+
+        Throws:
+            - `ValueError`: If the argument is not of type `Node` or `NodeID`.
         """
         if isinstance(node_or_idx, Node):
             node_idx = node_or_idx.idx

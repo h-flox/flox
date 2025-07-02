@@ -7,6 +7,30 @@ import numpy as np
 if t.TYPE_CHECKING:
     from .types import T
 
+Record: t.TypeAlias = dict[str, t.Any]
+"""
+A record is a dictionary with string keys and any type of values.
+
+This data format is used with Pandas to create DataFrames,
+which are used to store and manipulate tabular data (see example below).
+
+Examples:
+    >>> import pandas as pd
+    >>>
+    >>> records: list[Record] = [
+    >>>     {"name": "Alice",   "age": 30, "city": "New York"},
+    >>>     {"name": "Bob",     "age": 25, "city": "Los Angeles"},
+    >>>     {"name": "Charlie", "age": 35, "city": "Chicago"},
+    >>> ]
+    >>>
+    >>> df = pd.DataFrame.from_records(records)
+    >>> df.head()
+          name  age         city
+    0    Alice   30     New York
+    1      Bob   25  Los Angeles
+    2  Charlie   35      Chicago
+"""
+
 
 def proportion_split(
     seq: t.Sequence[T],

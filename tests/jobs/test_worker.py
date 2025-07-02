@@ -120,7 +120,7 @@ def test_worker_job(synthetic_mnist):
     worker_job(
         args=WorkerJobArgs(
             strategy=SimpleStrategy(),
-            model=model,
+            module=model,
             data=trainloader,
             params=model.get_params(),
             train_step=None,
@@ -144,13 +144,13 @@ def test_worker_job_with_custom_train_fn(synthetic_mnist):
         engine.state.metrics[engine.state.epoch] = {
             "loss": loss.item(),
         }
-        # return loss.item(), y_pred, y
-        return y, y_pred
+        return x, y, y_pred, loss
+        # return y, y_pred
 
     worker_job(
         args=WorkerJobArgs(
             strategy=SimpleStrategy(),
-            model=model,
+            module=model,
             data=trainloader,
             params=model.get_params(),
             train_step=train_step,

@@ -247,10 +247,7 @@ class Strategy(metaclass=_EnforceSuperMeta):
         #       Remember, this has to run on the different nodes
         #       (coordinator/aggregator/workers)
         if context is None:
-            print("Creating a new context")
             context = {}
-        else:
-            print("Inherited a context")
 
         for _name, handler in get_event_handlers(self, event_type, when=when):
             handler(context)

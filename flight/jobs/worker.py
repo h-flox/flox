@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass, field
 
+from ..learning.process_fns import create_hooked_supervised_trainer
 from ..state import WorkerState
 
 if t.TYPE_CHECKING:
@@ -40,13 +41,20 @@ class WorkerJobProto(t.Protocol):
 
 @dataclass
 class WorkerJobArgs:
+    """
+    ...
+    """
+
     strategy: Strategy
 
-    model: TorchModule
+    module: TorchModule
     data: TorchDataModule | DataLoader | Dataset
     params: Params
 
+    round_num: int | None = None
+
     node: Node | None = None
+    parent: Node | None = None
 
     train_step: t.Any | None = None
     supervised: bool = field(default=True)  # TODO: Move to `TorchModule`?
@@ -88,10 +96,10 @@ class TrainingConfig:
     output_transform: t.Callable[
         [t.Any, t.Any, t.Any, torch.Tensor], t.Any
     ] = lambda x, y_true, y_pred, loss: (
-        # x,
+        x,
         y_true,
         y_pred,
-        # loss.item(),
+        loss.item(),
     )
     gradient_accumulation_steps: int = 1
     model_fn: t.Callable[[torch.nn.Module, t.Any], t.Any] = lambda model, x: model(x)
@@ -104,12 +112,13 @@ class TrainingConfig:
 def worker_job(args: WorkerJobArgs):
     import functools
 
-    from ignite.engine import Engine, create_supervised_trainer
+    from ignite.engine import Engine
     from torch.utils.data import DataLoader, Dataset
 
     from flight.events import IgniteEvents, WorkerEvents
     from flight.jobs.protocols import JobStatus, Result
     from flight.learning.module import TorchDataModule, TorchModule
+    from flight.state import WorkerState
     from flight.system import Node
 
     if args.node is None:
@@ -117,12 +126,13 @@ def worker_job(args: WorkerJobArgs):
     else:
         node = args.node
 
+    records = []
     result = Result(
         node=node,
         # status=...,
         state=None,
-        module=args.model,
-        params=args.model.get_params(),
+        module=args.module,
+        params=args.module.get_params(),
         # uuid=args.node.globus_compute_id,
     )
     extra: dict[str, t.Any] = {}
@@ -130,11 +140,11 @@ def worker_job(args: WorkerJobArgs):
 
     ####################################################################################
 
-    if not isinstance(args.model, TorchModule):
+    if not isinstance(args.module, TorchModule):
         raise TypeError("The `model` argument must be a subclass of `TorchModule`.")
 
-    optimizer = args.model.configure_optimizers()
-    criterion = args.model.configure_criterion()
+    optimizer = args.module.configure_optimizers()
+    criterion = args.module.configure_criterion()
     train_config = TrainingConfig()
 
     ####################################################################################
@@ -144,15 +154,16 @@ def worker_job(args: WorkerJobArgs):
     if args.train_step is not None:
         wrapped_train_step: ProcessFn = functools.partial(
             args.train_step,
-            args.model,
+            args.module,
             optimizer,
             criterion,
         )
         trainer = Engine(wrapped_train_step)
 
     elif args.supervised:
-        trainer = create_supervised_trainer(  # TODO: Convert to our hooked function.
-            args.model,
+        # trainer = create_supervised_trainer(  # TODO: Convert to our hooked function.
+        trainer = create_hooked_supervised_trainer(
+            args.module,
             optimizer,
             criterion,
             device=train_config.device,
@@ -160,6 +171,8 @@ def worker_job(args: WorkerJobArgs):
             prepare_batch=train_config.prepare_batch,
             output_transform=train_config.output_transform,
             gradient_accumulation_steps=train_config.gradient_accumulation_steps,
+            strategy=args.strategy,
+            context=locals(),
         )
 
     else:
@@ -200,11 +213,14 @@ def worker_job(args: WorkerJobArgs):
     ####################################################################################
 
     if isinstance(args.data, TorchDataModule):
-        train_loader = args.data.train_data()
+        train_loader = args.data.train_data(args.node)
+
     elif isinstance(args.data, DataLoader):
         train_loader = args.data
+
     elif isinstance(args.data, Dataset):
         train_loader = DataLoader(args.data, **args.dataset_cfg)
+
     else:
         err = ValueError("`data` must be a TorchDataModule, DataLoader, or Dataset.")
         result.status = JobStatus.SUCCESS
@@ -219,19 +235,23 @@ def worker_job(args: WorkerJobArgs):
         epoch_length=train_config.epoch_length,
     )
 
-    context = locals()
+    # print(trainer_state)
+    # print(trainer_state.metrics)
+    # print(trainer_state.output)
+
     args.strategy.fire_event_handler(WorkerEvents.AFTER_TRAINING, locals())
 
     ####################################################################################
 
-    context = locals()
-    args.strategy.fire_event_handler(WorkerEvents.COMPLETED, context)
+    args.strategy.fire_event_handler(WorkerEvents.COMPLETED, locals())
 
     return Result(
         node=node,
         # status=...,
-        state=None,
-        params=args.model.get_params(),
-        module=args.model,
+        records=records,
+        state=WorkerState(),
+        params=args.module.get_params(),
+        module=args.module,
+        round_num=args.round_num,
         extra=extra,
     )

@@ -7,6 +7,7 @@ if t.TYPE_CHECKING:
     from flight.strategies.strategy import Strategy
     from flight.system.topology import NodeID
 
+    from ..commons import Record
     from ..learning.parameters import Params
     from ..runtime import DataPlane
     from ..system.node import Node
@@ -49,8 +50,10 @@ def aggregator_job(args: AggrJobArgs) -> Result:
             - If the `state` of any child result is not an instance of
               `AggregatorState` or `WorkerState`.
     """
+    from flight.jobs.protocols import Result
     from flight.learning.module import TorchModule
     from flight.state import AggregatorState, WorkerState
+    from flight.system import Node
 
     if not isinstance(args.node, Node):
         raise TypeError(
@@ -63,8 +66,9 @@ def aggregator_job(args: AggrJobArgs) -> Result:
     child_states: dict[NodeID, AggregatorState | WorkerState] = {}
     child_params: dict[NodeID, Params] = {}
     child_modules: dict[NodeID, TorchModule] = {}
+    child_records: list[Record] = []
 
-    for result in args.child_results:
+    for _child_idx, result in args.child_results.items():
         if isinstance(result.state, (AggregatorState, WorkerState)):
             child_states[result.node.idx] = result.state
         else:
@@ -85,6 +89,8 @@ def aggregator_job(args: AggrJobArgs) -> Result:
             child_params[result.node.idx] = result.module.get_params()
         else:
             child_params[result.node.idx] = result.params
+
+        child_records.extend(result.records)
 
         # if result.usable():
         #     child_states[result.node.idx] = result.state
@@ -110,7 +116,9 @@ def aggregator_job(args: AggrJobArgs) -> Result:
     return Result(
         node=args.node,
         state=aggr_state,
+        records=child_records,
         module=aggr_module,
+        round_num=args.round_num,
         params=aggr_params,
         extra={
             "child_states": child_states,
