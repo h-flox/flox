@@ -9,7 +9,7 @@ from flight.events import (
     IgniteEvents,
     EventsList,
     IgniteEventKinds,
-    fire_event_handler_by_type,
+    fire_event_handlers_by_type,
     get_event_handlers,
     get_event_handlers_by_genre,
     on,
@@ -167,15 +167,15 @@ def strategy_like_cls():
             super().__init__()
 
         @on(IgniteEvents.STARTED, when="train")
-        def train_started(self, context):
+        def train_started(self, _ctx):
             print("Training started!")
 
         @on(IgniteEvents.STARTED, when="test")
-        def test_started(self, context):
+        def test_started(self, _ctx):
             print("Training completed!")
 
         @on(IgniteEvents.STARTED, when="validate")
-        def validate_started(self, context):
+        def validate_started(self, _ctx):
             print("Validation started!")
 
     return StrategyLikeClass
@@ -230,20 +230,20 @@ def test_ignite_event_handlers_with_multiple_when_decorators(strategy_like_cls):
         """Strategy-like class with multiple `when` decorators."""
 
         # noinspection PyMethodMayBeStatic
-        def shared_functionality(self, context):
+        def shared_functionality(self, ctx):
             print("Shared functionality executed!")
             if "shared" in context:
-                context["shared"] += 1
+                ctx["shared"] += 1
             else:
-                context["shared"] = 1
+                ctx["shared"] = 1
 
         @on(IgniteEvents.STARTED, when="train")
-        def train_test_started_1(self, context):
-            self.shared_functionality(context)
+        def train_test_started_1(self, ctx):
+            self.shared_functionality(ctx)
 
         @on(IgniteEvents.STARTED, when="test")
-        def train_test_started_2(self, context):
-            self.shared_functionality(context)
+        def train_test_started_2(self, ctx):
+            self.shared_functionality(ctx)
 
     instance = MultipleWhens()
 
@@ -262,5 +262,6 @@ def test_ignite_event_handlers_with_multiple_when_decorators(strategy_like_cls):
     assert len(handlers) == 2
 
     context = {}
-    fire_event_handler_by_type(instance, IgniteEvents.STARTED, context)
-    assert context["shared"] == 2
+    # This will only run events with `when="train"`.
+    fire_event_handlers_by_type(instance, IgniteEvents.STARTED, context)
+    assert context["shared"] == 1

@@ -409,13 +409,14 @@ def on(
     return decorator
 
 
-def fire_event_handler_by_type(
+def fire_event_handlers_by_type(
     obj: t.Any,
     event_type: GenericEvents | EventsList,
     # TODO: We can maybe make `context` a keyword-only argument and provide **kwargs for
     #       additional arguments?
     context: dict[str, t.Any] | None = None,
     logger: t.Any = None,
+    when: str | IgniteEventKinds | None = None,
 ) -> None:
     """
     Fires the event handler implementations for a single event type or a list of
@@ -429,21 +430,32 @@ def fire_event_handler_by_type(
             The event type(s) to fire with the given context.
         context (dict[str, typing.Any] | None):
             Optional context that the event handler is run with. Defaults to `None`.
-        logger:
-            Optional logger to use for logging the event firing.
+        logger (t.Any):
+            Optional logger to use for logging the event firing. Defaults to `None`.
+        when (str | IgniteEventKinds | None):
+            Specifies whether the event handler is for training, validation,
+            or testing. If `None`, then it will default to `IgniteEventKinds.TRAIN`.
+            This is only relevant for `IgniteEvents` and is ignored for other event
+            types. Defaults to `None`.
 
     Notes:
-        The order in which event handlers for `event_type` is _not_ guaranteed.
-        Ensure that the logic of your given `Strategy` for federated learning
-        with Flight does not rely on a certain order of these event handlers
-        to run.
+        - The order in which event handlers for `event_type` is _not_ guaranteed.
+          Ensure that the logic of your given `Strategy` for federated learning
+          with Flight does not rely on a certain order of these event handlers
+          to run.
+        - For the `when` argument, if it is `None` (or not specified) and an
+          `event_type` that is not `IgniteEvents` is passed, then it will
+          fire all event handlers for that `event_type` regardless of their
+          `when` value.
     """
     # TODO: Incorporate the `logger` argument.
-
     if context is None:
         context = {}
 
-    for _name, handler in get_event_handlers(obj, event_type):
+    if when is None:
+        when = IgniteEventKinds.TRAIN
+
+    for _name, handler in get_event_handlers(obj, event_type, when=when):
         # logger.log(f"Firing event handler: {_name}")
         handler(context)
 

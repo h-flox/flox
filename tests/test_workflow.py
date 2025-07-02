@@ -11,8 +11,8 @@ from flight.workflow import get_relevant_nodes
 
 
 @pytest.fixture
-def topo() -> Topology:
-    return hierarchical_topology(aggr_shape=(2, 4), n=10)
+def hier_topo_from_fn() -> Topology:
+    return hierarchical_topology(aggr_shape=(2,), n=5, rng=42)
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def hier_topo_dict() -> Topology:
 ########################################################################################
 
 
-def test_hierarchical_topo(topo, flat_topo, hier_topo_dict):
+def test_get_relevant_nodes(hier_topo_from_fn, flat_topo, hier_topo_dict):
     relevant_nodes = get_relevant_nodes(hier_topo_dict, [11, 12, 21])
     assert len(relevant_nodes) == 3
     assert set(relevant_nodes[0]) == {1, 2}

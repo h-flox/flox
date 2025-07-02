@@ -27,10 +27,11 @@ import typing as t
 
 from ignite.engine import EventEnum
 
+from flight.events import TrainProcessFnEvents, on
 from flight.strategies.strategy import Strategy
 
 if t.TYPE_CHECKING:
-    from ignite.engine import Engine
+    from flight.events import Context
 
 
 class FedProxEvents(EventEnum):
@@ -40,41 +41,37 @@ class FedProxEvents(EventEnum):
 
 
 class FedProx(Strategy):
+    """
+    Implementation of the *FedProx* algorithm [(ref)](
+    https://proceedings.mlsys.org/paper_files/paper/
+    2020/file/1f5fe83998a09396ebe6477d9475ba0c-Paper.pdf
+    ).
+
+    The optimization performed in this algorithm can be defined by:
+
+    $$
+    \\min_{w} h_{k}(w, w^{t}) = F_{k}(w) + \frac{\\mu}{2} \\|w - w^{t}\\|^{2}
+    $$
+
+    Specifically, FedProx relies on the addition of a proximal term to the loss
+    objective before the optimization step occurs.
+    """
+
+    _requires_hooked_process_fn: bool = True
+
     def __init__(self, mu: float = 0.3):
         super().__init__()
         self.mu = mu
 
-    @staticmethod
-    def make_train_step(self) -> t.Callable | None:
-        def train_step():
-            ...
-
-        return train_step
-
-    # TODO: This has to be a custom event, see:
-    # https://pytorch-ignite.ai/how-to-guides/08-custom-events/
-    # @on(IgniteEvents.BACKWARD_STARTED)
-    def compute_proximal_term(self, engine: Engine, context):
-        proximal_term = 0.0
+    @on(TrainProcessFnEvents.BACKWARD_STARTED)  # TODO: Fix `on` decorator typing.
+    def add_proximal_term(self, context: Context):
         local_model = context["model"]
         global_model = context["global_model"]
-        for (_, w), (_, w_t) in zip(
-            local_model.get_params(),
-            global_model.get_params(),
+
+        proximal_term = 0.0
+        for (_, local_weights), (_, global_weights) in zip(
+            local_model.get_params(), global_model.get_params()
         ):
-            proximal_term += (w - w_t).norm(2)
+            proximal_term += (local_weights - global_weights).norm(2)
 
-        criterion = context["criterion"]
-        x, y_true = engine.state.batch
-        y_pred = engine.state.output
-        loss = criterion(y_pred, y_true) + (self.mu / 2) * proximal_term
-        return loss
-
-
-if __name__ == "__main__":
-
-    def cbk(self, engine, context):
-        print("Callback executed with context")
-
-    my_fed_prox = FedProx()
-    my_fed_prox.add_event_handler(FedProxEvents.BACKWARD_STARTED, cbk)
+        context["loss"] = context["loss"] + (self.mu / 2) * proximal_term

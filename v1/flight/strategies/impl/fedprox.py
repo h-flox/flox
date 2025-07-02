@@ -1,6 +1,6 @@
 # TODO: Re-implement this entire FL strategy such that it no longer relies on
 #  `TrainerStrategy` which is now deprecated.
-
+#
 # from __future__ import annotations
 #
 # import torch

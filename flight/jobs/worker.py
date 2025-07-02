@@ -3,6 +3,8 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass, field
 
+from ..state import WorkerState
+
 if t.TYPE_CHECKING:
     import torch
     from torch.optim import Optimizer  # noqa
@@ -48,6 +50,7 @@ class WorkerJobArgs:
 
     train_step: t.Any | None = None
     supervised: bool = field(default=True)  # TODO: Move to `TorchModule`?
+    state: WorkerState | None = field(default_factory=WorkerState)
 
     dataset_cfg: dict[str, t.Any] = field(default_factory=_default_dataset_cfg)
 

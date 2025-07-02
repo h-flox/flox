@@ -8,12 +8,13 @@ if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from .control.base import ControlPlane
-    from .data.base import DataPlane
+    from .data import DataPlane
 
 
 def make_default_control_plane() -> ControlPlane:
     from concurrent.futures import ThreadPoolExecutor
 
+    # noinspection PyTypeChecker
     return ThreadPoolExecutor(max_workers=1)
 
 

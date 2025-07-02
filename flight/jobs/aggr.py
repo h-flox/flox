@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import typing as t
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 if t.TYPE_CHECKING:
     from flight.strategies.strategy import Strategy
     from flight.system.topology import NodeID
 
     from ..learning.parameters import Params
+    from ..runtime import DataPlane
     from ..system.node import Node
     from .protocols import Result
 
@@ -19,10 +20,10 @@ class AggrJobArgs:
     """
 
     node: Node
-    child_results: list[Result]
+    child_results: dict[NodeID, Result]
     round_num: int
-    handlers: list[t.Any]
     strategy: Strategy
+    data_plane: DataPlane | None = field(default=None, repr=False)
 
 
 class AggregatorJobProto(t.Protocol):
@@ -34,6 +35,20 @@ class AggregatorJobProto(t.Protocol):
 
 
 def aggregator_job(args: AggrJobArgs) -> Result:
+    """
+
+    Args:
+        args:
+
+    Returns:
+        ...
+
+    Throws:
+        - `TypeError`:
+            - If the `node` argument is not an instance of `Node`.
+            - If the `state` of any child result is not an instance of
+              `AggregatorState` or `WorkerState`.
+    """
     from flight.learning.module import TorchModule
     from flight.state import AggregatorState, WorkerState
 

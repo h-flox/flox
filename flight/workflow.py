@@ -6,7 +6,7 @@ import typing as t
 from concurrent.futures import Future, InvalidStateError
 from dataclasses import dataclass, field
 
-from .events import Context, CoordinatorEvents, fire_event_handler_by_type
+from .events import Context, CoordinatorEvents, fire_event_handlers_by_type
 from .jobs.aggr import AggregatorJobProto, AggrJobArgs, aggregator_job
 from .jobs.protocols import Result
 from .jobs.worker import WorkerJobArgs, worker_job
@@ -40,7 +40,7 @@ def _fire_event_handler(
         context (dict[str, t.Any]):
             Contextual information to pass to the event handler.
     """
-    fire_event_handler_by_type(obj, event_type, context)
+    fire_event_handlers_by_type(obj, event_type, context)
 
 
 def _resolve_ambiguous_node(topology: Topology, node: Node | None) -> Node:
@@ -202,11 +202,12 @@ class FederationWorkflow:
     def coordinator_round(self, state: CoordinatorState, ctx):
         # WORKER SELECTION
         selected_workers = self.client_selection(ctx)
-        relevant_nodes = get_relevant_nodes(self.topology, selected_workers)
-        for node_idx in relevant_nodes:
+        self._relevant_nodes = get_relevant_nodes(self.topology, selected_workers)
+        for node_idx in self._relevant_nodes:
             self.logger.info(f"[Round:{state.round}] - Launching job on {node_idx=}.")
             node = self.topology[node_idx]
             future = self.launch_jobs(node, None)
+            self.logger.info("Got future...")
             future.result()
 
         state.update(incr_round=True)
@@ -260,6 +261,7 @@ class FederationWorkflow:
 
     def launch_aggregator_job(self, node: Node) -> Future[Result]:
         parent_future: Future = Future()
+        print(f"{node.idx=}\n{self._relevant_nodes=}")
         children_futures: list[Future] = [
             self.launch_jobs(node=child, parent=node)
             for child in self._relevant_nodes[node.idx]
@@ -284,6 +286,7 @@ class FederationWorkflow:
         for fut in children_futures:
             fut.add_done_callback(callback)
 
+        self.logger.info("Returning parent future for the aggregator job.")
         return parent_future
 
     def launch_worker_job(self, node: Node, parent: Node) -> Future[Result]:

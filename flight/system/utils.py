@@ -93,9 +93,16 @@ def hierarchical_topology(
         A hierarchical `Topology` instance.
 
     Notes:
-        This function behaves randomly in terms of how the nodes are connected
-        in a `Topology`. Be mindful of this. To ensure reproducibility, take
-        advantage of the `rng` argument.
+        - This function behaves randomly in terms of how the nodes are connected
+          in a `Topology`. Be mindful of this. To ensure reproducibility, take
+          advantage of the `rng` argument.
+        - The `aggr_shape` argument **must** be a sequence of integers in
+          ascending order.
+
+    Throws:
+        - `ValueError`: If the `aggr_shape` argument is a sequence of integers
+          that is not in ascending order or if any value in `aggr_shape` is not
+          in the range `(0, n]`.
     """
     # If no `aggr_shape` argument is provided, then we simply return the result
     # of the `flat_topology` function since the user specified no intermediate
@@ -133,15 +140,25 @@ def hierarchical_topology(
         _parents: t.Sequence[NodeID],
         _rng: np.random.Generator,
     ):
-        children_without_parents = [child for child in _children]
+        """
+        Randomly chooses parents for the given children in the tree.
+        """
+        children_without_parents = np.array(
+            [child for child in _children],
+            dtype=object,
+        )
 
         for parent in _parents:
-            child = _rng.choice(children_without_parents)
-            children_without_parents.remove(child)
+            index = _rng.integers(0, len(children_without_parents))
+            child = children_without_parents[index]
+            children_without_parents = np.delete(children_without_parents, index)
             tree.add_edge(parent, child)
 
+        # _parents_np = np.array(_parents, dtype=object)
+
         for child in children_without_parents:
-            parent = _rng.choice(_parents)
+            index = _rng.integers(0, len(_parents))
+            parent = _parents[index]
             tree.add_edge(parent, child)
 
     # Begin constructing the tree to build the `Topology` instance.
@@ -169,8 +186,8 @@ def hierarchical_topology(
     for num_aggrs in aggr_shape:
         if not 0 < num_aggrs <= n:
             raise ValueError(
-                "Value for number of aggregators in 'middle' tier must be nonzero and "
-                "no greater than the number of workers."
+                "Value for number of aggregators in 'middle' tier must be nonzero "
+                "and no greater than the number of workers."
             )
 
         curr_aggrs = []
