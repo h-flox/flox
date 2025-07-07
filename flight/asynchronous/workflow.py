@@ -8,16 +8,14 @@ from dataclasses import dataclass, field
 
 import torch
 from torch.utils.data import Subset, TensorDataset
+import numpy as np
 
-from flight.events import (
-    FlightEventEnum,
-    add_event_handler_to_obj,
-    fire_event_handler_by_type,
-)
+from flight.events import FlightEventEnum
 from flight.jobs.protocols import Result
 from flight.jobs.worker import WorkerJobArgs, worker_job
 from flight.learning.module import TorchModule
 from flight.runtime import Runtime
+from ignite.engine import Engine, Events
 
 if t.TYPE_CHECKING:
     from flight.strategies.strategy import Strategy
@@ -100,7 +98,7 @@ class AsyncWorkflowState:
 
 def evaluate_fn(model, data_loader, device=None):
     """
-    Default loss function calculator. Computes average loss over the data_loader.
+    Computes the loss for each batch (round) over the data_loader using Ignite Engine.
 
     Args:
         model: The model to evaluate.
@@ -108,26 +106,30 @@ def evaluate_fn(model, data_loader, device=None):
         device: Device to run the model on (optional).
 
     Returns:
-        float: Average loss over the dataset.
+        list: List of loss values, one per batch/round.
     """
     model.eval()
     criterion = model.configure_criterion()
-    total_loss = 0.0
-    total_samples = 0
+    total_losses = []
 
-    with torch.no_grad():
-        for batch in data_loader:
-            x, y = batch
-            if device is not None:
-                x = x.to(device)
-                y = y.to(device)
+    def eval_step(engine, batch):
+        x, y = batch
+        if device is not None:
+            x = x.to(device)
+            y = y.to(device)
+        with torch.no_grad():
             logits = model(x)
             loss = criterion(logits, y)
-            batch_size = x.size(0)
-            total_loss += loss.item() * batch_size
-            total_samples += batch_size
+        return loss.item()
 
-    return total_loss / total_samples if total_samples > 0 else 0.0
+    evaluator = Engine(eval_step)
+
+    @evaluator.on(Events.ITERATION_COMPLETED)
+    def collect_loss(engine): #noqa
+        total_losses.append(engine.state.output)
+
+    evaluator.run(data_loader)
+    return total_losses
 
 
 class AsyncWorkflow:
@@ -193,30 +195,36 @@ class AsyncWorkflow:
             self.state.worker_rounds[worker.idx] = 0
             self.state.worker_params[worker.idx] = deepcopy(initial_params)
 
-    def start(self) -> tuple[TorchModule, t.Any]:
+    def start(self) -> tuple[TorchModule, t.Any, dict]:
         """
         Starts the asynchronous federated learning strategy by dispatching worker
         jobs.
 
         Returns:
-            The final model and any additional information.
+            The final model, per-round global loss list, and per-worker loss dict.
         """
         # self.fire_event_handler(AsyncWorkflowEvents.STARTED)
 
         num_workers = len(self.topology.workers)
         max_jobs = num_workers * self.num_global_rounds
         jobs_completed = 0
-        # worker_ids = [worker.idx for worker in self.topology.workers]
         worker_idx_map = {worker.idx: worker for worker in self.topology.workers}
 
-        # Assign one job to each worker at the start
         futures = set()
-
         for worker in self.topology.workers:
             if self.state.worker_rounds[worker.idx] < self.num_global_rounds:
                 futures.add(self._dispatch_worker_job(worker))
                 self.state.worker_rounds[worker.idx] += 1
 
+        per_round_losses = []
+        # Evaluate initial model before any training
+        data_loader = torch.utils.data.DataLoader(self.dataset, batch_size=32)
+        per_round_losses.append(self.loss_function(self.module, data_loader))
+
+        # Track per-worker loss per round
+        worker_losses: dict[int, list[float]] = {worker.idx: [] for worker in self.topology.workers}
+
+        rounds_completed = 0
         while futures and jobs_completed < max_jobs:
             dones, futures = wait(futures, return_when=FIRST_COMPLETED)
 
@@ -235,10 +243,6 @@ class AsyncWorkflow:
                 if self.worker_time_tracker is not None:
                     self.worker_time_tracker.record_job_end(worker_node_id)
 
-                # self.fire_event_handler(
-                #    AsyncWorkflowEvents.WORKER_JOB_COMPLETED, {"result": result}
-                # )
-
                 if self.aggregation_policy:
                     self.aggregation_policy(self, worker_node_id)
                 else:
@@ -253,9 +257,23 @@ class AsyncWorkflow:
                     futures.add(new_future)
                     self.state.worker_rounds[worker_node_id] += 1
 
-        # self.strategy.fire_event_handler(AsyncWorkflowEvents.COMPLETED)
+                # Evaluate and record this worker's loss on its own data after its job completes
+                worker_model = deepcopy(self.module)
+                worker_model.set_params(self.state.worker_params[worker_node_id])
+                worker_data = self._get_dataset_for_worker(worker_node_id)
+                worker_loader = torch.utils.data.DataLoader(worker_data, batch_size=32)
+                loss_list = self.loss_function(worker_model, worker_loader)
+                # Store mean loss for this round for this worker
+                worker_losses[worker_node_id].append(float(np.mean(loss_list)))
+
+            # After each global round (when all workers have completed a round), evaluate and store loss
+            rounds_completed += 1
+            if jobs_completed % num_workers == 0:
+                self.module.set_params(self.state.global_params)
+                per_round_losses.append(self.loss_function(self.module, data_loader))
+
         self.module.set_params(self.state.global_params)
-        return self.module, None
+        return self.module, per_round_losses, worker_losses
 
     def _dispatch_worker_job(self, worker_node: Node) -> Future:
         """
