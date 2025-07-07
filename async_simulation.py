@@ -5,9 +5,7 @@ import seaborn as sns
 import torch
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 
-from flight.asynchronous.workflow import (
-    AsyncWorkflow,
-)
+from flight.asynchronous.workflow import AsyncWorkflow
 from flight.jobs.protocols import Result
 from flight.learning.module import TorchModule
 from flight.runtime import Runtime
@@ -86,6 +84,8 @@ class SimpleModule(TorchModule):
 
         super().__init__()
         self.linear = torch.nn.Linear(10, 2)
+        self.relu = torch.nn.ReLU()
+        self.linear2 = torch.nn.Linear(2, 2)
 
     def forward(self, x):
         """
@@ -121,7 +121,7 @@ class SimpleModule(TorchModule):
         Returns:
             torch.optim.SGD: The optimizer for the simple module.
         """
-        return torch.optim.SGD(self.parameters(), lr=0.01)
+        return torch.optim.SGD(self.parameters(), lr=0.005)
 
     def training_step(self, batch, batch_idx):
         """
@@ -142,13 +142,16 @@ class SimpleModule(TorchModule):
 
 
 if __name__ == "__main__":
+
+    # Parameters
     num_workers = 5
-    num_global_rounds = 8
+    num_global_rounds = 20
     module = SimpleModule()
     dataset = TensorDataset(torch.randn(100, 10), torch.randint(0, 2, (100,)))
     topology = flat_topology(num_workers)
     runtime = Runtime.simple_setup(max_workers=num_workers)
 
+    # Create the workflow
     wf = AsyncWorkflow(
         runtime=runtime,
         topology=topology,
@@ -157,8 +160,11 @@ if __name__ == "__main__":
         dataset=dataset,
         strategy=DefaultStrategy(),
     )
-    wf.start()
 
+    # Start the workflow
+    final_model, per_round_losses, worker_losses = wf.start()
+
+    # Plot the worker job completion times
     if not any(wf.worker_time_tracker.job_times.values()):
         print("No job times recorded! Check if jobs are running and being tracked.")
 
@@ -167,20 +173,27 @@ if __name__ == "__main__":
         for worker in wf.worker_time_tracker.job_times:
 
             if len(wf.worker_time_tracker.job_times[worker]) > 1:
-                wf.worker_time_tracker.job_times[worker] = wf.worker_time_tracker.job_times[worker][1:]
+                wf.worker_time_tracker.job_times[worker] = (
+                    wf.worker_time_tracker.job_times[worker][1:]
+                )
 
         min_time = min(
-            start for times in wf.worker_time_tracker.job_times.values() for start, _ in times
+            start
+            for times in wf.worker_time_tracker.job_times.values()
+            for start, _ in times
         )
 
         for worker in wf.worker_time_tracker.job_times:
             wf.worker_time_tracker.job_times[worker] = [
-                (s - min_time, e - min_time) for s, e in wf.worker_time_tracker.job_times[worker]
+                (s - min_time, e - min_time)
+                for s, e in wf.worker_time_tracker.job_times[worker]
             ]
 
         sns.set_theme(style="whitegrid")
         fig, ax = plt.subplots(figsize=(10, 6))
-        num_jobs = max(len(times) for times in wf.worker_time_tracker.job_times.values())
+        num_jobs = max(
+            len(times) for times in wf.worker_time_tracker.job_times.values()
+        )
         job_colors = sns.color_palette("tab20", n_colors=num_jobs)
 
         for worker_idx, times in wf.worker_time_tracker.job_times.items():
@@ -197,9 +210,23 @@ if __name__ == "__main__":
                     edgecolor="black",
                 )
 
+        # Plot the title, x-axis, y-axis, legend, and grid
+        plt.title("Asynchronous Worker Job Completion Times")
         ax.set_xlabel("Time (seconds)")
         ax.set_ylabel("Worker Index")
-        ax.set_title("Asynchronous Worker Job Completion Times")
+        ax.set_title("Asynchronous Worker Job Completion Times")  # noqa: F841
         plt.tight_layout()
         plt.savefig("Worker_Time_Simulation.pdf")
         plt.close()
+
+    # Plot the per-round loss
+    plt.figure(figsize=(10, 6))
+    for worker_id, losses in worker_losses.items():
+        plt.plot(range(len(losses)), losses, marker=".", label=f"Worker {worker_id}")
+    plt.title("Per-Round Loss (Global Rounds)")
+    plt.xlabel("Global Round")
+    plt.ylabel("Loss")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("Loss_Simulation.pdf")
+    plt.close()
