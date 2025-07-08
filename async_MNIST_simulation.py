@@ -16,7 +16,7 @@ from flight.utils.fed_data import federated_split
 # Parameters
 NUM_WORKERS = 5
 NUM_LABELS = 10
-NUM_GLOBAL_ROUNDS = 20
+NUM_GLOBAL_ROUNDS = 30
 
 # Load MNIST test data (as per user request)
 data = MNIST(
@@ -44,8 +44,8 @@ fed_data = federated_split(
     topo=topo,
     data=data,
     num_labels=NUM_LABELS,
-    label_alpha=1e8,  
-    sample_alpha=1e8,  
+    label_alpha=1.0,  
+    sample_alpha=1.0,  
 )
 
 
