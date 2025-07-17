@@ -31,7 +31,7 @@ def _prepare_batch(
 def fire_event_handler_if_strategy_exists(
     strategy: Strategy | None,
     event: TrainProcessFnEvents,
-    context: Context,
+    context: Context | None,
 ) -> None:
     """
     Fire an event handler if a strategy is provided.
@@ -48,6 +48,29 @@ def fire_event_handler_if_strategy_exists(
 ########################################################################################
 
 
+def _default_training_step_output_transform(
+    x: t.Any, y: t.Any, y_pred: t.Any, loss: torch.Tensor
+) -> dict[str, t.Any]:
+    """
+    Default output transform for the training step.
+
+    Args:
+        x (t.Any): The input data.
+        y (t.Any): The target data.
+        y_pred (t.Any): The predicted output from the model.
+        loss (torch.Tensor): The computed loss.
+
+    Returns:
+        A dictionary containing the input, target, prediction, and loss.
+    """
+    return {
+        "x": x,
+        "y": y,
+        "y_pred": y_pred,
+        "loss": loss.item(),
+    }
+
+
 def hooked_supervised_training_step(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -58,7 +81,7 @@ def hooked_supervised_training_step(
     model_transform: t.Callable[[t.Any], t.Any] = lambda output: output,
     output_transform: t.Callable[
         [t.Any, t.Any, t.Any, torch.Tensor], t.Any
-    ] = lambda x, y, y_pred, loss: loss.item(),
+    ] = _default_training_step_output_transform,
     gradient_accumulation_steps: int = 1,
     model_fn: t.Callable[[torch.nn.Module, t.Any], t.Any] = lambda model, x: model(x),
     strategy: Strategy | None = None,
@@ -161,18 +184,23 @@ def hooked_supervised_training_step(
     def update(
         engine: Engine, batch: t.Sequence[torch.Tensor]
     ) -> t.Union[t.Any, tuple[torch.Tensor]]:
+        _fire_event_handler_if_strategy_exists(
+            event=TrainProcessFnEvents.STARTED,
+            context=context,
+        )
+
         if (engine.state.iteration - 1) % gradient_accumulation_steps == 0:
             optimizer.zero_grad()
         model.train()
 
         _fire_event_handler_if_strategy_exists(
             event=TrainProcessFnEvents.BATCH_PREPARE_STARTED,
-            context=locals(),
+            context=context,
         )
         x, y = prepare_batch(batch, device=device, non_blocking=non_blocking)
         _fire_event_handler_if_strategy_exists(
             event=TrainProcessFnEvents.BATCH_PREPARE_COMPLETED,
-            context=locals(),
+            context=context,
         )
 
         output = model_fn(model, x)
@@ -184,24 +212,29 @@ def hooked_supervised_training_step(
 
         _fire_event_handler_if_strategy_exists(
             event=TrainProcessFnEvents.BACKWARD_STARTED,
-            context=locals(),
+            context=context,
         )
         loss.backward()
         _fire_event_handler_if_strategy_exists(
             event=TrainProcessFnEvents.BACKWARD_COMPLETED,
-            context=locals(),
+            context=context,
         )
 
         if engine.state.iteration % gradient_accumulation_steps == 0:
             _fire_event_handler_if_strategy_exists(
                 event=TrainProcessFnEvents.OPTIM_STEP_COMPLETED,
-                context=locals(),
+                context=context,
             )
             optimizer.step()
             _fire_event_handler_if_strategy_exists(
                 event=TrainProcessFnEvents.OPTIM_STEP_COMPLETED,
-                context=locals(),
+                context=context,
             )
+
+        _fire_event_handler_if_strategy_exists(
+            event=TrainProcessFnEvents.COMPLETED,
+            context=context,
+        )
 
         return output_transform(
             x,
@@ -292,7 +325,7 @@ def create_hooked_supervised_trainer(
     model_transform: t.Callable[[t.Any], t.Any] = lambda output: output,
     output_transform: t.Callable[
         [t.Any, t.Any, t.Any, torch.Tensor], t.Any
-    ] = lambda x, y, y_pred, loss: loss.item(),
+    ] = _default_training_step_output_transform,
     deterministic: bool = False,
     amp_mode: str | None = None,
     scaler: bool | torch.cuda.amp.GradScaler = False,
