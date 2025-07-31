@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\flight",
+    "\\flight\\asynchronous",
+    "\\flight\\jobs",
+    "\\flight\\strategies"
+  ],
+  "SelectedNode": "\\flight\\asynchronous\\workflow.py",
+  "PreviewInSolutionExplorer": false
+}

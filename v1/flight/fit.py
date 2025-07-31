@@ -12,7 +12,7 @@ from .engine.controllers.serial import SerialController
 from .federation import SyncFederation, Topology
 from .learning.base import AbstractDataModule, AbstractModule
 from .strategies import Strategy
-from .strategies.impl import FedSGD
+from .strategies.impl import FedSGD, FedAvg
 from .types import Record
 
 
@@ -66,7 +66,6 @@ def load_controller(
         case _:
             raise ValueError
 
-
 def federated_fit(
     topology: TopologyLike,
     module: AbstractModule,
@@ -109,6 +108,8 @@ def federated_fit(
     """
     if strategy == "fedsgd":
         strategy = FedSGD()
+    elif strategy == "fedavg":
+        strategy = FedAvg()
     else:
         raise ValueError("Fix this later.")
 

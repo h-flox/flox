@@ -17,11 +17,11 @@ from .system import Node
 from .system.node import NodeKind
 
 if t.TYPE_CHECKING:
-    from .events import get_event_handlers_by_genre  # noqa: F401
-    from .learning import TorchDataModule, TorchModule
-    from .strategies.strategy import Strategy
-    from .system.topology import Topology
-    from .system.types import NodeID
+    from flight.events import get_event_handlers_by_genre  # noqa: F401
+    from flight.learning.module import TorchDataModule, TorchModule
+    from flight.strategies.strategy import Strategy
+    from flight.system.topology import Topology
+    from flight.system.types import NodeID
 
 
 def _fire_event_handler(

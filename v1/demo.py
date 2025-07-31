@@ -7,8 +7,9 @@ from torch.utils.data import Subset
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 
-from v1 import flight as fl
-from v1.flight import TensorLoss, TorchModule, federated_split
+from .flight.system.utils import flat_topology
+from flight.fit import federated_fit
+from flight import TensorLoss, TorchModule, federated_split
 
 NUM_LABELS = 10
 
@@ -41,13 +42,13 @@ class MyModule(TorchModule):
 
 def main():
     data = MNIST(
-        root="~/Research/Data/Torch-Data/",
+        root=".",
         download=False,
         train=False,
         transform=ToTensor(),
     )
     data = Subset(data, indices=list(range(200)))
-    topo = fl.flat_topology(10)
+    topo = flat_topology(10)
     module = MyModule()
     fed_data = federated_split(
         topo=topo,
@@ -56,7 +57,7 @@ def main():
         label_alpha=100.0,
         sample_alpha=100.0,
     )
-    trained_module, records = fl.federated_fit(
+    trained_module, records = federated_fit(
         topo, module, fed_data, strategy="fedavg", rounds=10
     )
 

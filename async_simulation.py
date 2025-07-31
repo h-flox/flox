@@ -1,5 +1,3 @@
-import time
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
@@ -11,7 +9,7 @@ from flight.learning.module import TorchModule
 from flight.runtime import Runtime
 from flight.strategies import DefaultStrategy
 from flight.system.utils import flat_topology
-
+import pandas as pd
 
 def simulated_worker_job(args):
     """
@@ -27,7 +25,6 @@ def simulated_worker_job(args):
     Raises:
         ValueError: If the data type is not supported.
     """
-    start_time = time.time()
 
     if isinstance(args.data, DataLoader):
         loader = args.data
@@ -52,16 +49,10 @@ def simulated_worker_job(args):
         optimizer.step()
         break
 
-    end_time = time.time()
-    print(
-        f"Worker job finished for node {args.node.idx if args.node else 'unknown'} "
-        f"at {end_time}, duration: {end_time - start_time}"
-    )
     node = args.node
     params = model.get_params()
 
     return Result(node=node, params=params, module=model)
-
 
 class SimpleModule(TorchModule):
     """
@@ -81,7 +72,6 @@ class SimpleModule(TorchModule):
         Returns:
             None
         """
-
         super().__init__()
         self.linear = torch.nn.Linear(10, 2)
         self.relu = torch.nn.ReLU()
@@ -123,7 +113,7 @@ class SimpleModule(TorchModule):
         """
         return torch.optim.SGD(self.parameters(), lr=0.005)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch):
         """
         Training step of the simple module.
 
@@ -139,7 +129,6 @@ class SimpleModule(TorchModule):
         loss = self.configure_criterion()(logits, y)
 
         return loss
-
 
 if __name__ == "__main__":
 
@@ -162,71 +151,65 @@ if __name__ == "__main__":
     )
 
     # Start the workflow
-    final_model, per_round_losses, worker_losses = wf.start()
+    final_model, round_logs = wf.start()
+    df = pd.DataFrame.from_records(round_logs)
+    df["timedelta"] = df.time - df.time.min()
+    df.to_csv("async_simulation/async_simulation_logs.csv", index=False)
 
-    # Plot the worker job completion times
-    if not any(wf.worker_time_tracker.job_times.values()):
-        print("No job times recorded! Check if jobs are running and being tracked.")
+    # Reading form .csv file
+    df = pd.read_csv("async_simulation/async_simulation_logs.csv")
+    df['timedelta'] = pd.to_timedelta(df['timedelta']).dt.total_seconds()
 
-    else:
-
-        for worker in wf.worker_time_tracker.job_times:
-
-            if len(wf.worker_time_tracker.job_times[worker]) > 1:
-                wf.worker_time_tracker.job_times[worker] = (
-                    wf.worker_time_tracker.job_times[worker][1:]
-                )
-
-        min_time = min(
-            start
-            for times in wf.worker_time_tracker.job_times.values()
-            for start, _ in times
-        )
-
-        for worker in wf.worker_time_tracker.job_times:
-            wf.worker_time_tracker.job_times[worker] = [
-                (s - min_time, e - min_time)
-                for s, e in wf.worker_time_tracker.job_times[worker]
-            ]
-
-        sns.set_theme(style="whitegrid")
-        fig, ax = plt.subplots(figsize=(10, 6))
-        num_jobs = max(
-            len(times) for times in wf.worker_time_tracker.job_times.values()
-        )
-        job_colors = sns.color_palette("tab20", n_colors=num_jobs)
-
-        for worker_idx, times in wf.worker_time_tracker.job_times.items():
-
-            for job_num, (start, end) in enumerate(times):
-                color = job_colors[job_num % len(job_colors)]
-
-                ax.barh(
-                    worker_idx,
-                    end - start,
-                    left=start,
-                    height=0.8,
-                    color=color,
-                    edgecolor="black",
-                )
-
-        # Plot the title, x-axis, y-axis, legend, and grid
-        plt.title("Asynchronous Worker Job Completion Times")
-        ax.set_xlabel("Time (seconds)")
-        ax.set_ylabel("Worker Index")
-        ax.set_title("Asynchronous Worker Job Completion Times")  # noqa: F841
-        plt.tight_layout()
-        plt.savefig("Worker_Time_Simulation.pdf")
-        plt.close()
-
-    # Plot the per-round loss
-    plt.figure(figsize=(10, 6))
-    for worker_id, losses in worker_losses.items():
-        plt.plot(range(len(losses)), losses, marker=".", label=f"Worker {worker_id}")
-    plt.title("Per-Round Loss (Global Rounds)")
-    plt.xlabel("Global Round")
-    plt.ylabel("Loss")
+    # Plotting of Loss vs Time
+    plt.figure(figsize=(9, 5))
+    for worker_idx, group in df.groupby('worker_idx'):
+        plt.plot(group['timedelta'], group['loss'], marker='o', label=f'Worker {worker_idx}')
+    plt.title("Worker Loss vs Time")
+    plt.xlabel("Time (seconds)")
     plt.grid(True)
+    plt.legend(title="Worker")
+    plt.savefig("async_simulation/async_Loss_Time.pdf")
+    plt.show()
+    plt.close()
+
+    # Plotting of Loss vs Rounds
+    plt.figure(figsize=(9, 5))
+    for worker_idx, group in df.groupby('worker_idx'):
+        plt.plot(group['round'], group['loss'], marker='o', label=f'Worker {worker_idx}')
+    plt.title("Worker Loss vs Time")
+    plt.xlabel("Rounds")
+    plt.grid(True)
+    plt.legend(title="Worker")
+    plt.savefig("async_simulation/async_Loss_Round.pdf")
+    plt.show()
+    plt.close()
+
+    # Scheduled job execution plot 
+    # Ensure 'timedelta' is sorted for each worker
+    df = df.sort_values(['worker_idx', 'timedelta'])
+    df['duration'] = df.groupby('worker_idx')['timedelta'].shift(-1) - df['timedelta']
+    plt.figure(figsize=(9, 5))
+
+    # Use job index (e.g., 'round') for color mapping
+    unique_jobs = sorted(df['round'].unique())
+    color_map = {job_idx: color for job_idx, color in zip(unique_jobs, sns.color_palette("tab20", n_colors=len(unique_jobs)))}
+
+    for i, worker_idx in enumerate(sorted(df['worker_idx'].unique())):
+        worker_jobs = df[df['worker_idx'] == worker_idx]
+        for _, job in worker_jobs.iterrows():
+            plt.barh(
+                y=worker_idx,
+                width=job['duration'],
+                left=job['timedelta'],
+                color=color_map[job['round']],
+                edgecolor='black'
+            )
+
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Worker Index")
+    plt.title("Asynchronous Worker Job Completion Times")
+    plt.grid(True, axis='x', linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig("Loss_Simulation.pdf")
+    plt.savefig("async_simulation/async_jobs.pdf")
+    plt.show()
     plt.close()

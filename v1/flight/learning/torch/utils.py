@@ -105,6 +105,37 @@ class FederatedDataModule(TorchDataModule):
         """
         return len(self.train_indices)
 
+    def size(self, node: Node | NodeID | None = None, kind: str = "train") -> int:
+        """
+        Returns the number of training samples for a specific worker node.
+
+        Args:
+            node (Node | NodeID | None): The node or node index. If None, returns total size.
+            kind (str): The kind of data to get the size of (default: "train").
+
+        Returns:
+            Number of training samples for the worker node.
+        """
+        if kind != "train":
+            return 0
+            
+        if node is None:
+            # Return total size across all workers
+            return sum(len(indices) for indices in self.train_indices.values())
+        
+        # Resolve node to NodeID
+        if isinstance(node, Node):
+            node_idx = node.idx
+        elif isinstance(node, NodeID):
+            node_idx = node
+        else:
+            raise ValueError(f"Expected Node or NodeID, got {type(node)}")
+            
+        if node_idx in self.train_indices:
+            return len(self.train_indices[node_idx])
+        else:
+            return 0
+
     def __contains__(self, node_or_idx: Node | NodeID) -> bool:
         """
         Checks if a (worker) node exists in the federated data module.

@@ -280,9 +280,9 @@ _ON_DECORATOR_WHEN_FLAG: t.Final[str] = "_when_in_ignite"
 
 
 class IgniteEventKinds(str, enum.Enum):
-    TRAIN: str = "train"
-    VALIDATE: str = "validate"
-    TEST: str = "test"
+    TRAIN = "train"
+    VALIDATE = "validate"
+    TEST = "test"
 
 
 def add_event_handler_to_obj(

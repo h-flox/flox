@@ -1,10 +1,10 @@
-import csv
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
-from torchvision.datasets import MNIST
+from torch.utils.data import TensorDataset
+from torchvision.datasets import MNIST, FashionMNIST
 from torchvision.transforms import ToTensor
+import seaborn as sns
 
 from flight.asynchronous.workflow import AsyncWorkflow
 from flight.learning.module import TorchModule
@@ -13,45 +13,8 @@ from flight.strategies.strategy import DefaultStrategy
 from flight.system.utils import flat_topology
 from flight.utils.fed_data import federated_split
 
-# Parameters
-NUM_WORKERS = 5
-NUM_LABELS = 10
-NUM_GLOBAL_ROUNDS = 30
-
-# Load MNIST test data (as per user request)
-data = MNIST(
-    root=".",
-    download=True,
-    train=False,
-    transform=ToTensor(),
-)
-
-# Convert MNIST to TensorDataset for AsyncWorkflow
-images_list = []
-labels_list = []
-for img, label in data:
-    images_list.append(img)
-    labels_list.append(label)
-images = torch.stack(images_list)
-labels = torch.tensor(labels_list)
-tensor_dataset = torch.utils.data.TensorDataset(images, labels)
-
-# Create federated topology
-topo = flat_topology(NUM_WORKERS)
-
-# Splitting data among workers using Federated split
-fed_data = federated_split(
-    topo=topo,
-    data=data,
-    num_labels=NUM_LABELS,
-    label_alpha=1.0,  
-    sample_alpha=1.0,  
-)
-
-
 # Define simple model (2 linear layers with ReLU)
 class SimpleMNISTModule(TorchModule):
-
     def __init__(self):
         super().__init__()
         self.model = torch.nn.Sequential(
@@ -65,7 +28,7 @@ class SimpleMNISTModule(TorchModule):
         return self.model(x)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.001)
+        return torch.optim.Adam(self.parameters(), lr=0.0001)
 
     def configure_criterion(self):
         return torch.nn.CrossEntropyLoss()
@@ -76,82 +39,129 @@ class SimpleMNISTModule(TorchModule):
         loss = self.configure_criterion()(logits, y)
         return loss
 
-
-# Setup runtime and strategy
-runtime = Runtime.simple_setup(max_workers=NUM_WORKERS)
-
-# Run asynchronous workflow
-wf = AsyncWorkflow(
-    runtime=runtime,
-    topology=topo,
-    num_global_rounds=NUM_GLOBAL_ROUNDS,
-    module=SimpleMNISTModule(),
-    dataset=tensor_dataset,
-    strategy=DefaultStrategy(),
-)
-
-
-def main():
-
-    # Start the workflow and get the worker losses
-    _, _, worker_losses = wf.start()
-
-    # Save the worker losses to a CSV file
-    with open("async_mnist_results.csv", "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["worker_id", "epoch", "loss", "time"])
-
-        # Try to get per-worker, per-epoch times if available
-        # If not, record None as a placeholder
-        for worker_id, losses in worker_losses.items():
-            # Try to get times from wf.worker_time_tracker.job_times if available
-            start_time = wf.worker_time_tracker.job_times.get(worker_id, [])[0][0]
-            times = wf.worker_time_tracker.job_times.get(worker_id, [])
-            for epoch, loss in enumerate(losses):
-                # Use the end time for the epoch if available, else None
-                time_val = times[epoch][1] - start_time if epoch < len(times) else None
-                writer.writerow([worker_id, epoch, loss, time_val])
-
-    # Plot the worker losses
-    df = pd.read_csv("async_mnist_results.csv")
-
-    # Plot the worker losses Vs Rounds on MNIST
-    for worker_id in df["worker_id"].unique():
-        worker_data = df[df["worker_id"] == worker_id]
-        plt.plot(
-            worker_data["epoch"],
-            worker_data["loss"],
-            marker=".",
-            label=f"Worker {worker_id}",
-        )
-
-    plt.title("Worker Loss Vs Rounds on MNIST")
-    plt.xlabel("Round")
-    plt.ylabel("Loss")
-    plt.legend(title="Workers")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig("MNIST_Loss_Rounds_Simulation.pdf")
-    plt.close()
-
-    # Plot the Worker Loss Vs Time on MNIST
-    for worker_id in df["worker_id"].unique():
-        worker_data = df[df["worker_id"] == worker_id]
-        plt.plot(
-            worker_data["time"],
-            worker_data["loss"],
-            marker=".",
-            label=f"Worker {worker_id}",
-        )
-    
-    plt.title("Worker Loss Vs Time on MNIST")
-    plt.xlabel("Time")
-    plt.ylabel("Loss")
-    plt.legend(title="Workers")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig("MNIST_Loss_Time_Simulation.pdf")
-    plt.close()
-
 if __name__ == "__main__":
-    main()
+    # Parameters
+    NUM_LABELS = 10
+    NUM_WORKERS = 5
+    NUM_GLOBAL_ROUNDS = 10
+
+    # Load MNIST training data
+    def load_data(dataset, train):
+        if dataset == "MNIST":
+            # Download MNIST dataset if not already present
+            return MNIST(
+                root=".",
+                train=train,
+                transform=ToTensor(),
+                download=True,
+            )
+        elif dataset == "FashionMNIST":
+            # Download FashionMNIST dataset if not already present
+            return FashionMNIST(
+                root=".",
+                train=train,
+                transform=ToTensor(),
+                download=True,
+            )
+
+    # Create federated topology
+    topo = flat_topology(NUM_WORKERS)
+
+    # Splitting data among workers using Federated split
+    train_data = load_data("FashionMNIST", train=True)
+    test_data = load_data("FashionMNIST", train=False)
+
+    fed_data = federated_split(
+        topo=topo,
+        data=train_data,
+        num_labels=NUM_LABELS,
+        label_alpha=1.0,
+        sample_alpha=1.0,
+    )
+
+    # Setup runtime and strategy
+    runtime = Runtime.simple_setup(max_workers=NUM_WORKERS)
+
+    # Run asynchronous workflow
+    wf = AsyncWorkflow(
+        runtime=runtime,
+        topology=topo,
+        num_global_rounds=NUM_GLOBAL_ROUNDS,
+        module=SimpleMNISTModule(),
+        dataset=TensorDataset(train_data.data.view(-1, 28 * 28).float(), train_data.targets),
+        strategy=DefaultStrategy(),
+    )
+
+    # Start the workflow
+    final_model, round_logs = wf.start()
+    df = pd.DataFrame.from_records(round_logs)
+    
+    # df["sample_alpha"] = 1.0
+    df["timedelta"] = df.time - df.time.min()
+    df.to_csv("async_simulation/async_mnist_simulation_logs.csv", index=False)
+
+    # Using .csv to do the plotting
+    df = pd.read_csv("async_simulation/async_mnist_simulation_logs.csv")
+    df['timedelta'] = pd.to_timedelta(df['timedelta']).dt.total_seconds()
+
+    #test_loader = DataLoader(test_data)
+    #test_loss = evaluate_fn(final_model, test_loader)
+
+    # Plotting of Loss vs Time
+    plt.figure(figsize=(10, 6))
+    # Training Loss
+    for worker_idx, group in df.groupby('worker_idx'):
+        plt.plot(group['timedelta'], group['loss'], marker='o', label=f'Worker {worker_idx}')
+    # Test Loss
+    #plt.axhline(y=test_loss, color='black', linestyle='--', label='Test Loss')
+    plt.title("Worker Loss vs Time")
+    plt.xlabel("Time (seconds)")
+    plt.grid(True)
+    plt.legend(title="Worker")
+    plt.savefig("async_simulation/MNIST_Loss_Time.pdf")
+    plt.show()
+    plt.close()
+
+    # Plotting of Loss vs Rounds
+    plt.figure(figsize=(10, 6))
+    # Training Loss
+    for worker_idx, group in df.groupby('worker_idx'):
+        plt.plot(group['round'], group['loss'], marker='o', label=f'Worker {worker_idx}')
+    # Test Loss
+    #plt.axhline(y=test_loss, color='black', linestyle='--', label='Test Loss')
+    plt.title("Worker Loss vs Rounds")
+    plt.xlabel("Rounds")
+    plt.grid(True)
+    plt.legend(title="Worker")
+    plt.savefig("async_simulation/MNIST_Loss_Round.pdf")
+    plt.show()
+    plt.close()
+    
+    df['duration'] = df.groupby('worker_idx')['timedelta'].shift(-1) - df['timedelta']
+    plt.figure(figsize=(9, 5))
+
+    # Use job index for color mapping
+    unique_jobs = sorted(df['round'].unique())
+    color_map = {job_idx: color for job_idx, color in zip(unique_jobs, sns.color_palette("tab20", n_colors=len(unique_jobs)))}
+
+    for i, worker_idx in enumerate(sorted(df['worker_idx'].unique())):
+        worker_jobs = df[df['worker_idx'] == worker_idx]
+        for _, job in worker_jobs.iterrows():
+            plt.barh(
+                y=worker_idx,
+                width=job['duration'],
+                left=job['timedelta'],
+                color=color_map[job['round']],
+                edgecolor='black'
+            )
+
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Worker Index")
+    plt.title("Asynchronous Worker Job Completion Times")
+    plt.grid(True, axis='x', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.savefig("async_simulation/MNIST_jobs.pdf")
+    plt.show()
+    plt.close()
+
+

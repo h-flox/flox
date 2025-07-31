@@ -39,6 +39,9 @@ def default_training_job(args: TrainJobArgs) -> Result:
 
     # training_start = datetime.datetime.now()
 
+    # Initialize records variable
+    records = []
+    
     match local_model.kind():
         case "lightning":
             raise ValueError
@@ -49,9 +52,8 @@ def default_training_job(args: TrainJobArgs) -> Result:
             records = scikit_local_train(data, local_model, node)
 
         case "torch":
-            pass
-
-            # records = torch_local_train(args, data, local_model, node_state)
+            from v1.flight.federation.work._torch import torch_local_train
+            records = torch_local_train(data, local_model, node)
 
         case _:
             raise ValueError(
@@ -62,9 +64,8 @@ def default_training_job(args: TrainJobArgs) -> Result:
                 f"of this method."
             )
 
-    # worker_strategy.before_training(node_state, data)
-    # TODO: These needed calls (↑↑ and ↓↓) to be included in the trainers!!
-    # state, optimizer = worker_strategy.after_training(node_state)
+    # Call before_training to set up worker state (e.g., num_data_samples for FedAvg)
+    node_state, data = worker_strategy.before_training(node_state, data)
 
     # training_end = datetime.datetime.now()
 

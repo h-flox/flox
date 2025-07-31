@@ -1,0 +1,33 @@
+0:
+  kind: "coordinator"
+  children: [1, 2, 3, 4, 5]
+
+1:
+  kind: "worker"
+  children: []
+  extra:
+    device: "cpu"
+
+2:
+  kind: "worker"
+  children: []
+  extra:
+    device: "cpu"
+
+3:
+  kind: "worker"
+  children: []
+  extra:
+    device: "cpu"
+
+4:
+  kind: "worker"
+  children: []
+  extra:
+    device: "cpu"
+
+5:
+  kind: "worker"
+  children: []
+  extra:
+    device: "cpu"

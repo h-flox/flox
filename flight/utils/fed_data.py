@@ -168,7 +168,11 @@ def federated_split(
         for w in topo.workers:
             if worker_samples[w.idx] < samples_per_worker[w.idx]:
                 try:
-                    probs.append(label_probs_per_worker[w.idx][label])
+                    prob = label_probs_per_worker[w.idx]
+                    if isinstance(prob, (float, np.floating)):
+                        probs.append(prob)
+                    else:
+                        probs.append(prob[label])
                     temp_workers.append(w.idx)
                 except IndexError as err:
                     if isinstance(label, float):
